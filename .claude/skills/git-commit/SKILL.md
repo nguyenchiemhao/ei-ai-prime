@@ -67,7 +67,7 @@ Used only by the `ship-ticket` skill (the owner started the pipeline, which is t
 ## Message format
 
 ```
-<type>(<scope>): <imperative summary> [EA-<n>]
+[EA-<n>] <type>(<scope>): <imperative summary>
 
 - <what changed and why>
 - <what changed and why>
@@ -77,17 +77,17 @@ Refs: EA-<n>[, EA-<m>]
 
 | Part | Rule |
 |---|---|
-| Subject | Conventional Commits, imperative mood, lowercase after the colon, no trailing period, **≤ 72 characters including the key** |
+| Subject | **Ticket key first** in square brackets, then a Conventional Commit: `[EA-<n>] <type>(<scope>): <summary>`. Imperative mood, lowercase after the colon, no trailing period, **≤ 72 characters including the key**. Several keys: `[EA-12][EA-11] …` (main key first) |
 | type | `feat`, `fix`, `docs`, `refactor`, `test`, `build`, `ci`, `chore`, `perf` |
 | scope | module touched: `backlog`, `design`, `skills`, `foundation`, `kb`, `widget`, `pipeline`, `jev`, `skill`, `admin`, `eval`, `infra` |
 | Body | 1–5 bullets, wrapped at 72 chars; explain *why* when it is not obvious. Omit for trivial commits |
 | Footer | `Refs:` with every ticket key the commit touches |
-| No ticket | Ask first. Only for `docs`/`chore` and with explicit user approval: drop the `[EA-…]` suffix and use `Refs: none` |
+| No ticket | Ask first. Only for `docs`/`chore` and with explicit user approval: drop the `[EA-…]` prefix and use `Refs: none` |
 
 Examples:
 
 ```
-feat(widget): stream answers in iframe widget [EA-41]
+[EA-41] feat(widget): stream answers in iframe widget
 
 - Add SSE endpoint and incremental renderer
 - Show stop button while the answer is generating
@@ -96,7 +96,7 @@ Refs: EA-41
 ```
 
 ```
-docs(backlog): translate backlog summary to English [EA-85]
+[EA-85] docs(backlog): translate backlog summary to English
 
 Refs: EA-85
 ```
