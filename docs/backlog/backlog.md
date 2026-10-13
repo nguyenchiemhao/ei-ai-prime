@@ -27,7 +27,7 @@ The owner could not answer yet → **every question is attached to its ticket wi
 | # | Question | Default in use | Ticket |
 |---|---|---|---|
 | Q1 | Size of the "AI team", who reviews code? | 1 person (PO/Tech Lead) reviews + AI coding agent | SET-01 |
-| Q2 | Tech stack? | Proposed Python/FastAPI + PostgreSQL RLS + pgvector + React/Preact + llama.cpp/vLLM behind an OpenAI-compatible API — decided by a spike | SET-01, SET-02 |
+| Q2 | Tech stack? | Proposed Python/FastAPI + PostgreSQL RLS + pgvector + React/Preact + llama.cpp/vLLM behind an OpenAI-compatible API — proposed in ADR-001 (`docs/architecture/adr-001-tech-stack.md`), pending owner approval | SET-01, SET-02 |
 | Q3 | Prototype deadline? | None; roadmap of 10 × 2-week sprints | SET-01 |
 | Q4 | Velocity? | **Assumed 40 SP per 2-week sprint** | section 5 |
 | Q5 | Where is staging, what budget? | **Decided: deferred** — no deploy; test in the local environment (SET-03, WGT-10, SKL-04); set up staging and re-test once the MVP is complete | SET-05 (E9) |

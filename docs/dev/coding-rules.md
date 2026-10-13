@@ -35,17 +35,19 @@ Used by the Developer and Code Reviewer agents and by humans. The short, non-neg
 
 ## 2. Stack-specific
 
-> Filled when SET-01 (EA-11) records the stack decision in an ADR. Proposed stack: Python/FastAPI + PostgreSQL (RLS) + pgvector + React/Preact. Until then, the Developer follows the general rules and the conventions of any code already in the repo.
+> Decided in ADR-001 (`docs/architecture/adr-001-tech-stack.md`). The ADR stays "Proposed" until the owner approves it; these rules apply from approval. Follow the conventions of any code already in the repo.
 
 ### Backend
-- Language/version, formatter, linter, type checker:
-- Test runner and layout:
-- DB access and migrations (RLS policy per table):
+- Language/version, formatter, linter, type checker: Python 3.12, FastAPI (Pydantic v2); ruff for lint and format; mypy in strict mode for new modules.
+- Test runner and layout: pytest (+ pytest-asyncio), tests under `tests/` mirroring the package layout; database tests run against a real PostgreSQL 16 + pgvector from Docker Compose, never a mock of the database.
+- DB access and migrations (RLS policy per table): SQLAlchemy 2 (async, psycopg 3) and Alembic. Every table has `org_id`, and its RLS policy (`ENABLE` + `FORCE ROW LEVEL SECURITY`) is created in the same migration as the table. The application role is never a table owner, superuser or BYPASSRLS role. Tenant context is set at the start of a top-level transaction with `set_config('app.current_org', <org id from the verified token>, true)`; the helper must refuse to run when a transaction is already open (a nested call only creates a SAVEPOINT and the setting would outlive it), and policies read it through `NULLIF(current_setting('app.current_org', true), '')::uuid` (the setting reads `''` after a transaction ends). Origin of the pattern, with tests: `poc/stack-spike/src/stack_spike/tenant.py` (to be replaced by the real helper in FND-01). Use composite foreign keys `(org_id, id)`; no grants on vector partitions; views use `security_invoker = true`.
+- Models: call them only through the OpenAI-compatible gateway (official `openai` SDK with `base_url`); never import an engine-specific client.
 
 ### Frontend (admin + widget)
-- Framework, formatter, linter:
-- i18n library:
-- Component test runner:
+- Framework, formatter, linter: React (admin) and Preact (widget), both TypeScript in strict mode, built with Vite; ESLint and Prettier.
+- i18n library: `react-i18next` in the admin; a small dictionary-based `t()` in the widget; both read the shared VI/EN message JSON. No hard-coded user-facing strings.
+- Component test runner: Vitest with Testing Library.
+- Styling: only the shared design-token CSS variables (DSN-01); IBM Plex through the self-hosted `@fontsource` packages (Vietnamese subset included).
 
 ### E2E
 - Playwright Test (`@playwright/test`), specs in `e2e/<area>/<ticket-key>-<slug>.spec.ts`.
@@ -54,7 +56,7 @@ Used by the Developer and Code Reviewer agents and by humans. The short, non-neg
 
 ## 3. Commands
 
-Fill in once the stack exists; agents run exactly these.
+Fill in once the stack exists; agents run exactly these. Filled by SET-03 (EA-13) when the skeleton exists; the EA-11 PoC commands are in `poc/stack-spike/README.md`.
 
 | Purpose | Command |
 |---|---|

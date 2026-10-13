@@ -1,0 +1,104 @@
+# EA-11 stack spike: infrastructure part of the chosen stack (ADR-001).
+# PoC only: no passwords exist anywhere (trust auth on the compose-internal network, no published ports).
+# SET-03 (EA-13) owns the real compose file, profiles and env-provided credentials.
+#
+# Written for Docker Compose <= 2.17: profiles, healthcheck conditions, mem_limit, tmpfs and named
+# volumes only (no include:, develop.watch or healthcheck.start_interval).
+#
+#   core stack only : docker compose -f poc/stack-spike/compose.yaml up -d
+#   with ~4B model  : docker compose -f poc/stack-spike/compose.yaml --profile model up -d
+#   run tools/tests : docker compose -f poc/stack-spike/compose.yaml run --rm poc <command>
+
+name: ei-ai-stack-spike
+
+# One default for the model alias, shared by the server and the tests.
+x-llm-alias: &llm_alias "${LLM_ALIAS:-qwen3-4b-instruct-2507}"
+
+services:
+  # PostgreSQL 16 + pgvector 0.8.x: relational data with RLS, per-Organization vector partitions (F1, F2).
+  db:
+    image: pgvector/pgvector:0.8.7-pg16
+    environment:
+      POSTGRES_DB: poc
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d poc"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    mem_limit: 1g
+
+  # Valkey 8 (BSD-3-Clause, Redis wire-compatible): rate limits and short-lived counters.
+  valkey:
+    image: valkey/valkey:8.1.10-alpine
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 256m
+
+  # llama.cpp server: OpenAI-compatible endpoint, ~4B model on CPU. Opt-in profile (multi-GB download).
+  model:
+    image: ghcr.io/ggml-org/llama.cpp:server-b11580
+    profiles: ["model"]
+    command:
+      # Downloaded by Hugging Face revision (commit), not by branch, so the file cannot change under us.
+      # The poc service verifies the file against MODEL_SHA256 (tests/stack/test_model_server.py).
+      - "-mu"
+      - "${LLM_MODEL_URL:-https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF/resolve/a06e946bb6b655725eafa393f4a9745d460374c9/Qwen3-4B-Instruct-2507-Q4_K_M.gguf}"
+      - "--alias"
+      - *llm_alias
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "8080"
+      - "-c"
+      - "8192"
+      - "-t"
+      - "6"
+      - "--jinja"
+    environment:
+      LLAMA_CACHE: /models
+    volumes:
+      - model-cache:/models
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 600s
+    mem_limit: 6g
+    # For manual browsing only (never needed by the tests):
+    # ports:
+    #   - "127.0.0.1:8080:8080"
+
+  # Test and lint runner. Not started by "up"; used through "run --rm poc ...".
+  poc:
+    build: .
+    profiles: ["tools"]
+    depends_on:
+      db:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    volumes:
+      - ./:/workspace/poc
+      - model-cache:/models:ro
+      - ../../docs:/workspace/docs:ro
+    environment:
+      POC_ADMIN_DSN: postgresql://postgres@db:5432/poc
+      POC_APP_DSN: postgresql://poc_app@db:5432/poc
+      VALKEY_URL: redis://valkey:6379/0
+      MODEL_BASE_URL: http://model:8080/v1
+      MODEL_NAME: *llm_alias
+      MODEL_SHA256: ${LLM_MODEL_SHA256:-3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597}
+      ADR_PATH: /workspace/docs/architecture/adr-001-tech-stack.md
+      CHECK_MODEL: ${CHECK_MODEL:-0}
+
+volumes:
+  model-cache:
