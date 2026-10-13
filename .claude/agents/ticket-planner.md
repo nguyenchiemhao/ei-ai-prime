@@ -40,7 +40,7 @@ The Lead gives you the ticket key and the work folder `.work/EA-<n>/`. Jira clou
 # EA-<n> — <summary>
 
 Profile: ui | api | docs
-Branch: <filled by Lead>
+Branch: <branch given by the Lead>
 
 ## 1. Understanding
 <3–6 sentences: what changes for whom, and why>
