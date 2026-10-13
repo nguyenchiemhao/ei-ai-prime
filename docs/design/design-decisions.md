@@ -188,6 +188,8 @@ Nhãn: **P** = trong bản thử; **Later** = vẽ để hình dung, ngoài ph�
 | V3 | Gom nhóm câu hỏi tương tự ở màn hình câu chưa trả lời được chưa có trong phạm vi bản thử | Bản thử: danh sách thô, chưa gom nhóm |
 | V4 | Trang quản trị dùng một sidebar cố định với người dùng là Builder; các màn hình của vai trò khác có nhãn "Viewing as…" | Chấp nhận cho bản mock; giao diện thật ẩn mục theo vai trò |
 
+**Trạng thái (2026-10-13):** V1 **đã duyệt** — bản tối giản là WGT-11 (EA-50), cần vẽ thêm bước xác nhận gửi. Khi đối chiếu bản vẽ với backlog còn phát hiện thêm 15 điểm lệch X1–X15 (đề xuất đang dùng cho tới khi chốt) — xem DSN-01 (EA-85) và mục 8 của [backlog.md](../backlog/backlog.md).
+
 ---
 
 ## 6. Lịch sử thay đổi
@@ -196,3 +198,4 @@ Nhãn: **P** = trong bản thử; **Later** = vẽ để hình dung, ngoài ph�
 |---|---|
 | 2026-10-12 | Tạo file; chốt UI1–UI6; doanh nghiệp giả định Mekong Devworks; danh sách màn hình A1–A8, B1–B24 |
 | 2026-10-12 | Vẽ xong 25 artboard trên canvas; ghi nhận vấn đề V1–V4 |
+| 2026-10-13 | V1 được duyệt (WGT-11); tạo DSN-01 (EA-85) gắn canvas vào backlog, ghi điểm lệch X1–X15 |
