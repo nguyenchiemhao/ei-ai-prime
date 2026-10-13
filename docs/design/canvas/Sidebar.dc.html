@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admin sidebar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<nav aria-label="Main" style="box-sizing: border-box; width: 100%; min-height: 900px; height: 100%; display: flex; flex-direction: column; gap: 20px; padding: 18px 14px; background: #FFFFFF; border-right: 1px solid #E1E4E8; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #16181D">
+
+  <div style="display: flex; align-items: center; gap: 10px; padding: 0 6px">
+    <div style="width: 30px; height: 30px; border-radius: 8px; background: #16181D; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500">ei</div>
+    <div style="font-weight: 600; font-size: 16px">ei-ai</div>
+    <span style="margin-left: auto; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #FDF0E1; color: #8A4205">Prototype</span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 6px">
+    <button style="min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 6px 10px; border: 1px solid #E1E4E8; border-radius: 10px; background: #FFFFFF; font-family: inherit; text-align: left; color: #16181D">
+      <span style="width: 26px; height: 26px; border-radius: 6px; background: #0E7C6B; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600">MD</span>
+      <span style="flex: 1; min-width: 0">
+        <span style="display: block; font-size: 11px; color: #555E6B">{{orgLabel}}</span>
+        <span style="display: block; font-size: 13px; font-weight: 600">Mekong Devworks</span>
+      </span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555E6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg>
+    </button>
+    <button style="min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 6px 10px; border: 1px solid #E1E4E8; border-radius: 10px; background: #F7F7F8; font-family: inherit; text-align: left; color: #16181D">
+      <span style="flex: 1; min-width: 0">
+        <span style="display: block; font-size: 11px; color: #555E6B">Workspace</span>
+        <span style="display: block; font-size: 13px; font-weight: 600">People Ops</span>
+      </span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555E6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg>
+    </button>
+  </div>
+
+  <sc-for list="{{groups}}" as="g" hint-placeholder-count="5">
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <div style="padding: 0 10px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #6B7380">{{g.label}}</div>
+      <sc-for list="{{g.items}}" as="it" hint-placeholder-count="3">
+        <a href="{{it.href}}" aria-current="{{it.current}}" style="{{it.style}}">{{it.label}}</a>
+      </sc-for>
+    </div>
+  </sc-for>
+
+  <div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 10px; border-top: 1px solid #ECEEF1">
+    <span style="width: 32px; height: 32px; border-radius: 16px; background: #E8EEFC; color: #2346C7; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600">{{user.initials}}</span>
+    <span style="flex: 1; min-width: 0">
+      <span style="display: block; font-size: 13px; font-weight: 600">{{user.name}}</span>
+      <span style="display: block; font-size: 12px; color: #555E6B">{{user.role}}</span>
+    </span>
+  </div>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","default":"assistants","options":["chat","dashboard","assistants","knowledge","scripts","glossary","skills","channels","conversations","unanswered","members","organization"]},"role":{"editor":"enum","default":"builder","options":["builder","member"]},"lang":{"editor":"enum","default":"en","options":["en","vi"]},"$preview":{"width":248,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const active = this.props.active ?? 'assistants';
+    const base = 'display: flex; align-items: center; min-height: 36px; padding: 0 10px; border-radius: 8px; font-size: 14px; text-decoration: none;';
+    const on = base + ' background: #E8EEFC; color: #1D3BAA; font-weight: 600;';
+    const off = base + ' color: #2B3038;';
+    const mk = (id, label, href) => ({ id, label, href, style: id === active ? on : off, current: id === active ? 'page' : 'false' });
+    const vi = (this.props.lang ?? 'en') === 'vi';
+    const member = (this.props.role ?? 'builder') === 'member';
+    const overview = { label: vi ? 'Tổng quan' : 'Overview', items: [mk('chat', vi ? 'Trò chuyện' : 'Chat', 'Chat.dc.html')] };
+    const builderGroups = [
+      { label: overview.label, items: [...overview.items, mk('dashboard', 'Dashboard', 'Dashboard.dc.html')] },
+      { label: 'Build', items: [
+        mk('assistants', 'Assistants', 'Assistants.dc.html'),
+        mk('knowledge', 'Knowledge', 'Collections.dc.html'),
+        mk('scripts', 'Answer Scripts', 'Scripts.dc.html'),
+        mk('glossary', 'Glossary', 'Glossary.dc.html'),
+        mk('skills', 'Skills & Connectors', 'SkillEditor.dc.html')
+      ] },
+      { label: 'Deploy', items: [mk('channels', 'Channels', 'ChannelSettings.dc.html')] },
+      { label: 'Review', items: [
+        mk('conversations', 'Conversations', 'Conversations.dc.html'),
+        mk('unanswered', 'Unanswered', 'Unanswered.dc.html')
+      ] },
+      { label: 'Settings', items: [
+        mk('members', 'Members & roles', 'Members.dc.html'),
+        mk('organization', 'Organization', 'OrgSettings.dc.html')
+      ] }
+    ];
+    const user = member
+      ? { initials: 'AD', name: 'An Do', role: vi ? 'Thành viên' : 'Member' }
+      : { initials: 'MP', name: 'Minh Pham', role: 'Builder' };
+    return {
+      orgLabel: vi ? 'Tổ chức' : 'Organization',
+      groups: member ? [overview] : builderGroups,
+      user
+    };
+  }
+}
+</script>
+</body>
+</html>

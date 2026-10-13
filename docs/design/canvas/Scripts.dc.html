@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Answer Scripts</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#16181D;background:#F7F7F8}
+a{color:#2346C7}a:hover{color:#1D3BAA}
+p{margin:0}
+button,input{font-family:inherit}
+table{border-collapse:collapse;width:100%}
+th{font-size:12px;font-weight:600;color:#555E6B;text-align:left;padding:10px 12px;border-bottom:1px solid #E1E4E8;white-space:nowrap}
+td{font-size:14px;padding:12px;border-bottom:1px solid #ECEEF1;vertical-align:middle}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #F7F7F8">
+  <div style="flex: 1 1 248px; display: flex">
+    <dc-import name="Sidebar" active="scripts" hint-size="248px,900px"></dc-import>
+  </div>
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 28px 32px 48px">
+    <div style="max-width: 1120px; display: flex; flex-direction: column; gap: 20px">
+
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+        <div>
+          <h1 style="margin: 0; font-size: 26px; font-weight: 600">Answer Scripts</h1>
+          <p style="margin-top: 4px; font-size: 14px; color: #555E6B">Approved answers returned word for word when a question matches with high confidence. Changes go live immediately.</p>
+        </div>
+        <div style="display: flex; gap: 8px">
+          <button style="min-height: 44px; padding: 0 14px; border: 1px solid #C9CED4; border-radius: 8px; background: #FFFFFF; font-size: 14px">Import CSV</button>
+          <a href="ScriptEditor.dc.html" style="min-height: 44px; display: inline-flex; align-items: center; padding: 0 18px; border-radius: 8px; background: #2346C7; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none">New script</a>
+        </div>
+      </div>
+
+      <div role="tablist" style="display: flex; gap: 4px; border-bottom: 1px solid #E1E4E8; overflow-x: auto">
+        <a role="tab" aria-selected="false" href="#" style="padding: 10px 14px; font-size: 14px; color: #3F4752; text-decoration: none">IT basics <span style="color: #555E6B">12</span></a>
+        <a role="tab" aria-selected="true" href="#" style="padding: 10px 14px; font-size: 14px; font-weight: 600; color: #1D3BAA; border-bottom: 2px solid #2346C7; text-decoration: none">HR quick answers <span>11</span></a>
+        <a role="tab" aria-selected="false" href="#" style="padding: 10px 14px; font-size: 14px; color: #3F4752; text-decoration: none">Careers FAQ <span style="color: #555E6B">7</span></a>
+        <button style="margin-left: 8px; min-height: 40px; padding: 0 12px; border: 1px dashed #C9CED4; border-radius: 8px; background: transparent; font-size: 13px; color: #3F4752">New set</button>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 13px; color: #3F4752">
+        <span>Set access:</span>
+        <span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E8EEFC; color: #1D3BAA">Authenticated</span>
+        <span>· Used by Employee Assistant</span>
+      </div>
+
+      <section style="background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; overflow: hidden">
+        <div style="overflow-x: auto">
+          <table>
+            <thead><tr><th>Script</th><th>Languages</th><th>Reply mode</th><th>Status</th><th>Active dates</th><th>Matches · 7d</th><th>Helpful</th></tr></thead>
+            <tbody>
+              <tr><td><a href="ScriptEditor.dc.html" style="font-weight: 500">How to request leave</a></td><td>EN · VI</td><td>Rephrase allowed</td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E6F4EA; color: #1E6B34">Active</span></td><td style="color: #555E6B">Always</td><td style="font-family: 'IBM Plex Mono', monospace">73</td><td>88%</td></tr>
+              <tr><td><a href="ScriptEditor.dc.html" style="font-weight: 500">How to cancel a leave request</a></td><td>EN · VI</td><td>Verbatim</td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E6F4EA; color: #1E6B34">Active</span></td><td style="color: #555E6B">Always</td><td style="font-family: 'IBM Plex Mono', monospace">12</td><td>75%</td></tr>
+              <tr><td><a href="ScriptEditor.dc.html" style="font-weight: 500">Payday &amp; payslip</a></td><td>EN · VI</td><td>Verbatim</td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E6F4EA; color: #1E6B34">Active</span></td><td style="color: #555E6B">Always</td><td style="font-family: 'IBM Plex Mono', monospace">58</td><td>94%</td></tr>
+              <tr><td><a href="ScriptEditor.dc.html" style="font-weight: 500">Office hours</a></td><td>EN · VI</td><td>Verbatim</td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E6F4EA; color: #1E6B34">Active</span></td><td style="color: #555E6B">Always</td><td style="font-family: 'IBM Plex Mono', monospace">41</td><td>91%</td></tr>
+              <tr><td><a href="ScriptEditor.dc.html" style="font-weight: 500">Tết holiday schedule 2027</a></td><td>VI <span style="font-size: 12px; color: #8A4205">· EN missing</span></td><td>Verbatim</td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E8EEFC; color: #1D3BAA">Scheduled</span></td><td>15 Jan → 20 Feb 2027</td><td style="font-family: 'IBM Plex Mono', monospace">—</td><td>—</td></tr>
+              <tr><td><a href="ScriptEditor.dc.html" style="font-weight: 500">Talk to HR</a><div style="font-size: 12px; color: #555E6B">Action: hand off to HR by email</div></td><td>EN · VI</td><td>Action</td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E6F4EA; color: #1E6B34">Active</span></td><td style="color: #555E6B">Always</td><td style="font-family: 'IBM Plex Mono', monospace">19</td><td>—</td></tr>
+              <tr><td><a href="ScriptEditor.dc.html" style="font-weight: 500">OT policy on public holidays</a></td><td>EN · VI</td><td>Verbatim</td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #FDF0E1; color: #8A4205">Draft</span></td><td style="color: #555E6B">—</td><td style="font-family: 'IBM Plex Mono', monospace">—</td><td>—</td></tr>
+              <tr><td><a href="ScriptEditor.dc.html" style="font-weight: 500; color: #555E6B">Year-end party 2025</a></td><td>EN · VI</td><td>Verbatim</td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #EEF0F3; color: #3F4752">Expired</span></td><td style="color: #555E6B">01 Dec 2025 → 10 Jan 2026</td><td style="font-family: 'IBM Plex Mono', monospace">—</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div style="display: flex; gap: 10px; align-items: center; padding: 12px 16px; border: 1px dashed #C9CED4; border-radius: 10px; font-size: 13px; color: #3F4752">
+        <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: #EEF0F3">Later</span>
+        <span>Per-script analytics (wrong-match reports, trends) and creating scripts from unanswered questions in one click.</span>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1040}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

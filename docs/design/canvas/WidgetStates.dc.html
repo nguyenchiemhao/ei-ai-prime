@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Widget – States</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#16181D;background:#E9ECEF}
+p{margin:0}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1160px; height: 640px; box-sizing: border-box; padding: 32px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; background: #E9ECEF">
+
+  <section style="display: flex; flex-direction: column; gap: 12px">
+    <h2 style="margin: 0; font-size: 15px; font-weight: 600; color: #3F4752">Launcher on host page</h2>
+    <div style="flex: 1; position: relative; background: #FFFFFF; border: 1px solid #D5D9DE; border-radius: 12px; overflow: hidden">
+      <div style="padding: 20px; display: flex; flex-direction: column; gap: 10px">
+        <div style="height: 14px; width: 60%; background: #E3E6EA; border-radius: 4px"></div>
+        <div style="height: 10px; width: 90%; background: #EEF0F3; border-radius: 4px"></div>
+        <div style="height: 10px; width: 80%; background: #EEF0F3; border-radius: 4px"></div>
+        <div style="height: 10px; width: 85%; background: #EEF0F3; border-radius: 4px"></div>
+        <div style="margin-top: 12px; height: 120px; background: #F4F5F7; border-radius: 8px"></div>
+      </div>
+      <div style="position: absolute; right: 20px; bottom: 92px; max-width: 220px; background: #FFFFFF; border: 1px solid #D5D9DE; border-radius: 12px 12px 4px 12px; padding: 10px 12px; font-size: 13px; line-height: 1.45">Hỏi mình về chính sách, IT hoặc dự án nhé!</div>
+      <button aria-label="Mở trợ lý Mekong Assistant" style="position: absolute; right: 20px; bottom: 20px; width: 60px; height: 60px; border: 0; border-radius: 30px; background: {{brand}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H8l-4 4V5z"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 12px">
+    <h2 style="margin: 0; font-size: 15px; font-weight: 600; color: #3F4752">Channel turned off (maintenance)</h2>
+    <div style="flex: 1; display: flex; flex-direction: column; background: #FFFFFF; border: 1px solid #D5D9DE; border-radius: 16px; overflow: hidden">
+      <header style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: {{brand}}; color: #FFFFFF">
+        <div style="width: 32px; height: 32px; border-radius: 9px; background: #FFFFFF; color: {{brand}}; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">MD</div>
+        <div style="font-weight: 600; font-size: 15px">Mekong Assistant</div>
+      </header>
+      <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; background: #F6F7F8">
+        <div style="width: 56px; height: 56px; border-radius: 28px; background: #EEF0F3; color: #3F4752; display: flex; align-items: center; justify-content: center">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4 2.5-2.5z"/></svg>
+        </div>
+        <p style="font-size: 16px; font-weight: 600">Trợ lý đang bảo trì</p>
+        <p style="font-size: 14px; line-height: 1.55; color: #3F4752">Bạn vui lòng quay lại sau. Cần hỗ trợ gấp, liên hệ IT Helpdesk (máy lẻ 1234) hoặc HR.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 12px">
+    <h2 style="margin: 0; font-size: 15px; font-weight: 600; color: #3F4752">System busy (overload)</h2>
+    <div style="flex: 1; display: flex; flex-direction: column; background: #FFFFFF; border: 1px solid #D5D9DE; border-radius: 16px; overflow: hidden">
+      <header style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: {{brand}}; color: #FFFFFF">
+        <div style="width: 32px; height: 32px; border-radius: 9px; background: #FFFFFF; color: {{brand}}; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">MD</div>
+        <div style="font-weight: 600; font-size: 15px">Mekong Assistant</div>
+      </header>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 16px 14px; background: #F6F7F8">
+        <div style="align-self: flex-end; max-width: 240px; background: {{brand}}; color: #FFFFFF; border-radius: 14px 4px 14px 14px; padding: 10px 14px; font-size: 14px; line-height: 1.5">Quy trình onboarding cho nhân viên mới?</div>
+        <div role="status" style="display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; background: #FDF0E1; border: 1px solid #F1C99A; border-radius: 10px; font-size: 14px; line-height: 1.5; color: #6E3504">
+          <span>Hệ thống đang bận. Bạn vui lòng thử lại sau ít phút.</span>
+          <button style="align-self: flex-start; min-height: 40px; padding: 6px 14px; border: 1px solid #9A4A06; background: #FFFFFF; color: #6E3504; border-radius: 8px; font-size: 13px; font-weight: 500">Thử lại</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"brand":{"editor":"color","default":"#0E7C6B","options":["#0E7C6B","#2346C7","#7A3FB0"]},"$preview":{"width":1160,"height":640}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { brand: this.props.brand ?? '#0E7C6B' };
+  }
+}
+</script>
+</body>
+</html>

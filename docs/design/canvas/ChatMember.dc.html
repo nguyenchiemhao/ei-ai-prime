@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Chat – Member view</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#16181D;background:#F7F7F8}
+a{color:#2346C7}a:hover{color:#1D3BAA}
+p{margin:0}
+button,input,select,textarea{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #F7F7F8">
+  <div style="flex: 1 1 248px; display: flex">
+    <dc-import name="Sidebar" active="chat" role="member" lang="vi" hint-size="248px,900px"></dc-import>
+  </div>
+
+  <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-wrap: wrap; background: #FFFFFF">
+
+    <aside aria-label="Lịch sử trò chuyện" style="flex: 1 1 240px; max-width: 280px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; padding: 20px 14px; background: #FBFBFC; border-right: 1px solid #E1E4E8">
+      <button style="min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 8px; background: #2346C7; color: #FFFFFF; font-size: 14px; font-weight: 600">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        Cuộc trò chuyện mới
+      </button>
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <label for="hs" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Tìm cuộc trò chuyện</label>
+        <input id="hs" type="search" placeholder="Tìm cuộc trò chuyện" style="height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px; background: #FFFFFF">
+      </div>
+
+      <nav aria-label="Cuộc trò chuyện gần đây" style="display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <div style="padding: 0 8px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #6B7380">Hôm nay</div>
+          <a href="#" aria-current="page" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 8px; background: #E8EEFC; color: #16181D; text-decoration: none">
+            <span style="font-size: 14px; font-weight: 600">Lịch release Falcon tháng 10</span>
+            <span style="font-size: 12px; color: #555E6B">Employee Assistant · 09:12</span>
+          </a>
+          <a href="#" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 8px; color: #16181D; text-decoration: none">
+            <span style="font-size: 14px;">Ngày phép còn lại</span>
+            <span style="font-size: 12px; color: #555E6B">Employee Assistant · 08:47</span>
+          </a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <div style="padding: 0 8px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #6B7380">Hôm qua</div>
+          <a href="#" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 8px; color: #16181D; text-decoration: none">
+            <span style="font-size: 14px;">Cài VPN trên máy mới</span>
+            <span style="font-size: 12px; color: #555E6B">Employee Assistant · 16:05</span>
+          </a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <div style="padding: 0 8px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #6B7380">7 ngày trước</div>
+          <a href="#" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 8px; color: #16181D; text-decoration: none">
+            <span style="font-size: 14px;">Lịch nghỉ Tết 2027</span>
+            <span style="font-size: 12px; color: #555E6B">Employee Assistant · 06/10</span>
+          </a>
+        </div>
+      </nav>
+
+      <p style="margin-top: auto; padding: 0 8px; font-size: 12px; line-height: 1.5; color: #555E6B">Cuộc trò chuyện chỉ bạn xem được và được giữ 90 ngày. Reviewer chỉ mở được cuộc trò chuyện bạn đã đánh giá; mỗi lần mở đều được ghi vào nhật ký kiểm tra.</p>
+    </aside>
+
+    <main style="flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column">
+
+      <header style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid #E1E4E8">
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+          <h1 style="margin: 0; font-size: 15px; font-weight: 600">Employee Assistant</h1>
+          <span style="font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 12px; background: #E6F4EA; color: #1E6B34">Live v7</span>
+          <span style="font-size: 13px; color: #555E6B">Đang trả lời với tư cách An Do · all-staff, project-falcon</span>
+        </div>
+        <span style="font-size: 12px; padding: 3px 10px; border-radius: 12px; background: #EEF0F3; color: #2B3038">Viewing as An Do · Member</span>
+      </header>
+
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 22px; padding: 24px; max-width: 760px; width: 100%; box-sizing: border-box; margin: 0 auto">
+
+        <div style="align-self: flex-end; max-width: 520px; background: #2346C7; color: #FFFFFF; border-radius: 14px 4px 14px 14px; padding: 10px 14px; font-size: 15px; line-height: 1.5">Lịch release tiếp theo của project Falcon là khi nào?</div>
+
+        <div style="display: flex; gap: 12px; align-items: flex-start">
+          <div style="flex: none; width: 32px; height: 32px; border-radius: 8px; background: #0E7C6B; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600">EA</div>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+            <article aria-label="Câu trả lời 1" style="display: flex; flex-direction: column; gap: 8px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 4px 14px 14px 14px; padding: 12px 14px">
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555E6B">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                Đã tìm trong 2 bộ tài liệu · 3 đoạn liên quan
+              </div>
+              <div style="font-size: 15px; line-height: 1.65">
+                <p>Bản release tiếp theo của Falcon là <strong>v2.8</strong>, dự kiến <strong>24/10/2026</strong>. Code freeze vào 20/10, sau đó khách hàng UAT trong 3 ngày <a href="#" aria-label="Nguồn 1: Falcon Release Calendar Q4" style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 6px; box-sizing: border-box; border-radius: 6px; background: #E8EEFC; color: #1D3BAA; font-size: 12px; font-weight: 600; text-decoration: none; vertical-align: baseline">1</a>.</p>
+                <p style="margin-top: 8px">Mọi thay đổi sau code freeze cần PM phía khách duyệt qua quy trình hotfix <a href="#" aria-label="Nguồn 2: Falcon Hotfix Procedure" style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 6px; box-sizing: border-box; border-radius: 6px; background: #E8EEFC; color: #1D3BAA; font-size: 12px; font-weight: 600; text-decoration: none; vertical-align: baseline">2</a>.</p>
+              </div>
+            </article>
+            <div style="display: flex; gap: 4px">
+              <button aria-label="Câu trả lời hữu ích" style="width: 40px; height: 36px; border: 1px solid #E1E4E8; background: #FFFFFF; border-radius: 8px; color: #555E6B; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v11H3V10h4z"/><path d="M7 10l4-7a2 2 0 0 1 3 1.7L13 10h6a2 2 0 0 1 2 2.3l-1.4 7A2 2 0 0 1 17.6 21H7"/></svg></button>
+              <button aria-label="Câu trả lời chưa đúng" style="width: 40px; height: 36px; border: 1px solid #E1E4E8; background: #FFFFFF; border-radius: 8px; color: #555E6B; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: rotate(180deg)"><path d="M7 10v11H3V10h4z"/><path d="M7 10l4-7a2 2 0 0 1 3 1.7L13 10h6a2 2 0 0 1 2 2.3l-1.4 7A2 2 0 0 1 17.6 21H7"/></svg></button>
+              <button aria-label="Sao chép câu trả lời" style="width: 40px; height: 36px; border: 1px solid #E1E4E8; background: #FFFFFF; border-radius: 8px; color: #555E6B; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <div style="align-self: flex-end; max-width: 520px; background: #2346C7; color: #FFFFFF; border-radius: 14px 4px 14px 14px; padding: 10px 14px; font-size: 15px; line-height: 1.5">Còn mình năm nay còn bao nhiêu ngày phép?</div>
+
+        <div style="display: flex; gap: 12px; align-items: flex-start">
+          <div style="flex: none; width: 32px; height: 32px; border-radius: 8px; background: #0E7C6B; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600">EA</div>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+            <article aria-label="Câu trả lời 2, đang chọn" aria-current="true" style="display: flex; flex-direction: column; gap: 8px; background: #FFFFFF; border: 2px solid #2346C7; border-radius: 4px 14px 14px 14px; padding: 12px 14px">
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555E6B">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+                Đã tra cứu HR System · skill: Check my leave balance
+              </div>
+              <p style="font-size: 15px; line-height: 1.65">Năm 2026, An còn <strong>8,5 ngày phép năm</strong> và <strong>5 ngày phép ốm</strong>.</p>
+              <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; max-width: 420px">
+                <div style="background: #F1F4FD; border-radius: 10px; padding: 10px 12px">
+                  <div style="font-size: 12px; color: #3F4752">Phép năm còn lại</div>
+                  <div style="font-size: 22px; font-weight: 600; color: #1D3BAA">8,5 <span style="font-size: 13px; font-weight: 500; color: #3F4752">/ 14 ngày</span></div>
+                </div>
+                <div style="background: #F1F4FD; border-radius: 10px; padding: 10px 12px">
+                  <div style="font-size: 12px; color: #3F4752">Phép ốm còn lại</div>
+                  <div style="font-size: 22px; font-weight: 600; color: #1D3BAA">5 <span style="font-size: 13px; font-weight: 500; color: #3F4752">/ 5 ngày</span></div>
+                </div>
+              </div>
+              <p style="font-size: 12px; color: #555E6B">Từ HR System · cập nhật 12/10/2026 09:15 · chỉ dữ liệu của bạn</p>
+            </article>
+            <div style="font-size: 12px; color: #1D3BAA; font-weight: 500">Đang chọn · nguồn ở bên phải</div>
+            <div style="display: flex; gap: 4px">
+              <button aria-label="Câu trả lời hữu ích" style="width: 40px; height: 36px; border: 1px solid #E1E4E8; background: #FFFFFF; border-radius: 8px; color: #555E6B; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v11H3V10h4z"/><path d="M7 10l4-7a2 2 0 0 1 3 1.7L13 10h6a2 2 0 0 1 2 2.3l-1.4 7A2 2 0 0 1 17.6 21H7"/></svg></button>
+              <button aria-label="Câu trả lời chưa đúng" style="width: 40px; height: 36px; border: 1px solid #E1E4E8; background: #FFFFFF; border-radius: 8px; color: #555E6B; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: rotate(180deg)"><path d="M7 10v11H3V10h4z"/><path d="M7 10l4-7a2 2 0 0 1 3 1.7L13 10h6a2 2 0 0 1 2 2.3l-1.4 7A2 2 0 0 1 17.6 21H7"/></svg></button>
+              <button aria-label="Sao chép câu trả lời" style="width: 40px; height: 36px; border: 1px solid #E1E4E8; background: #FFFFFF; border-radius: 8px; color: #555E6B; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="padding: 0 24px 20px; max-width: 760px; width: 100%; box-sizing: border-box; margin: 0 auto; display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+          <button style="min-height: 36px; padding: 6px 12px; border: 1px solid #D3DCF7; background: #F1F4FD; color: #1D3BAA; border-radius: 18px; font-size: 13px">Quy trình xin nghỉ phép</button>
+          <button style="min-height: 36px; padding: 6px 12px; border: 1px solid #D3DCF7; background: #F1F4FD; color: #1D3BAA; border-radius: 18px; font-size: 13px">Lịch nghỉ Tết 2027</button>
+          <button style="min-height: 36px; padding: 6px 12px; border: 1px solid #D3DCF7; background: #F1F4FD; color: #1D3BAA; border-radius: 18px; font-size: 13px">Cài VPN thế nào?</button>
+        </div>
+        <form style="display: flex; gap: 10px; align-items: flex-end; padding: 10px; border: 1px solid #8A929C; border-radius: 14px; background: #FFFFFF">
+          <label for="msg" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Nhắn tin cho Employee Assistant</label>
+          <textarea id="msg" rows="2" placeholder="Hỏi Employee Assistant về chính sách, IT hoặc dự án…" style="flex: 1; min-width: 0; border: 0; resize: none; font-size: 15px; line-height: 1.5; padding: 4px 6px; outline-offset: 2px"></textarea>
+          <button type="button" aria-label="Gửi" style="flex: none; width: 44px; height: 44px; border: 0; border-radius: 10px; background: #2346C7; color: #FFFFFF; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
+        </form>
+        <p style="font-size: 12px; color: #555E6B; text-align: center">Enter để gửi · Shift+Enter để xuống dòng · AI có thể sai, hãy kiểm tra nguồn trích dẫn.</p>
+      </div>
+    </main>
+
+    <aside aria-label="Nguồn" style="flex: 1 1 260px; max-width: 320px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; padding: 20px 18px; border-left: 1px solid #E1E4E8; background: #FBFBFC">
+      <div style="display: flex; justify-content: space-between; align-items: baseline">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Nguồn</h2>
+        <span style="font-size: 12px; color: #555E6B">cho câu trả lời đang chọn</span>
+      </div>
+
+      <article style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: #FFFFFF; border: 1px solid #2346C7; border-radius: 10px">
+        <div style="display: flex; gap: 8px; align-items: center">
+          <span style="flex: none; color: #2346C7"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></span>
+          <span style="font-size: 14px; font-weight: 600">HR System · Check my leave balance</span>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: #3F4752"><span style="flex: none; margin-top: 2px; color: #555E6B"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span><span>Dữ liệu trực tiếp, chỉ đọc</span></div>
+        <div style="display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: #3F4752"><span style="flex: none; margin-top: 2px; color: #555E6B"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span>Cập nhật 12/10/2026 09:15</span></div>
+        <div style="display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: #3F4752"><span style="flex: none; margin-top: 2px; color: #555E6B"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span>Chỉ dữ liệu của bạn: mã nhân viên lấy từ phiên đăng nhập, AI không xem hay đổi được.</span></div>
+      </article>
+
+      <p style="font-size: 12px; line-height: 1.5; color: #555E6B">Bạn chỉ thấy đoạn trích từ bộ tài liệu mà nhóm của bạn được đọc.</p>
+    </aside>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

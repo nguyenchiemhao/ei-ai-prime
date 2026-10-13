@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Knowledge – Collections</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#16181D;background:#F7F7F8}
+a{color:#2346C7}a:hover{color:#1D3BAA}
+p{margin:0}
+button,input{font-family:inherit}
+table{border-collapse:collapse;width:100%}
+th{font-size:12px;font-weight:600;color:#555E6B;text-align:left;padding:10px 14px;border-bottom:1px solid #E1E4E8;white-space:nowrap}
+td{font-size:14px;padding:14px;border-bottom:1px solid #ECEEF1;vertical-align:middle}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #F7F7F8">
+  <div style="flex: 1 1 248px; display: flex">
+    <dc-import name="Sidebar" active="knowledge" hint-size="248px,900px"></dc-import>
+  </div>
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 28px 32px 48px">
+    <div style="max-width: 1120px; display: flex; flex-direction: column; gap: 22px">
+
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+        <div>
+          <h1 style="margin: 0; font-size: 26px; font-weight: 600">Knowledge</h1>
+          <p style="margin-top: 4px; font-size: 14px; color: #555E6B">Collections hold your documents. Access is set per collection and enforced before anything reaches the model.</p>
+        </div>
+        <button style="min-height: 44px; padding: 0 18px; border: 0; border-radius: 8px; background: #2346C7; color: #FFFFFF; font-size: 14px; font-weight: 600">New collection</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+        <div style="padding: 14px 16px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 10px; display: flex; flex-direction: column; gap: 6px">
+          <span style="align-self: flex-start; font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E6F4EA; color: #1E6B34">Public</span>
+          <p style="font-size: 13px; color: #3F4752">Anyone, including anonymous visitors.</p>
+        </div>
+        <div style="padding: 14px 16px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 10px; display: flex; flex-direction: column; gap: 6px">
+          <span style="align-self: flex-start; font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E8EEFC; color: #1D3BAA">Authenticated</span>
+          <p style="font-size: 13px; color: #3F4752">Any signed-in user of your app.</p>
+        </div>
+        <div style="padding: 14px 16px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 10px; display: flex; flex-direction: column; gap: 6px">
+          <span style="align-self: flex-start; font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #FDF0E1; color: #8A4205">Restricted</span>
+          <p style="font-size: 13px; color: #3F4752">Only people in one of the listed groups (from the widget token or Members &amp; roles).</p>
+        </div>
+      </div>
+
+      <section style="background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; overflow: hidden">
+        <div style="padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; border-bottom: 1px solid #ECEEF1">
+          <label for="q" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search collections</label>
+          <input id="q" type="search" placeholder="Search collections" style="flex: 1 1 240px; height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px">
+        </div>
+        <div style="overflow-x: auto">
+          <table>
+            <thead><tr><th>Collection</th><th>Who can read</th><th>Data handling</th><th>Documents</th><th>Status</th><th>Used by</th></tr></thead>
+            <tbody>
+              <tr><td><a href="CollectionDetail.dc.html" style="font-weight: 500">Employee Handbook</a></td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E8EEFC; color: #1D3BAA">Authenticated</span></td><td style="color: #555E6B">Any allowed model</td><td>42</td><td><span style="color: #1E6B34">41 ready</span> · <span style="color: #8A4205">1 needs attention</span></td><td>Employee Assistant</td></tr>
+              <tr><td><a href="#" style="font-weight: 500">IT &amp; Security</a></td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E8EEFC; color: #1D3BAA">Authenticated</span></td><td style="color: #555E6B">Any allowed model</td><td>18</td><td><span style="color: #1E6B34">All ready</span></td><td>Employee Assistant</td></tr>
+              <tr><td><a href="#" style="font-weight: 500">Engineering Standards</a></td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E8EEFC; color: #1D3BAA">Authenticated</span></td><td style="color: #555E6B">Any allowed model</td><td>27</td><td><span style="color: #1E6B34">All ready</span></td><td>Employee Assistant</td></tr>
+              <tr><td><a href="#" style="font-weight: 500">Manager Handbook</a></td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #FDF0E1; color: #8A4205">Restricted · managers</span></td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 10px; background: #EEF0F3; color: #2B3038">Local model only</span></td><td>11</td><td><span style="color: #1E6B34">All ready</span></td><td>Employee Assistant</td></tr>
+              <tr><td><a href="#" style="font-weight: 500">Project Falcon</a><div style="font-size: 12px; color: #555E6B">Client: Japan · under NDA</div></td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #FDF0E1; color: #8A4205">Restricted · project-falcon</span></td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 10px; background: #EEF0F3; color: #2B3038">Local model only</span></td><td>23</td><td><span style="color: #2346C7">2 processing</span></td><td>Employee Assistant</td></tr>
+              <tr><td><a href="#" style="font-weight: 500">Company &amp; Careers</a></td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E6F4EA; color: #1E6B34">Public</span></td><td style="color: #555E6B">Any allowed model</td><td>9</td><td><span style="color: #1E6B34">All ready</span></td><td>Careers Assistant</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p style="font-size: 13px; color: #555E6B">Only Workspace Admins can change who can read a collection. Making a collection Public asks for confirmation and is recorded in the audit log.</p>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

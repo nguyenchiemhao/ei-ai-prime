@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Connector and tool</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#16181D;background:#F7F7F8}
+a{color:#2346C7}a:hover{color:#1D3BAA}
+p{margin:0}
+button,input,select{font-family:inherit}
+label{font-size:13px;font-weight:500}
+table{border-collapse:collapse;width:100%}
+th{font-size:12px;font-weight:600;color:#555E6B;text-align:left;padding:10px 12px;border-bottom:1px solid #E1E4E8;white-space:nowrap}
+td{font-size:14px;padding:12px;border-bottom:1px solid #ECEEF1;vertical-align:top}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #F7F7F8">
+  <div style="flex: 1 1 248px; display: flex">
+    <dc-import name="Sidebar" active="skills" hint-size="248px,900px"></dc-import>
+  </div>
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 24px 32px 48px">
+    <div style="max-width: 1120px; display: flex; flex-direction: column; gap: 20px">
+
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center">
+        <nav aria-label="Breadcrumb" style="font-size: 13px; color: #555E6B"><a href="SkillEditor.dc.html">Skills &amp; Connectors</a> / Connectors / HR System</nav>
+        <span style="font-size: 12px; padding: 3px 10px; border-radius: 12px; background: #EEF0F3; color: #2B3038">Viewing as Quang Le · Developer</span>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 600">HR System</h1>
+          <span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E6F4EA; color: #1E6B34">Healthy · last call 2 min ago</span>
+        </div>
+        <div style="display: flex; gap: 8px">
+          <button style="min-height: 40px; padding: 0 14px; border: 1px solid #9A4A06; border-radius: 8px; background: #FFFFFF; color: #8A4205; font-size: 14px">Turn off connector</button>
+          <button style="min-height: 40px; padding: 0 14px; border: 1px solid #C9CED4; border-radius: 8px; background: #FFFFFF; font-size: 14px">Test connection</button>
+        </div>
+      </div>
+
+      <section style="padding: 20px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+        <h2 style="grid-column: 1 / -1; margin: 0; font-size: 16px; font-weight: 600">Connection</h2>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="base">Base URL</label>
+          <input id="base" type="url" value="https://hr-api.mekongdevworks.example/v1" style="height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid #8A929C; border-radius: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 13px">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="auth">Authentication</label>
+          <select id="auth" style="height: 44px; padding: 0 10px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px; background: #FFFFFF">
+            <option>API key in header</option>
+            <option>Forward the user's app token</option>
+          </select>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="hdr">Header name</label>
+          <input id="hdr" type="text" value="X-Api-Key" style="height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid #8A929C; border-radius: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 13px">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 13px; font-weight: 500">Secret</span>
+          <div style="display: flex; gap: 8px; align-items: center; height: 44px; padding: 0 12px; border: 1px solid #E1E4E8; border-radius: 8px; background: #F7F7F8">
+            <span style="flex: 1; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #3F4752">••••••••••••7f2a</span>
+            <a href="#" style="font-size: 13px">Replace</a>
+          </div>
+          <span style="font-size: 12px; color: #555E6B">Encrypted. Never shown again, never sent to the model, never written to logs.</span>
+        </div>
+        <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 13px; font-weight: 500">Allowed outbound domains</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px">
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; padding: 6px 10px; border-radius: 8px; background: #EEF0F3">hr-api.mekongdevworks.example</span>
+          </div>
+          <span style="font-size: 12px; color: #555E6B">Every tool call goes through the platform's outbound proxy. Requests to any other domain are blocked.</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="to">Timeout</label>
+          <select id="to" style="height: 44px; padding: 0 10px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px; background: #FFFFFF"><option>5 seconds</option><option>10 seconds</option></select>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="max">Max response size</label>
+          <select id="max" style="height: 44px; padding: 0 10px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px; background: #FFFFFF"><option>64 KB</option><option>256 KB</option></select>
+        </div>
+      </section>
+
+      <section style="padding: 20px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 600">Tool · Get leave balance</h2>
+          <div style="display: flex; gap: 8px; align-items: center">
+            <span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E8EEFC; color: #1D3BAA">Read-only</span>
+            <span style="font-size: 12px; padding: 2px 8px; border-radius: 10px; background: #EEF0F3; color: #3F4752">Import from OpenAPI · Later</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; padding: 10px 12px; background: #F7F7F8; border-radius: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; overflow-x: auto">
+          <span style="font-weight: 500; color: #1E6B34">GET</span><span>/employees/{employee_id}/leave-balance?year={year}</span>
+        </div>
+
+        <div style="overflow-x: auto">
+          <table>
+            <thead><tr><th>Parameter</th><th>Type</th><th>Value comes from</th></tr></thead>
+            <tbody>
+              <tr>
+                <td style="font-family: 'IBM Plex Mono', monospace">employee_id</td><td>string</td>
+                <td>
+                  <div style="display: flex; gap: 8px; align-items: center">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D3BAA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                    <span style="font-weight: 500">Signed user token · claim <span style="font-family: 'IBM Plex Mono', monospace">sub</span></span>
+                  </div>
+                  <div style="margin-top: 4px; font-size: 12px; color: #555E6B">Bound. The model never sees this value and cannot set it, so users can only read their own data.</div>
+                  <div style="margin-top: 4px; font-size: 12px; color: #555E6B">In Console chat: the member's External user ID (Members &amp; roles).</div>
+                </td>
+              </tr>
+              <tr>
+                <td style="font-family: 'IBM Plex Mono', monospace">year</td><td>integer</td>
+                <td>Asked from the user · default: current year</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 13px; font-weight: 500">Response fields passed to the model</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 14px">
+            <label style="display: flex; gap: 8px; align-items: center; font-weight: 400; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px">annual_remaining</span></label>
+            <label style="display: flex; gap: 8px; align-items: center; font-weight: 400; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px">annual_total</span></label>
+            <label style="display: flex; gap: 8px; align-items: center; font-weight: 400; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px">sick_remaining</span></label>
+            <label style="display: flex; gap: 8px; align-items: center; font-weight: 400; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px">updated_at</span></label>
+            <label style="display: flex; gap: 8px; align-items: center; font-weight: 400; font-size: 14px"><input type="checkbox" style="width: 18px; height: 18px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px">manager_notes</span></label>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 14px; border-top: 1px solid #ECEEF1">
+          <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+            <span style="font-size: 13px; font-weight: 500">Test call as</span>
+            <select aria-label="Test user" style="height: 40px; padding: 0 10px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px; background: #FFFFFF"><option>An Do (sub: emp-0421)</option></select>
+            <button style="min-height: 40px; padding: 0 14px; border: 0; border-radius: 8px; background: #2346C7; color: #FFFFFF; font-size: 14px; font-weight: 600">Run</button>
+            <span style="font-size: 13px; color: #1E6B34">200 OK · 182 ms</span>
+          </div>
+          <pre style="margin: 0; padding: 12px 14px; background: #16181D; color: #E8EAED; border-radius: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.6; overflow-x: auto">{ "annual_remaining": 8.5, "annual_total": 14,
+  "sick_remaining": 5, "updated_at": "2026-10-12T09:15:00+07:00" }</pre>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Assistants</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#16181D;background:#F7F7F8}
+a{color:#2346C7}a:hover{color:#1D3BAA}
+p{margin:0}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #F7F7F8">
+  <div style="flex: 1 1 248px; display: flex">
+    <dc-import name="Sidebar" active="assistants" hint-size="248px,900px"></dc-import>
+  </div>
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 28px 32px 48px">
+    <div style="max-width: 1120px; display: flex; flex-direction: column; gap: 24px">
+
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+        <div>
+          <h1 style="margin: 0; font-size: 26px; font-weight: 600">Assistants</h1>
+          <p style="margin-top: 4px; font-size: 14px; color: #555E6B">Each assistant is one configured brain. Deploy it to one or more channels.</p>
+        </div>
+        <button style="min-height: 44px; padding: 0 18px; border: 0; border-radius: 8px; background: #2346C7; color: #FFFFFF; font-size: 14px; font-weight: 600">New assistant</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+
+        <a href="AssistantInstructions.dc.html" style="display: flex; flex-direction: column; gap: 16px; padding: 20px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; color: #16181D; text-decoration: none">
+          <div style="display: flex; gap: 12px; align-items: flex-start">
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: #0E7C6B; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600">EA</div>
+            <div style="flex: 1; min-width: 0">
+              <div style="font-size: 17px; font-weight: 600">Employee Assistant</div>
+              <div style="margin-top: 2px; font-size: 13px; color: #555E6B">Policies, IT, projects and leave for staff</div>
+            </div>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px">
+            <span style="font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 12px; background: #E6F4EA; color: #1E6B34">Published v7</span>
+            <span style="font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 12px; background: #FDF0E1; color: #8A4205">Unpublished draft changes</span>
+          </div>
+          <dl style="margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; font-size: 13px">
+            <div><dt style="color: #555E6B">Model</dt><dd style="margin: 2px 0 0; font-family: 'IBM Plex Mono', monospace; font-size: 12px">qwen3-14b-instruct · 2026.09</dd></div>
+            <div><dt style="color: #555E6B">Channels</dt><dd style="margin: 2px 0 0">Employee Portal · Console chat</dd></div>
+            <div><dt style="color: #555E6B">Knowledge</dt><dd style="margin: 2px 0 0">5 collections</dd></div>
+            <div><dt style="color: #555E6B">Scripts · Skills</dt><dd style="margin: 2px 0 0">2 sets · 1 skill</dd></div>
+          </dl>
+        </a>
+
+        <a href="#" style="display: flex; flex-direction: column; gap: 16px; padding: 20px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; color: #16181D; text-decoration: none">
+          <div style="display: flex; gap: 12px; align-items: flex-start">
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: #3F4752; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600">CA</div>
+            <div style="flex: 1; min-width: 0">
+              <div style="font-size: 17px; font-weight: 600">Careers Assistant</div>
+              <div style="margin-top: 2px; font-size: 13px; color: #555E6B">Answers candidates on the public careers site</div>
+            </div>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px">
+            <span style="font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 12px; background: #E6F4EA; color: #1E6B34">Published v3</span>
+            <span style="font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 12px; background: #EEF0F3; color: #3F4752">Anonymous channel</span>
+          </div>
+          <dl style="margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; font-size: 13px">
+            <div><dt style="color: #555E6B">Model</dt><dd style="margin: 2px 0 0; font-family: 'IBM Plex Mono', monospace; font-size: 12px">qwen3-8b-instruct · 2026.09</dd></div>
+            <div><dt style="color: #555E6B">Channels</dt><dd style="margin: 2px 0 0">Careers site · Console chat (people-ops)</dd></div>
+            <div><dt style="color: #555E6B">Knowledge</dt><dd style="margin: 2px 0 0">1 collection (Public)</dd></div>
+            <div><dt style="color: #555E6B">Scripts · Skills</dt><dd style="margin: 2px 0 0">1 set · none</dd></div>
+          </dl>
+        </a>
+
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

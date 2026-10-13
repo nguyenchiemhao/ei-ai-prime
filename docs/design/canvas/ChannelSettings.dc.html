@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Channel settings</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#16181D;background:#F7F7F8}
+a{color:#2346C7}a:hover{color:#1D3BAA}
+p{margin:0}
+button,input,select{font-family:inherit}
+label{font-size:13px;font-weight:500}
+table{border-collapse:collapse;width:100%}
+th{font-size:12px;font-weight:600;color:#555E6B;text-align:left;padding:10px 12px;border-bottom:1px solid #E1E4E8;white-space:nowrap}
+td{font-size:14px;padding:12px;border-bottom:1px solid #ECEEF1;vertical-align:middle}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #F7F7F8">
+  <div style="flex: 1 1 248px; display: flex">
+    <dc-import name="Sidebar" active="channels" hint-size="248px,900px"></dc-import>
+  </div>
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 24px 32px 48px">
+    <div style="max-width: 1120px; display: flex; flex-direction: column; gap: 20px">
+
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+        <h1 style="margin: 0; font-size: 26px; font-weight: 600">Channels</h1>
+        <button style="min-height: 44px; padding: 0 18px; border: 0; border-radius: 8px; background: #2346C7; color: #FFFFFF; font-size: 14px; font-weight: 600">New channel</button>
+      </div>
+
+      <section style="background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; overflow: hidden">
+        <div style="overflow-x: auto">
+          <table>
+            <thead><tr><th>Channel</th><th>Assistant · live version</th><th>Users</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr style="background: #F5F7FE"><td style="font-weight: 600">Employee Portal widget</td><td>Employee Assistant · v7</td><td>Signed-in employees</td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E6F4EA; color: #1E6B34">On</span></td></tr>
+              <tr><td><a href="#">Careers site widget</a></td><td>Careers Assistant · v3</td><td>Anonymous visitors</td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E6F4EA; color: #1E6B34">On</span></td></tr>
+              <tr><td><a href="ChannelConsoleChat.dc.html">Console chat</a><span style="margin-left: 8px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: #EEF0F3; color: #3F4752">Built-in</span></td><td>Employee Assistant · v7, Careers Assistant · v3</td><td>Signed-in console members</td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E6F4EA; color: #1E6B34">On</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div role="tablist" style="display: flex; gap: 4px; border-bottom: 1px solid #E1E4E8">
+        <a role="tab" aria-selected="true" href="ChannelSettings.dc.html" style="padding: 10px 14px; font-size: 14px; font-weight: 600; color: #1D3BAA; border-bottom: 2px solid #2346C7; text-decoration: none">Access &amp; embed</a>
+        <a role="tab" aria-selected="false" href="ChannelAppearance.dc.html" style="padding: 10px 14px; font-size: 14px; color: #3F4752; text-decoration: none">Appearance &amp; content</a>
+      </div>
+
+      <section style="padding: 20px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between">
+        <div>
+          <h2 style="margin: 0; font-size: 16px; font-weight: 600">Employee Portal widget</h2>
+          <p style="margin-top: 4px; font-size: 13px; color: #555E6B">Serves <a href="AssistantInstructions.dc.html">Employee Assistant</a> v7. Publishing v8 updates this channel automatically.</p>
+        </div>
+        <button style="min-height: 40px; padding: 0 14px; border: 1px solid #9A4A06; border-radius: 8px; background: #FFFFFF; color: #8A4205; font-size: 14px">Turn off channel</button>
+      </section>
+
+      <section style="padding: 20px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; display: flex; flex-direction: column; gap: 16px">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 600">Who can use it</h2>
+        <fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-wrap: wrap; gap: 10px">
+          <legend style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">User identity</legend>
+          <label style="flex: 1 1 300px; display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: 2px solid #2346C7; background: #F5F7FE; border-radius: 10px; font-weight: 400"><input type="radio" name="id" checked style="width: 18px; height: 18px; margin-top: 2px"><span><strong style="font-weight: 600; font-size: 14px">Signed-in users only</strong><br><span style="font-size: 13px; color: #3F4752">Your backend signs a short-lived token with the user's ID, name and groups.</span></span></label>
+          <label style="flex: 1 1 300px; display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: 1px solid #E1E4E8; border-radius: 10px; font-weight: 400"><input type="radio" name="id" style="width: 18px; height: 18px; margin-top: 2px"><span><strong style="font-weight: 600; font-size: 14px">Allow anonymous visitors</strong><br><span style="font-size: 13px; color: #3F4752">Public knowledge only, no skills, stricter rate limits.</span></span></label>
+        </fieldset>
+
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 13px; font-weight: 500">Allowed sites</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px">
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; padding: 6px 10px; border-radius: 8px; background: #EEF0F3">portal.mekongdevworks.example</span>
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; padding: 6px 10px; border-radius: 8px; background: #EEF0F3">staging-portal.mekongdevworks.example</span>
+            <button style="min-height: 32px; padding: 0 10px; border: 1px dashed #C9CED4; border-radius: 8px; background: transparent; font-size: 13px">Add site</button>
+          </div>
+          <p style="font-size: 12px; color: #555E6B">Stops other websites from embedding this widget. User data is protected by the signed token, not by this list.</p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 13px; font-weight: 500">Token signing keys</span>
+          <div style="overflow-x: auto; border: 1px solid #E1E4E8; border-radius: 10px">
+            <table>
+              <thead><tr><th>Key</th><th>Status</th><th>Created</th><th>Last used</th><th><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Actions</span></th></tr></thead>
+              <tbody>
+                <tr><td style="font-family: 'IBM Plex Mono', monospace">key_A ••••91c3</td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E6F4EA; color: #1E6B34">Active</span></td><td>01 Sep 2026</td><td>1 min ago</td><td><a href="#">Retire</a></td></tr>
+                <tr><td style="font-family: 'IBM Plex Mono', monospace">key_B ••••5e07</td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E8EEFC; color: #1D3BAA">Active · rotating in</span></td><td>10 Oct 2026</td><td>Not used yet</td><td><a href="#">Retire</a></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="font-size: 12px; color: #555E6B">To rotate: deploy key B to your backend, wait until key A is no longer used, then retire key A. Visible to Developers only.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 14px; background: #F7F7F8; border-radius: 10px; font-size: 13px">
+          <div><div style="color: #555E6B">Required claims</div><div style="font-family: 'IBM Plex Mono', monospace">sub · exp (≤ 60 min)</div></div>
+          <div><div style="color: #555E6B">Optional claims</div><div style="font-family: 'IBM Plex Mono', monospace">name · groups · lang</div></div>
+          <div><div style="color: #555E6B">Groups used by</div><div>Restricted collections and script sets</div></div>
+        </div>
+      </section>
+
+      <section style="padding: 20px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+        <h2 style="grid-column: 1 / -1; margin: 0; font-size: 16px; font-weight: 600">Limits &amp; hand-off</h2>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="rl">Messages per user per minute</label>
+          <input id="rl" type="number" value="20" style="height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px">
+          <p style="font-size: 12px; color: #555E6B">Default 20 for signed-in users, 10 for anonymous visitors.</p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; color: #6B7380">
+          <span style="font-size: 13px; font-weight: 500">Daily cost cap <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: #EEF0F3; color: #3F4752">Later</span></span>
+          <div style="height: 44px; box-sizing: border-box; display: flex; align-items: center; padding: 0 12px; border: 1px dashed #C9CED4; border-radius: 8px; font-size: 14px">Stops the channel for the day when reached</div>
+        </div>
+        <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 14px; padding-top: 16px; border-top: 1px solid #ECEEF1">
+          <label for="hr-on" style="display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500">
+            <input id="hr-on" type="checkbox" role="switch" checked style="width: 20px; height: 20px; margin: 0">
+            Talk to HR
+          </label>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <span style="font-size: 13px; font-weight: 500">Send transcript to (up to 3 emails)</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center">
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; padding: 6px 10px; border-radius: 8px; background: #EEF0F3">hr@mekongdevworks.example</span>
+              <button style="min-height: 32px; padding: 0 10px; border: 1px dashed #C9CED4; border-radius: 8px; background: transparent; font-size: 13px">Add email</button>
+            </div>
+            <p style="font-size: 12px; color: #555E6B">Signed-in users only · at most 3 hand-offs per user per day</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; color: #6B7380">
+            <span style="font-size: 13px; font-weight: 500">Webhook URL <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: #EEF0F3; color: #3F4752">Later</span></span>
+            <div style="height: 44px; box-sizing: border-box; display: flex; align-items: center; padding: 0 12px; border: 1px dashed #C9CED4; border-radius: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 13px">https://</div>
+          </div>
+        </div>
+      </section>
+
+      <section style="padding: 20px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; display: flex; flex-direction: column; gap: 12px">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 600">Embed</h2>
+        <p style="font-size: 13px; color: #3F4752">1 · Add this to every page of your portal:</p>
+        <pre style="margin: 0; padding: 12px 14px; background: #16181D; color: #E8EAED; border-radius: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.6; overflow-x: auto">&lt;script src="https://cdn.ei-ai.example/widget.js" data-channel="ch_emp_portal" async&gt;&lt;/script&gt;</pre>
+        <p style="font-size: 13px; color: #3F4752">2 · Give the widget a fresh token from your backend:</p>
+        <pre style="margin: 0; padding: 12px 14px; background: #16181D; color: #E8EAED; border-radius: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.6; overflow-x: auto">EiAI.setTokenProvider(() =&gt; fetch("/api/ei-ai-token").then(r =&gt; r.text()));</pre>
+        <p style="font-size: 13px; color: #3F4752">Signing examples: <a href="#">Node</a> · <a href="#">PHP</a> · <a href="#">.NET</a> · <a href="#">Java</a> · <a href="#">Python</a>. If your site sets a Content-Security-Policy, allow <span style="font-family: 'IBM Plex Mono', monospace">cdn.ei-ai.example</span> in script-src and frame-src.</p>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1720}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

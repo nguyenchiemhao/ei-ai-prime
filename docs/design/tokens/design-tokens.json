@@ -1,0 +1,150 @@
+{
+  "$description": "ei-ai visual language (DSN-01, EA-85). Provisional, not a design system (UI6). Values copied from the canvas.",
+  "color": {
+    "$type": "color",
+    "text": {
+      "primary": { "$value": "#16181D", "$description": "Body text and headings." },
+      "secondary": { "$value": "#3F4752" },
+      "muted": { "$value": "#555E6B", "$description": "Captions, meta lines, help text." },
+      "subtle": { "$value": "#6B7380", "$description": "Group labels. White (#FFFFFF) or #FBFBFC surfaces only: 4.47:1 on the page background #F7F7F8 fails 4.5:1." },
+      "on-accent": { "$value": "#FFFFFF" },
+      "on-code": { "$value": "#E8EAED" },
+      "nav": { "$value": "#2B3038", "$description": "Inactive sidebar items." }
+    },
+    "surface": {
+      "page": { "$value": "#F7F7F8" },
+      "card": { "$value": "#FFFFFF" },
+      "subtle": { "$value": "#FBFBFC" },
+      "muted": { "$value": "#EEF0F3" },
+      "widget-canvas": { "$value": "#F6F7F8" },
+      "widget-host": { "$value": "#E9ECEF" },
+      "code": { "$value": "#16181D" },
+      "sensitive-row": { "$value": "#FFF8F0" }
+    },
+    "border": {
+      "default": { "$value": "#E1E4E8" },
+      "strong": { "$value": "#C9CED4", "$description": "Decorative outlines and secondary buttons. Not for form fields (1.58:1 on white)." },
+      "divider": { "$value": "#ECEEF1" },
+      "widget-frame": { "$value": "#D5D9DE" },
+      "field": { "$value": "#8A929C", "$description": "Input, select, textarea and the Chat composer frame (X17). 3.15:1 on white meets WCAG 1.4.11." }
+    },
+    "accent": {
+      "default": { "$value": "#2346C7" },
+      "hover": { "$value": "#1D3BAA" },
+      "tint": { "$value": "#E8EEFC" },
+      "tint-subtle": { "$value": "#F5F7FE" },
+      "chip-bg": { "$value": "#F1F4FD" },
+      "chip-border": { "$value": "#D3DCF7" }
+    },
+    "brand": {
+      "$description": "Widget default. The brand colour is configurable per Channel (WGT-07); these are the Mekong Devworks sample values.",
+      "default": { "$value": "#0E7C6B" },
+      "text": { "$value": "#0B6B5C" },
+      "text-hover": { "$value": "#084F44" },
+      "tint": { "$value": "#F1F7F5" },
+      "border": { "$value": "#CFE6D6" },
+      "selected": { "$value": "#E3F1ED" }
+    },
+    "status": {
+      "success": {
+        "text": { "$value": "#1E6B34" },
+        "bg": { "$value": "#E6F4EA" }
+      },
+      "warning": {
+        "text": { "$value": "#8A4205" },
+        "strong": { "$value": "#9A4A06" },
+        "deep": { "$value": "#6E3504" },
+        "bg": { "$value": "#FDF0E1" },
+        "border": { "$value": "#F1C99A" }
+      }
+    },
+    "access": {
+      "public": {
+        "text": { "$value": "{color.status.success.text}" },
+        "bg": { "$value": "{color.status.success.bg}" }
+      },
+      "authenticated": {
+        "text": { "$value": "{color.accent.hover}" },
+        "bg": { "$value": "{color.accent.tint}" }
+      },
+      "restricted": {
+        "text": { "$value": "{color.status.warning.text}" },
+        "bg": { "$value": "{color.status.warning.bg}" }
+      }
+    }
+  },
+  "font": {
+    "family": {
+      "$type": "fontFamily",
+      "sans": { "$value": "'IBM Plex Sans', system-ui, sans-serif" },
+      "mono": { "$value": "'IBM Plex Mono', ui-monospace, monospace" }
+    },
+    "weight": {
+      "$type": "fontWeight",
+      "regular": { "$value": 400 },
+      "medium": { "$value": 500 },
+      "semibold": { "$value": 600 }
+    },
+    "size": {
+      "$type": "dimension",
+      "xs": { "$value": "11px" },
+      "sm": { "$value": "12px" },
+      "md": { "$value": "13px" },
+      "base": { "$value": "14px" },
+      "lg": { "$value": "15px" },
+      "xl": { "$value": "16px" },
+      "stat": { "$value": "22px" },
+      "title": { "$value": "24px" },
+      "page-title": { "$value": "26px" }
+    },
+    "line-height": {
+      "$type": "number",
+      "tight": { "$value": 1.45 },
+      "base": { "$value": 1.5 },
+      "relaxed": { "$value": 1.6 }
+    }
+  },
+  "radius": {
+    "$type": "dimension",
+    "xs": { "$value": "4px" },
+    "sm": { "$value": "6px" },
+    "md": { "$value": "8px" },
+    "lg": { "$value": "10px" },
+    "xl": { "$value": "12px" },
+    "2xl": { "$value": "14px" },
+    "3xl": { "$value": "16px" },
+    "pill": { "$value": "9999px" }
+  },
+  "space": {
+    "$type": "dimension",
+    "0-5": { "$value": "2px" },
+    "1": { "$value": "4px" },
+    "1-5": { "$value": "6px" },
+    "2": { "$value": "8px" },
+    "2-5": { "$value": "10px" },
+    "3": { "$value": "12px" },
+    "3-5": { "$value": "14px" },
+    "4": { "$value": "16px" },
+    "5": { "$value": "20px" },
+    "6": { "$value": "24px" },
+    "8": { "$value": "32px" },
+    "12": { "$value": "48px" }
+  },
+  "size": {
+    "$type": "dimension",
+    "target": {
+      "min": { "$value": "44px", "$description": "End-user surfaces (widget, Chat): hit area of every control (X16). The visible control may be 36-40px if padding extends the hit area." },
+      "inline-min": { "$value": "24px", "$description": "Inline controls such as citation chips; also the admin desktop minimum (WCAG 2.2 SC 2.5.8)." }
+    },
+    "control": {
+      "compact": { "$value": "36px" },
+      "default": { "$value": "40px" },
+      "touch": { "$value": "44px" }
+    },
+    "layout": {
+      "sidebar": { "$value": "248px" },
+      "widget": { "$value": "420px" },
+      "chat-column": { "$value": "760px" }
+    }
+  }
+}
