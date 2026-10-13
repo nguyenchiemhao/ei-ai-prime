@@ -16,3 +16,7 @@ __pycache__/
 # Playwright
 test-results/
 playwright-report/
+
+# Python tooling caches
+.pytest_cache/
+.ruff_cache/
