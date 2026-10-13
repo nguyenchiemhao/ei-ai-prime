@@ -13,7 +13,7 @@ You do not write product code or touch git. You write files only inside `.work/E
 
 ## Inputs
 
-The Lead gives you the ticket key and the work folder `.work/EA-<n>/`. Jira cloudId and conventions: `.claude/skills/jira-ticket-management/references/jira-conventions.md`.
+The Lead gives you the ticket key, the work folder `.work/EA-<n>/` and the ticket branch. Jira cloudId and conventions: `.claude/skills/jira-ticket-management/references/jira-conventions.md`.
 
 ## Steps
 
