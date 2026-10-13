@@ -33,7 +33,9 @@ const DECISION_STATUS = ["Decided", "Proposed — owner to confirm"];
 const EXPECTED_X = Array.from({ length: 20 }, (_, i) => `X${i + 1}`);
 
 const cache = new Map();
-const read = (file) => (cache.has(file) ? cache.get(file) : cache.set(file, fs.readFileSync(file, "utf8")).get(file));
+// Normalise CRLF so the checks pass on Windows checkouts (core.autocrlf=true).
+const read = (file) =>
+  cache.has(file) ? cache.get(file) : cache.set(file, fs.readFileSync(file, "utf8").replace(/\r\n/g, "\n")).get(file);
 const exists = (file) => fs.existsSync(file);
 const artboardFiles = () => fs.readdirSync(DIR).filter((f) => f.endsWith(".dc.html")).sort();
 const board = (name) => read(path.join(DIR, `${name}.dc.html`));
