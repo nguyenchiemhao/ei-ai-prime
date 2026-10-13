@@ -15,7 +15,7 @@ Constraints that drive the decisions:
 
 - The 15 foundations F1 to F15 (`docs/workshop/tong-hop.md` section 5) cannot be added later without rework. Tenant isolation (D46) must be decided before the first line of code.
 - Everything must run on the dev machine: Windows 11, Ryzen 5 5600G, 16 GB RAM, no GPU (NFR of EA-11). A rented GPU is used only to measure quality and latency (SET-04, R2, R8).
-- The product is built on open-source libraries with our own core (D64). Licences must allow hosted use and distribution of self-hosted container images. The binding approved list is produced by SET-02 (EA-12); this ADR records the licence of every option and the red flags it found.
+- The product is built on open-source libraries with our own core (D64). Licences must allow hosted use and distribution of self-hosted container images. The binding approved list is [oss-license-review.md](oss-license-review.md) (SET-02, EA-12); this ADR records the licence of every option and the red flags it found.
 - UI first (D65): the stack must implement the design in DSN-01 (EA-85).
 
 Scope limits: this ADR does not define the data model (FND-01), the encryption implementation (FND-03), the model catalog (FND-07) or the egress proxy implementation (FND-10). It decides which mechanism each of them uses.
@@ -35,7 +35,7 @@ Scope limits: this ADR does not define the data model (FND-01), the encryption i
 
 ## 3. Decisions per component
 
-Option tables show the licence (verified against the project's licence file or registry entry, URLs in section 12; "to verify in SET-02" where not checked), the fit to the criteria above and notes.
+Option tables show the licence (verified against the project's licence file or registry entry, URLs in section 12; the remaining licences were confirmed by SET-02 in [oss-license-review.md](oss-license-review.md)), the fit to the criteria above and notes.
 
 ### 3.1 Backend language and framework
 
@@ -58,7 +58,7 @@ Option tables show the licence (verified against the project's licence file or r
 | Option | Licence | Fit to criteria | Notes |
 |---|---|---|---|
 | PostgreSQL 16 with row-level security (FORCE, non-owner app role, transaction-local tenant setting, composite foreign keys), SQLAlchemy 2 + Alembic | PostgreSQL Licence; SQLAlchemy MIT; Alembic MIT; psycopg 3 driver LGPL-3.0-only (see section 10) | C1 strong (D46 layer 2 enforced by the database); C6 strong (also hosts vectors, keyword search, jobs); C7 | Proven by the PoC (section 9). Views, SECURITY DEFINER functions and side paths need discipline (rules in section 9) |
-| MySQL or MariaDB | MariaDB server GPL-2.0; MySQL to verify in SET-02 | C1 weak: no native row-level security, so isolation depends on every query | Would need a separate vector store and search engine (C6) |
+| MySQL or MariaDB | MariaDB server GPL-2.0; MySQL Community Server GPL-2.0 with additional linking permissions | C1 weak: no native row-level security, so isolation depends on every query | Would need a separate vector store and search engine (C6) |
 | Database per tenant | PostgreSQL Licence | C1 strongest isolation; C6 weak (provisioning, migrations and connection pools per tenant) | Rejected for the prototype by D46 (shared database with `org_id` and RLS); remains a possible tier for large self-hosted customers |
 
 **Choice:** PostgreSQL 16 with row-level security, accessed through SQLAlchemy 2 (async, psycopg 3 driver) and migrated with Alembic.
@@ -111,7 +111,7 @@ Option tables show the licence (verified against the project's licence file or r
 
 **Reasons:**
 - Fewest components and simplest self-hosted install (C6, C7); the interface lets an object store replace the volume later without touching callers.
-- Encryption in the application layer gives the per-Organization key that D46 requires, independent of the storage backend. HashiCorp Vault is under BUSL since version 1.15, so a KMS or OpenBao (to verify in SET-02) is the later key-management option, not Vault.
+- Encryption in the application layer gives the per-Organization key that D46 requires, independent of the storage backend. HashiCorp Vault is under BUSL since version 1.15, so a KMS or OpenBao (MPL-2.0) is the later key-management option, not Vault.
 - Implementation belongs to FND-03.
 
 ### 3.6 Local model serving
@@ -134,9 +134,9 @@ Option tables show the licence (verified against the project's licence file or r
 | Option | Licence | Fit to criteria | Notes |
 |---|---|---|---|
 | LLM: Qwen3-4B-Instruct-2507 (Q4_K_M GGUF for dev); Qwen3-14B and 8B on GPU | Apache-2.0 | C2 passes; C3 (about 2.5 GB file); C5 multilingual incl. Vietnamese (quality unmeasured, R2) | Default dev model; non-thinking variant |
-| LLM: Gemma 3 4B | Gemma Terms of Use | C2 needs legal review (use restrictions, flow-down terms) | Not a default; compare only after SET-02 |
+| LLM: Gemma 3 4B | Gemma Terms of Use | C2 needs legal review (use restrictions, flow-down terms) | Not a default; not approved by SET-02, use only after legal review in MVP-10 |
 | LLM: Phi-4-mini | MIT | C2 passes; Vietnamese quality unmeasured | Candidate for the evaluation matrix (EVL-04) |
-| LLM: Llama 3.2 3B | Llama 3.2 Community Licence | C2 needs legal review | Not a default |
+| LLM: Llama 3.2 3B | Llama 3.2 Community Licence | C2 needs legal review | Not a default; not approved by SET-02, use only after legal review in MVP-10 |
 | Embedding and reranker: bge-m3 + bge-reranker-v2-m3 | bge-m3 MIT; bge-reranker-v2-m3 Apache-2.0 | C5 strong multilingual; C3 (about 0.6B parameters each) | Default pair |
 | Embedding and reranker: Qwen3-Embedding-0.6B + Qwen3-Reranker-0.6B | Apache-2.0 | C5 strong; C3 | Alternative, same family as the LLM |
 
@@ -210,7 +210,7 @@ Option tables show the licence (verified against the project's licence file or r
 
 | Option | Licence | Fit to criteria | Notes |
 |---|---|---|---|
-| Docker Compose with profiles `core`, `model` and `demo` | Docker Compose: to verify in SET-02; Docker Desktop has its own subscription terms for larger companies (to verify in SET-02) | C7 strongest (the same images for hosted and self-hosted); C6; C3 | One command from a clean clone (SET-03 `make up`); this spike proves the infrastructure part (section 8) |
+| Docker Compose with profiles `core`, `model` and `demo` | Docker Compose Apache-2.0; Docker Desktop has its own subscription terms for larger companies (250 or more employees or US$10M or more revenue), used on the developer machine only | C7 strongest (the same images for hosted and self-hosted); C6; C3 | One command from a clean clone (SET-03 `make up`); this spike proves the infrastructure part (section 8) |
 | Kubernetes with Helm charts | Apache-2.0 | C6 weak for the prototype and for small self-hosted customers | A later deployment target, not needed now |
 | Bare-metal scripts | not applicable | C6 and C7 weak (per-OS differences, hard to support) | Rejected |
 
@@ -476,22 +476,22 @@ Rules that FND-01 and FND-02 must keep:
 
 ## 10. Licence notes and red flags
 
-The binding approved-libraries list is produced by SET-02 (EA-12) in `docs/architecture/oss-license-review.md`. Every licence below was read from the project's licence file, package registry or model card (URLs in section 12); entries marked "to verify in SET-02" were not checked.
+The binding approved-libraries list is [oss-license-review.md](oss-license-review.md) (SET-02, EA-12); this table summarises it and the review prevails if they differ. Every licence below was read from the project's licence file, package registry or model card (URLs in section 12 and per row in the review).
 
 | Component | Licence | Risk | Decision |
 |---|---|---|---|
-| PyMuPDF | AGPL-3.0 or Artifex commercial licence | AGPL would apply to our code if distributed in self-hosted images | Do not use without a commercial licence; choose a permissive PDF parser in SET-02 |
+| PyMuPDF | AGPL-3.0 or Artifex commercial licence | AGPL would apply to our code if distributed in self-hosted images | Do not use without a commercial licence; pypdf (BSD-3-Clause) is the PDF parser |
 | MinIO | AGPL-3.0 | AGPL in a shipped component | Not used (section 3.5) |
 | ParadeDB pg_search | AGPL-3.0 | AGPL extension | Not used (section 3.4) |
 | Redis 7.4 or newer | RSALv2 or SSPLv1 (7.4 to 7.8); RSALv2, SSPLv1 or AGPLv3 (8.x) | Source-available or AGPL; not suitable for distributed images | Valkey 8 (BSD-3-Clause) instead (section 3.11) |
-| HashiCorp Vault | BUSL (version 1.15 or newer) | Business Source License restricts competing use | Not used; OpenBao or a cloud KMS later (to verify in SET-02) |
+| HashiCorp Vault | BUSL (version 1.15 or newer) | Business Source License restricts competing use | Not used; OpenBao (MPL-2.0) or a cloud KMS later |
 | Unidecode | GPL-2.0 or newer | GPL in a shipped component | Use our own accent-stripping table or `anyascii` (ISC) |
-| underthesea | Apache-2.0 for the current release (PyPI and repository) | Earlier releases may have been GPL-licensed; confirm per pinned version | to verify in SET-02 before adoption; pyvi (MIT) is the alternative; word segmentation is chosen by measurement (D60) |
+| underthesea | Apache-2.0 from 9.3.0 (PyPI and repository); GPL-3.0 up to 9.2.x | Earlier releases are GPL-licensed, and the terms of the data behind the bundled models are unconfirmed | Dev only for evaluation, pin 9.3.0 or newer. pyvi (MIT) has the same open question about the data behind its bundled models, so no Vietnamese word segmenter is approved for shipping yet; KB-04 and EVL decide (confirm the data terms, retrain, or no segmentation, D60) and MVP-10 signs off; see the review |
 | Squid | GPL-2.0 | GPL proxy bundled as a separate process | Not chosen (section 3.14); Smokescreen (MIT) |
-| psycopg 3 (PostgreSQL driver, also required by Procrastinate) | LGPL-3.0-only (PyPI metadata) | Weak copyleft; acceptable only if used unmodified as an imported library, which must be confirmed for container distribution | Chosen driver for now; SET-02 confirms or replaces it (alternative driver to be evaluated there) |
+| psycopg 3 (PostgreSQL driver, also required by Procrastinate) | LGPL-3.0-only (PyPI metadata); the binary wheel also bundles LGPL-2.1 libraries | Weak copyleft; acceptable only if used unmodified as a separately installed library | Approved with conditions by SET-02 (unmodified package, notices and source pointer); asyncpg (Apache-2.0) is the alternative driver |
 | Dramatiq | LGPL-3.0 | Weak copyleft; review needed if linked | Not chosen (section 3.10) |
-| Gemma 3 | Gemma Terms of Use | Use restrictions and flow-down terms | Not a default model; legal review in SET-02 |
-| Llama 3.2 | Llama 3.2 Community Licence | Use restrictions, attribution and scale clauses | Not a default model; legal review in SET-02 |
+| Gemma 3 | Gemma Terms of Use | Use restrictions and flow-down terms | Not a default model; not approved by SET-02, legal review in MVP-10 before any use |
+| Llama 3.2 | Llama 3.2 Community Licence | Use restrictions, attribution and scale clauses | Not a default model; not approved by SET-02, legal review in MVP-10 before any use |
 | Qwen3 models (Qwen3-4B-Instruct-2507, Qwen3-14B, embedding, reranker) | Apache-2.0 | Low | Default family |
 | bge-m3, bge-reranker-v2-m3 | MIT, Apache-2.0 | Low | Default retrieval models |
 | Phi-4-mini | MIT | Low | Candidate |
@@ -501,7 +501,7 @@ The binding approved-libraries list is produced by SET-02 (EA-12) in `docs/archi
 | vLLM | Apache-2.0 | Low | Used on GPU |
 | IBM Plex fonts (`@fontsource` packages) | OFL-1.1 | Low; keep the licence file with the fonts | Used |
 | DOMPurify | MPL-2.0 or Apache-2.0 (dual) | Low | Used in the widget |
-| Docker Desktop | Subscription terms for larger companies | Applies to the developer's machine, not to shipped images | to verify in SET-02 |
+| Docker Desktop | Subscription terms for larger companies (250 or more employees or US$10M or more revenue) | Applies to the developer's machine, not to shipped images | Dev only, never in an image; Docker Engine is the alternative |
 
 Other shipped Python dependencies were checked on PyPI: `openai` Apache-2.0, `redis` MIT, SQLAlchemy MIT, Alembic MIT, PyJWT MIT, argon2-cffi MIT, `cryptography` Apache-2.0 OR BSD-3-Clause, structlog MIT OR Apache-2.0, Procrastinate MIT. Test-only tools (pytest, ruff: MIT) are not shipped.
 
@@ -533,7 +533,7 @@ Follow-ups:
 - FND-01 (EA-18): adopt the RLS pattern, role setup and composite foreign keys from the PoC in Alembic migrations.
 - KB-05 (EA-36): the PoC search helper accepts at most k = 40 (the HNSW `ef_search` default). Retrieval with permission filters must set `hnsw.ef_search` and `hnsw.iterative_scan` inside the query transaction and test recall under filters (F5).
 - FND-07 (EA-24): implement the gateway and the model catalog with checksums, verified when the model server starts (llama-server does not verify them); pick the exact embedding and reranker artefacts and their publishers.
-- SET-02 (EA-12): produce the binding licence list.
+- SET-02 (EA-12): done, the binding licence list is `docs/architecture/oss-license-review.md`; SET-03 adds the notices file and the licence scan to CI.
 - Status: this ADR stays Proposed until the owner approves it; SET-03 should not start before approval.
 
 ## 12. References
@@ -542,6 +542,7 @@ Project documents:
 
 - `docs/workshop/tong-hop.md` (sections 3.2, 5, 6, 9, 10 and 11) and `docs/workshop/phan-bien-va-quyet-dinh.md` (D1, D4, D6, D11, D12, D17, D18, D32, D33, D46, D50, D52, D57, D58, D60, D64, D65).
 - `docs/backlog/backlog.md` (Q1 to Q3, section 4 code map) and `docs/design/design-decisions.md` (DSN-01 visual language).
+- `docs/architecture/oss-license-review.md` (SET-02, EA-12): the binding approved-libraries list.
 - Jira EA-11 (this spike), EA-12, EA-13, EA-14, EA-24, EA-85.
 - Branch note: the ticket text says `spike/tech-stack`; the working branch follows the repository convention `spike/EA-11-tech-stack-architecture-adr`.
 
