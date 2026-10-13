@@ -87,7 +87,7 @@ Always re-read before editing, edit descriptions with `contentFormat: markdown`,
 | **Re-prioritise / re-estimate** | Update priority or `sp-N` and the reason in the header |
 | **Link** | Blocks/Relates/Duplicate via MCP; remote links via REST; remove links via REST; keep Dependencies lines in sync |
 | **Comment / attach** | Markdown comment via MCP; attachments via `jira-rest.sh upload` |
-| **Transition** | List transitions; check required fields; never move to Done unless the AC are confirmed |
+| **Transition** | List transitions; check required fields; never move to Done unless the AC are confirmed **and** the ticket branch is merged (committed but unmerged → *In Review*) |
 | **Bulk** | JQL → preview table (key, current → new) → approval → parallel edits → verify with the same JQL |
 | **Delete** | Only on explicit request for named issues; show what will be lost (subtasks, links, dependants); prefer closing as won't-do |
 
@@ -115,7 +115,7 @@ After any change, update `docs/backlog/backlog.md` and suggest the git-commit sk
 |---|---|
 | A ticket branch was created (`git-commit start`) | Offer to transition the ticket to *In Progress* and assign it to the user |
 | A ticket is finished (`git-commit commit`) | Show the numbered AC and ask which pass in the local integration environment; if all pass and the user agrees, add a markdown comment (summary + commit hash/branch) and transition to *Done*; otherwise comment what remains |
-| `ship-ticket` start / finish | Start: transition to *In Progress* without asking. Finish: the AC evidence in `.work/EA-<n>/final.md` replaces the AC question — comment (summary, branch, commit hash, AC → evidence, test counts) and transition to *Done* only if every AC has passing evidence; otherwise comment what remains and leave the status |
+| `ship-ticket` start / finish | Start: transition to *In Progress* without asking. Finish: the AC evidence in `.work/EA-<n>/final.md` replaces the AC question — comment (summary, branch, commit hash, AC → evidence, test counts) and transition to *In Review* if every AC has passing evidence (to *Done* only after the ticket branch is merged, with a comment naming the merge commit); otherwise comment what remains and leave the status |
 
 ## Guardrails
 

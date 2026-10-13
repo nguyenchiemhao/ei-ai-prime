@@ -86,7 +86,7 @@ Follow `git-commit` mode `commit`:
 - Never push.
 
 ### 10. Close
-- Jira (via `jira-ticket-management`, finish hand-off with the evidence from `final.md`): add a markdown comment — summary, branch, commit hash(es), AC → evidence table, test counts, known limitations; transition to *Done* only if every AC passed.
+- Jira (via `jira-ticket-management`, finish hand-off with the evidence from `final.md`): add a markdown comment — summary, branch, commit hash(es), AC → evidence table, test counts, known limitations; transition to *In Review* when every AC passed (it is committed on the ticket branch, not yet merged). Move it to *Done* only after the branch is merged into the base branch (`main`/`dev`), with a short comment naming the merge commit; until then it stays *In Review*.
 - **Improvements:**
   - product/code ideas (from minors, QA observations, plan risks) → propose new tickets (summary + one-line reason, label `proposed`). Create them only after the owner approves; in auto mode, list them in the Jira comment instead.
   - pipeline/process ideas (what slowed this ticket down, recurring review findings, missing rules) → append a dated entry to `docs/dev/team-retro.md`. If the same coding finding appears in 2+ tickets, propose a new rule for `docs/dev/coding-rules.md`.
@@ -99,5 +99,5 @@ Stop the pipeline, keep the working tree as is, and tell the owner: where it sto
 
 - One ticket per run. Never start a second ticket in the same run.
 - Never push, force, amend pushed commits, or skip hooks.
-- Never mark a ticket Done without evidence for every AC.
+- Never mark a ticket Done without evidence for every AC, and never before its branch is merged.
 - Do not edit agent outputs to make them pass; send work back instead.
