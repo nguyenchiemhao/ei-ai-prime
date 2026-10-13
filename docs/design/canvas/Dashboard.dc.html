@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Dashboard</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#16181D;background:#F7F7F8}
+a{color:#2346C7}a:hover{color:#1D3BAA}
+p{margin:0}
+button{font-family:inherit}
+table{border-collapse:collapse;width:100%}
+th{font-size:12px;font-weight:600;color:#555E6B;text-align:left;padding:10px 12px;border-bottom:1px solid #E1E4E8}
+td{font-size:14px;padding:12px;border-bottom:1px solid #ECEEF1}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #F7F7F8">
+  <div style="flex: 1 1 248px; display: flex">
+    <dc-import name="Sidebar" active="dashboard" hint-size="248px,900px"></dc-import>
+  </div>
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 28px 32px 48px">
+    <div style="max-width: 1120px; display: flex; flex-direction: column; gap: 24px">
+
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+        <div>
+          <h1 style="margin: 0; font-size: 26px; font-weight: 600">Dashboard</h1>
+          <p style="margin-top: 4px; font-size: 14px; color: #555E6B">People Ops workspace · all assistants</p>
+        </div>
+        <div style="display: flex; gap: 4px; padding: 4px; background: #EEF0F3; border-radius: 10px">
+          <button style="min-height: 36px; padding: 0 12px; border: 0; border-radius: 7px; background: transparent; font-size: 13px; color: #3F4752">24 hours</button>
+          <button aria-pressed="true" style="min-height: 36px; padding: 0 12px; border: 0; border-radius: 7px; background: #FFFFFF; font-size: 13px; font-weight: 600">7 days</button>
+          <button style="min-height: 36px; padding: 0 12px; border: 0; border-radius: 7px; background: transparent; font-size: 13px; color: #3F4752">30 days</button>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+        <div style="padding: 18px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px">
+          <div style="font-size: 13px; color: #555E6B">Conversations</div>
+          <div style="margin-top: 6px; font-size: 28px; font-weight: 600">1,284</div>
+          <div style="margin-top: 4px; font-size: 12px; color: #3F4752">3,902 messages</div>
+        </div>
+        <div style="padding: 18px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px">
+          <div style="font-size: 13px; color: #555E6B">Answered</div>
+          <div style="margin-top: 6px; font-size: 28px; font-weight: 600">87%</div>
+          <div style="margin-top: 4px; font-size: 12px; color: #3F4752">from documents, scripts or skills</div>
+        </div>
+        <div style="padding: 18px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px">
+          <div style="font-size: 13px; color: #555E6B">Unanswered</div>
+          <div style="margin-top: 6px; font-size: 28px; font-weight: 600; color: #9A4A06">96</div>
+          <div style="margin-top: 4px; font-size: 12px"><a href="Unanswered.dc.html">Review questions</a></div>
+        </div>
+        <div style="padding: 18px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px">
+          <div style="font-size: 13px; color: #555E6B">Helpful rating</div>
+          <div style="margin-top: 6px; font-size: 28px; font-weight: 600">82%</div>
+          <div style="margin-top: 4px; font-size: 12px; color: #3F4752">211 ratings · 38 not helpful</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+        <section style="padding: 20px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; display: flex; flex-direction: column; gap: 14px">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 600">How questions were handled</h2>
+          <div style="display: flex; flex-direction: column; gap: 12px">
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <div style="display: flex; justify-content: space-between; font-size: 13px"><span>Documents (RAG)</span><span style="font-family: 'IBM Plex Mono', monospace">54%</span></div>
+              <div style="height: 8px; background: #EEF0F3; border-radius: 4px"><div style="width: 54%; height: 8px; background: #2346C7; border-radius: 4px"></div></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <div style="display: flex; justify-content: space-between; font-size: 13px"><span>Answer Scripts</span><span style="font-family: 'IBM Plex Mono', monospace">25%</span></div>
+              <div style="height: 8px; background: #EEF0F3; border-radius: 4px"><div style="width: 25%; height: 8px; background: #1E6B34; border-radius: 4px"></div></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <div style="display: flex; justify-content: space-between; font-size: 13px"><span>Skills</span><span style="font-family: 'IBM Plex Mono', monospace">8%</span></div>
+              <div style="height: 8px; background: #EEF0F3; border-radius: 4px"><div style="width: 8%; height: 8px; background: #7A3FB0; border-radius: 4px"></div></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <div style="display: flex; justify-content: space-between; font-size: 13px"><span>Not found</span><span style="font-family: 'IBM Plex Mono', monospace">8%</span></div>
+              <div style="height: 8px; background: #EEF0F3; border-radius: 4px"><div style="width: 8%; height: 8px; background: #B85A0B; border-radius: 4px"></div></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <div style="display: flex; justify-content: space-between; font-size: 13px"><span>Greeting, handoff, out of scope</span><span style="font-family: 'IBM Plex Mono', monospace">5%</span></div>
+              <div style="height: 8px; background: #EEF0F3; border-radius: 4px"><div style="width: 5%; height: 8px; background: #6B7380; border-radius: 4px"></div></div>
+            </div>
+          </div>
+        </section>
+
+        <section style="padding: 20px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: flex; justify-content: space-between; align-items: baseline">
+            <h2 style="margin: 0; font-size: 16px; font-weight: 600">Top unanswered</h2>
+            <a href="Unanswered.dc.html" style="font-size: 13px">View all</a>
+          </div>
+          <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column">
+            <li style="display: flex; gap: 12px; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #ECEEF1; font-size: 14px"><span>Chính sách hỗ trợ học chứng chỉ AWS?</span><span style="font-family: 'IBM Plex Mono', monospace; color: #555E6B">14</span></li>
+            <li style="display: flex; gap: 12px; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #ECEEF1; font-size: 14px"><span>Do you offer remote positions for QA?</span><span style="font-family: 'IBM Plex Mono', monospace; color: #555E6B">11</span></li>
+            <li style="display: flex; gap: 12px; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #ECEEF1; font-size: 14px"><span>Lịch team building quý 4?</span><span style="font-family: 'IBM Plex Mono', monospace; color: #555E6B">9</span></li>
+            <li style="display: flex; gap: 12px; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #ECEEF1; font-size: 14px"><span>BHXH dong cho thu viec khong</span><span style="font-family: 'IBM Plex Mono', monospace; color: #555E6B">7</span></li>
+            <li style="display: flex; gap: 12px; justify-content: space-between; padding: 10px 0; font-size: 14px"><span>How to request a second monitor?</span><span style="font-family: 'IBM Plex Mono', monospace; color: #555E6B">6</span></li>
+          </ol>
+        </section>
+      </div>
+
+      <section style="background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; overflow: hidden">
+        <div style="padding: 16px 20px 6px"><h2 style="margin: 0; font-size: 16px; font-weight: 600">By assistant</h2></div>
+        <div style="overflow-x: auto">
+          <table>
+            <thead><tr><th>Assistant</th><th>Channel</th><th>Conversations</th><th>Answered</th><th>Helpful</th><th>Time to first token (p95)</th></tr></thead>
+            <tbody>
+              <tr><td><a href="AssistantInstructions.dc.html">Employee Assistant</a></td><td>Employee Portal</td><td>1,120</td><td>88%</td><td>83%</td><td style="font-family: 'IBM Plex Mono', monospace">2.4 s</td></tr>
+              <tr><td><a href="Assistants.dc.html">Careers Assistant</a></td><td>Careers site</td><td>164</td><td>81%</td><td>77%</td><td style="font-family: 'IBM Plex Mono', monospace">1.9 s</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div style="display: flex; gap: 10px; align-items: center; padding: 12px 16px; border: 1px dashed #C9CED4; border-radius: 10px; font-size: 13px; color: #3F4752">
+        <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: #EEF0F3">Later</span>
+        <span>Usage &amp; quota, alerts and full analytics arrive in the MVP. Usage is already being recorded.</span>
+      </div>
+
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

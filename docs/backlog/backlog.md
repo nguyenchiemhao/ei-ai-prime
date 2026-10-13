@@ -4,7 +4,7 @@
 - **Sources:** [tong-hop.md](../workshop/tong-hop.md), [phan-bien-va-quyet-dinh.md](../workshop/phan-bien-va-quyet-dinh.md) (D1–D67), [jev-spike.md](../workshop/jev-spike.md), [design-decisions.md](../design/design-decisions.md)
 - **Jira:** project `EA` — https://nguyenchiemhao2205.atlassian.net/jira/software/projects/EA/issues
 - **Story details** (full template: User Story, Given/When/Then AC, Expected Result, **Design reference**, technical notes, NFR, tests, open questions + proposals, DoD) live in the Jira ticket descriptions, all written in English. This file is the summary.
-- **Design:** canvas "ei-ai Prototype UI" (25 artboards) — https://claude.ai/artifact/4YiSppZaEbjh9C5YSMgHUF — hub ticket DSN-01 (EA-85).
+- **Design:** canvas "ei-ai Prototype UI" (31 artboards) — https://claude.ai/artifact/4YiSppZaEbjh9C5YSMgHUF — hub ticket DSN-01 (EA-85).
 - **Test environment:** nothing is deployed yet. The DoD of every story is "All AC pass in the local integration environment (SET-03)"; staging (SET-05) is deferred until the MVP is complete.
 - **Maintained with** the project skills `jira-ticket-management` (tickets, sprints, review, status) and `git-commit` (ticket branches and commits) in `.claude/skills/`.
 
@@ -41,18 +41,18 @@ The owner could not answer yet → **every question is attached to its ticket wi
 
 | Epic | Jira | Milestone | Points |
 |---|---|---|---|
-| E0 Tech foundation, tech stack & UI design | EA-1 | before M0 | 24 |
+| E0 Tech foundation, tech stack & UI design | EA-1 | before M0 | 29 |
 | E1 Multi-tenant, security & observability foundations | EA-2 | M0 | 81 |
 | E2 Knowledge Base & permission-aware RAG | EA-3 | M1 | 55 |
 | E3 Widget & Channel | EA-4 | M2 | 77 |
 | E4 5-step pipeline & Answer Scripts | EA-5 | M3 | 48 |
 | E5 Jev Decision Provider | EA-6 | M3b | 19 |
 | E6 Thin slice of Skills & Connectors | EA-7 | M4 | 27 |
-| E7 Assistant configuration & operations | EA-8 | M5 | 49 |
+| E7 Assistant configuration & operations | EA-8 | M5 | 52 |
 | E8 Quality evaluation & test data | EA-9 | cross-cutting | 26 |
-| **Prototype total (E0–E8)** | | | **406** |
+| **Prototype total (E0–E8)** | | | **414** |
 | E9 MVP hardening (after the prototype, incl. SET-05 staging) | EA-10 | MVP | 55 |
-| **Grand total** | | | **461** |
+| **Grand total** | | | **469** |
 
 ## 4. Story summary
 
@@ -64,8 +64,9 @@ Points are stored as `sp-N` labels (Story Points field not enabled in EA — see
 | SET-02 | EA-12 | Spike: OSS libraries & licences | 3 | Highest | — |
 | SET-03 | EA-13 | Repo skeleton, one-command local env, CI | 5 | Highest | SET-01, SET-02 |
 | SET-04 | EA-14 | Spike: model-evaluation infra (rented GPU) | 3 | High | — |
+| DSN-02 ⓟ✔ | EA-92 | UI style rules: colour roles, spacing, type, radius, component states, Assistant avatar; canvas made consistent | 5 | Medium | DSN-01 |
 | SET-06 ⓟ✔ | EA-86 | Licence allow-list in CI + NOTICES in every image | 3 | High | SET-03 |
-| DSN-01 ⓟ | EA-85 | UI design: canvas, visual language, X1–X15, ConsoleChat artboard + D67 updates | 5 | High | — |
+| DSN-01 ⓟ | EA-85 | UI design: canvas review, X1–X20, console Chat states and Member view, D67 updates, tokens | 5 | High | — |
 | FND-01 | EA-18 | Multi-tenant data model + RLS | 8 | Highest | SET-03 |
 | FND-02 | EA-19 | Tenant-isolation tests in CI | 5 | Highest | FND-01 |
 | FND-03 | EA-20 | Per-Org encryption keys, per-Org vectors | 8 | High | FND-01 |
@@ -130,6 +131,7 @@ Points are stored as `sp-N` labels (Story Points field not enabled in EA — see
 | ADM-06 | EA-72 | Playground + 5-step trace | 8 | High | PIPE-08, WGT-03 |
 | ADM-07 | EA-73 | Conversations (Reviewer) | 5 | Medium | WGT-08, PIPE-08 |
 | ADM-08 | EA-74 | Dashboard + unanswered questions | 5 | Medium | PIPE-08, WGT-06, WGT-08 |
+| ADM-10 ⓟ✔ | EA-93 | Dashboard channel filter + Console chat split | 3 | Medium | ADM-08, WGT-13 |
 | MVP-01 | EA-75 | 2FA (TOTP) | 5 | Low | FND-06 |
 | MVP-02 | EA-76 | Audit log UI + CSV | 5 | Low | FND-08 |
 | MVP-03 | EA-77 | Org quotas + per-Channel cost cap | 8 | Low | FND-09, WGT-04 |
@@ -210,24 +212,29 @@ Cut or move after M5 while keeping the three parts of the D3 positioning: KB-03 
 
 ## 8. UI design ↔ backlog (DSN-01, EA-85)
 
-Canvas: https://claude.ai/artifact/4YiSppZaEbjh9C5YSMgHUF. Every UI ticket has a **Design reference** section (artboard, labels, states to build). Discrepancies between the design and the decisions/tickets — the proposal on the right is used until the owner decides:
+Canvas: https://claude.ai/artifact/4YiSppZaEbjh9C5YSMgHUF. Every UI ticket has a **Design reference** section (artboard, labels, states to build). Discrepancies between the design and the decisions/tickets. Each has a decision recorded in `docs/design/design-decisions.md` §6; rows marked **Owner to confirm** use the proposal until the owner decides:
 
-| # | Discrepancy | Proposal in use |
-|---|---|---|
-| X1 | CollectionDetail shows a .doc file (D61: DOC in the MVP) | Keep .doc out of the prototype, tag "Later" |
-| X2 | Upload limit 50 MB vs 25 MB | 50 MB |
-| X3 | Contrast check in ChannelAppearance (D16: MVP) | Read-only indicator in WGT-07; full check in MVP-08 |
-| X4 | Unanswered grouped by similarity (V3: raw list) | Raw list, no Cause column (ADM-08) |
-| X5 | Rate limit 20/min vs 10 | 20 signed-in / 10 anonymous, configurable |
-| X6 | "Talk to HR" tagged Later | Remove "Later" (WGT-11 approved) |
-| X7 | Variables `{name}` vs `{user.name}` | `{name}`, `{page}` |
-| X8 | Answer length field | Keep (ADM-01) |
-| X9 | Access level per script set | Same 3 levels as Collections (needs confirmation) |
-| X10 | Version history (rollback = MVP) | Read-only list; rollback in MVP-07 |
-| X11 | Connector timeout/size | 5/10 s, 64/256 KB; platform caps 10 s / 256 KB |
-| X12 | `EiAI.setTokenProvider` vs `ei.identify` | Use the design's API |
-| X13 | "local models take over" when external AI is stopped (contradicts D18) | Keep D18; fix the canvas wording (ADM-05) |
-| X14 | "Search messages" box in Conversations | Simple substring search; full-text in the MVP (ADM-07) |
-| X15 | Org policy not going through Draft/Publish | Effective immediately (needs confirmation, = Q7) |
+| # | Discrepancy | Proposal in use | Status |
+|---|---|---|---|
+| X1 | CollectionDetail shows a .doc file (D61: DOC in the MVP) | Keep .doc out of the prototype, tag "Later" | Decided |
+| X2 | Upload limit 50 MB vs 25 MB | 50 MB | Decided |
+| X3 | Contrast check in ChannelAppearance (D16: MVP) | Read-only indicator in WGT-07; full check in MVP-08 (canvas text now says 5.1:1, the computed value) | Decided |
+| X4 | Unanswered grouped by similarity (V3: raw list) | Raw list, no Cause column (ADM-08); grouping tagged "Later" | Decided |
+| X5 | Rate limit 20/min vs 10 | 20 signed-in / 10 anonymous, configurable | Decided |
+| X6 | "Talk to HR" tagged Later | Remove "Later" (WGT-11 approved); the webhook stays Later | Decided |
+| X7 | Variables `{name}` vs `{user.name}` | `{name}`, `{page}` | Decided |
+| X8 | Answer length field | Keep (ADM-01) | Decided |
+| X9 | Access level per script set | Same 3 levels as Collections | Decided |
+| X10 | Version history (rollback = MVP) | Read-only list; rollback in MVP-07 | Decided |
+| X11 | Connector timeout/size | 5/10 s, 64/256 KB; platform caps 10 s / 256 KB | Decided |
+| X12 | `EiAI.setTokenProvider` vs `ei.identify` | Use the design's API | Decided |
+| X13 | "local models take over" when external AI is stopped (contradicts D18) | Keep D18; canvas wording fixed (ADM-05) | Decided |
+| X14 | "Search messages" box in Conversations | Simple substring search over first questions ("Search first questions"); full-text in the MVP (ADM-07) | Decided |
+| X15 | Org policy not going through Draft/Publish | Effective immediately (= Q7) | Decided |
+| X16 | Target size: the rule says 44 px, the canvas uses 36/40 px controls | End-user surfaces need a 44x44 px hit area (visible control may be smaller); admin desktop at least 24x24 px; inline chips at least 24x24 px | Decided |
+| X17 | Form-field borders #C9CED4 are 1.58:1 on white (WCAG 1.4.11) | New token `border.field` #8A929C (3.15:1) on input, select, textarea and the Chat composer; applied across the canvas | Decided |
+| X18 | Chat Sources "Open" goes to the admin Collection page, a dead end for Members | Roles with Knowledge access see "Open in Knowledge"; Members see the quoted passage only | Decided |
+| X19 | "Open in Playground" from Chat: placement and meaning | Per-answer action for Builder and Workspace Admin; re-runs the question on the live version as the signed-in member (not the stored trace) | Decided |
+| X20 | Source of greeting and suggestions in the console Chat (WGT-06 per Channel vs EA-88 AC6 per Assistant) | Console chat Channel holds them per Assistant (EN/VI) | Decided |
 
-**Artboards still to draw:** "Talk to HR" confirmation step (WGT-11, before it starts); 2FA (MVP-01), audit log (MVP-02), usage & quota (MVP-03), end-user data deletion (MVP-04), rollback (MVP-07), Org Theme (MVP-08) — before the MVP phase.
+**Artboards still to draw:** 2FA (MVP-01), audit log (MVP-02), usage & quota (MVP-03), end-user data deletion (MVP-04), rollback (MVP-07), Org Theme (MVP-08) — before the MVP phase.

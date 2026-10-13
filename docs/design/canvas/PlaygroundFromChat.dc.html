@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Playground opened from Chat</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#16181D;background:#F7F7F8}
+a{color:#2346C7}a:hover{color:#1D3BAA}
+p{margin:0}
+button,input,select{font-family:inherit}
+dl{margin:0}
+dd{margin:0}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #F7F7F8">
+  <div style="flex: 1 1 248px; display: flex">
+    <dc-import name="Sidebar" active="assistants" hint-size="248px,900px"></dc-import>
+  </div>
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 24px 32px 48px">
+    <div style="max-width: 1120px; display: flex; flex-direction: column; gap: 18px">
+
+      <nav aria-label="Breadcrumb" style="font-size: 13px; color: #555E6B"><a href="Assistants.dc.html">Assistants</a> / <a href="AssistantInstructions.dc.html">Employee Assistant</a> / Playground</nav>
+
+      <div role="status" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 12px 16px; background: #E8EEFC; border: 1px solid #D3DCF7; border-radius: 10px; font-size: 14px; line-height: 1.5; color: #16181D">
+        <span style="flex: 1 1 520px; min-width: 0"><strong style="font-weight: 600">Opened from Chat</strong> · Your question was re-run on the live version v7 as you (Minh Pham · all-staff, people-ops). The answer may differ from the one in Chat.</span>
+        <a href="Chat.dc.html" style="min-height: 44px; box-sizing: border-box; display: flex; align-items: center; padding: 0 14px; border: 1px solid #C9CED4; border-radius: 8px; background: #FFFFFF; font-size: 13px; font-weight: 500; color: #16181D; text-decoration: none">Back to chat</a>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: space-between">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 600">Playground</h1>
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <label for="ver" style="font-size: 12px; font-weight: 500; color: #555E6B">Version</label>
+            <select id="ver" style="height: 40px; padding: 0 10px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px; background: #FFFFFF">
+              <option>v7 · published (live)</option>
+              <option>Draft (unpublished)</option>
+            </select>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <label for="as" style="font-size: 12px; font-weight: 500; color: #555E6B">Test as</label>
+            <select id="as" style="height: 40px; padding: 0 10px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px; background: #FFFFFF">
+              <option>Minh Pham (you) · all-staff, people-ops</option>
+              <option>An Do · all-staff, project-falcon</option>
+              <option>Test manager · all-staff, managers</option>
+              <option>Anonymous visitor</option>
+              <option>Custom token claims…</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+
+        <section aria-label="Test conversation" style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; overflow: hidden">
+          <div style="display: flex; flex-direction: column; gap: 14px; padding: 18px 16px; background: #F6F7F8; min-height: 640px">
+            <div style="align-self: flex-end; max-width: 300px; background: #0E7C6B; color: #FFFFFF; border-radius: 14px 4px 14px 14px; padding: 10px 14px; font-size: 14px; line-height: 1.5">Checklist tuần đầu cho nhân viên mới gồm những gì?</div>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <div style="background: #FFFFFF; border: 2px solid #2346C7; border-radius: 4px 14px 14px 14px; padding: 12px 14px; font-size: 14px; line-height: 1.6">
+                <p>Tuần đầu của nhân viên mới gồm 4 việc chính <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 6px; box-sizing: border-box; border-radius: 6px; background: #F1F7F5; color: #0B6B5C; font-size: 12px; font-weight: 600; vertical-align: baseline">1</span>:</p>
+                <ol style="margin: 8px 0 0; padding-left: 22px">
+                  <li><strong>Ngày 1:</strong> nhận laptop, tài khoản email và Slack; IT kích hoạt 2FA <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 6px; box-sizing: border-box; border-radius: 6px; background: #F1F7F5; color: #0B6B5C; font-size: 12px; font-weight: 600; vertical-align: baseline">2</span>.</li>
+                  <li><strong>Ngày 1–2:</strong> buổi giới thiệu công ty và ký các cam kết bảo mật.</li>
+                  <li><strong>Ngày 3:</strong> gặp buddy và PM của dự án được phân công.</li>
+                  <li><strong>Cuối tuần:</strong> hoàn thành khóa Security Awareness trên LMS.</li>
+                </ol>
+              </div>
+              <div style="font-size: 12px; color: #1D3BAA; font-weight: 500">Selected · trace shown on the right</div>
+            </div>
+          </div>
+          <form style="display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid #ECEEF1">
+            <label for="pq" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Test question</label>
+            <input id="pq" type="text" placeholder="Ask a test question…" style="flex: 1; min-width: 0; height: 44px; box-sizing: border-box; padding: 0 14px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px">
+            <button type="button" style="min-height: 44px; padding: 0 16px; border: 0; border-radius: 8px; background: #2346C7; color: #FFFFFF; font-size: 14px; font-weight: 600">Send</button>
+          </form>
+        </section>
+
+        <section aria-label="Trace" style="flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 10px">
+          <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: baseline">
+            <h2 style="margin: 0; font-size: 16px; font-weight: 600">Trace</h2>
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #555E6B">assistant v7 · model qwen3-14b-instruct@2026.09 · scripts IT basics@v12, HR quick answers@v9</span>
+          </div>
+
+          <div style="padding: 14px 16px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 10px; display: flex; flex-direction: column; gap: 8px">
+            <div style="display: flex; gap: 10px; align-items: center"><span style="width: 24px; height: 24px; border-radius: 12px; background: #16181D; color: #FFFFFF; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center">1</span><span style="font-weight: 600; font-size: 14px">Gate</span><span style="margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #555E6B">3 ms</span></div>
+            <dl style="display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 4px 12px; font-size: 13px">
+              <dt style="color: #555E6B">Language</dt><dd>Vietnamese · 0.98</dd>
+              <dt style="color: #555E6B">Unicode</dt><dd>Normalized to NFC</dd>
+              <dt style="color: #555E6B">Personal data masked</dt><dd>None found</dd>
+              <dt style="color: #555E6B">Injection patterns</dt><dd>None</dd>
+            </dl>
+          </div>
+
+          <div style="padding: 14px 16px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 10px; display: flex; flex-direction: column; gap: 8px">
+            <div style="display: flex; gap: 10px; align-items: center"><span style="width: 24px; height: 24px; border-radius: 12px; background: #16181D; color: #FFFFFF; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center">2</span><span style="font-weight: 600; font-size: 14px">Classifier</span><span style="margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #555E6B">16 ms</span></div>
+            <dl style="display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 4px 12px; font-size: 13px">
+              <dt style="color: #555E6B">Question type</dt><dd><span style="font-family: 'IBM Plex Mono', monospace">information</span> · 0.93</dd>
+              <dt style="color: #555E6B">Context used</dt><dd>0 previous turns</dd>
+            </dl>
+          </div>
+
+          <div style="padding: 14px 16px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 10px; display: flex; flex-direction: column; gap: 8px">
+            <div style="display: flex; gap: 10px; align-items: center"><span style="width: 24px; height: 24px; border-radius: 12px; background: #16181D; color: #FFFFFF; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center">3</span><span style="font-weight: 600; font-size: 14px">Script Matcher</span><span style="font-size: 12px; padding: 2px 8px; border-radius: 10px; background: #EEF0F3; color: #3F4752">Low band</span><span style="margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #555E6B">58 ms</span></div>
+            <p style="font-size: 13px; color: #3F4752">Provider: local reranker · no script above the threshold → documents</p>
+            <div style="display: flex; flex-direction: column; gap: 4px; font-size: 13px">
+              <div style="display: flex; gap: 12px"><span style="flex: 1">How to request leave</span><span style="font-family: 'IBM Plex Mono', monospace">0.31</span></div>
+              <div style="display: flex; gap: 12px; color: #555E6B"><span style="flex: 1">IT helpdesk contact</span><span style="font-family: 'IBM Plex Mono', monospace">0.18</span></div>
+              <div style="display: flex; gap: 12px; color: #555E6B"><span style="flex: 1">Payday &amp; payslip</span><span style="font-family: 'IBM Plex Mono', monospace">0.09</span></div>
+            </div>
+          </div>
+
+          <div style="padding: 14px 16px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 10px; display: flex; flex-direction: column; gap: 8px">
+            <div style="display: flex; gap: 10px; align-items: center"><span style="width: 24px; height: 24px; border-radius: 12px; background: #16181D; color: #FFFFFF; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center">4</span><span style="font-weight: 600; font-size: 14px">Orchestrator</span><span style="font-size: 12px; padding: 2px 8px; border-radius: 10px; background: #E8EEFC; color: #1D3BAA">Route: documents</span><span style="margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #555E6B">5.2 s</span></div>
+            <dl style="display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 4px 12px; font-size: 13px">
+              <dt style="color: #555E6B">Glossary expansion</dt><dd>None matched</dd>
+              <dt style="color: #555E6B">Collections searched</dt><dd>3 of 5 · Manager Handbook, Project Falcon skipped (not in your groups)</dd>
+              <dt style="color: #555E6B">Passages</dt><dd>12 retrieved → 5 after reranking (2 collections)</dd>
+              <dt style="color: #555E6B">Model</dt><dd><span style="font-family: 'IBM Plex Mono', monospace">qwen3-14b-instruct@2026.09</span> · Precise</dd>
+              <dt style="color: #555E6B">Tokens</dt><dd><span style="font-family: 'IBM Plex Mono', monospace">2,260 in · 191 out</span> · first token 1.7 s</dd>
+            </dl>
+            <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px; font-size: 13px">
+              <div style="display: flex; gap: 12px"><span style="width: 24px; color: #0B6B5C; font-weight: 600">[1]</span><span style="flex: 1">Onboarding Checklist 2026 · §2</span><span style="font-family: 'IBM Plex Mono', monospace">0.89</span></div>
+              <div style="display: flex; gap: 12px"><span style="width: 24px; color: #0B6B5C; font-weight: 600">[2]</span><span style="flex: 1">IT Account Setup Guide · p.2</span><span style="font-family: 'IBM Plex Mono', monospace">0.77</span></div>
+              <div style="display: flex; gap: 12px; color: #555E6B"><span style="width: 24px"></span><span style="flex: 1">Employee Handbook · §1 Welcome</span><span style="font-family: 'IBM Plex Mono', monospace">0.64</span></div>
+              <div style="display: flex; gap: 12px; color: #555E6B"><span style="width: 24px"></span><span style="flex: 1">Security Awareness Course</span><span style="font-family: 'IBM Plex Mono', monospace">0.58</span></div>
+              <div style="display: flex; gap: 12px; color: #555E6B"><span style="width: 24px"></span><span style="flex: 1">Buddy Programme Guide</span><span style="font-family: 'IBM Plex Mono', monospace">0.51</span></div>
+            </div>
+          </div>
+
+          <div style="padding: 14px 16px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 10px; display: flex; flex-direction: column; gap: 8px">
+            <div style="display: flex; gap: 10px; align-items: center"><span style="width: 24px; height: 24px; border-radius: 12px; background: #16181D; color: #FFFFFF; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center">5</span><span style="font-weight: 600; font-size: 14px">Response Guard</span><span style="font-size: 12px; padding: 2px 8px; border-radius: 10px; background: #E6F4EA; color: #1E6B34">Passed</span><span style="margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #555E6B">3 ms</span></div>
+            <dl style="display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 4px 12px; font-size: 13px">
+              <dt style="color: #555E6B">Citations</dt><dd>2 valid · 0 outside retrieved passages</dd>
+              <dt style="color: #555E6B">Output filter</dt><dd>HTML sanitized · no external images</dd>
+              <dt style="color: #555E6B">Instruction leak check</dt><dd>Clean</dd>
+              <dt style="color: #555E6B">Reply language</dt><dd>Vietnamese</dd>
+            </dl>
+          </div>
+        </section>
+      </div>
+      <p style="font-size: 12px; color: #555E6B">Playground runs are not counted in the Dashboard or Unanswered.</p>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1280}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

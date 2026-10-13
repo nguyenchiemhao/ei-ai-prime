@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Widget – Not found and feedback</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#16181D;background:#E9ECEF}
+a{color:#0B6B5C}a:hover{color:#084F44}
+p{margin:0}
+button,textarea{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 420px; height: 900px; box-sizing: border-box; display: flex; flex-direction: column; background: #FFFFFF; border: 1px solid #D5D9DE; border-radius: 16px; overflow: hidden">
+
+  <header style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: {{brand}}; color: #FFFFFF">
+    <div style="width: 36px; height: 36px; border-radius: 10px; background: #FFFFFF; color: {{brand}}; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px">MD</div>
+    <div style="flex: 1; min-width: 0">
+      <div style="font-weight: 600; font-size: 15px">Mekong Assistant</div>
+      <div style="font-size: 12px; opacity: 0.9">Employee Portal · An Do</div>
+    </div>
+    <button aria-label="Thu nhỏ" style="width: 44px; height: 44px; border: 0; background: transparent; color: #FFFFFF; border-radius: 8px; display: flex; align-items: center; justify-content: center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>
+    </button>
+  </header>
+
+  <div style="flex: 1; display: flex; flex-direction: column; gap: 16px; padding: 18px 16px; background: #F6F7F8">
+
+    <div style="align-self: flex-end; max-width: 300px; background: {{brand}}; color: #FFFFFF; border-radius: 14px 4px 14px 14px; padding: 10px 14px; font-size: 14px; line-height: 1.5">Khung lương cho senior engineer hiện nay là bao nhiêu?</div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px; max-width: 360px">
+      <div style="background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 4px 14px 14px 14px; padding: 12px 14px; font-size: 14px; line-height: 1.6">
+        <p>Mình chưa tìm thấy thông tin này. Với câu hỏi về lương và đãi ngộ, bạn có thể trao đổi trực tiếp với HR.</p>
+        <a href="WidgetHandoff.dc.html" style="margin-top: 10px; box-sizing: border-box; text-decoration: none; min-height: 44px; padding: 8px 14px; border: 1px solid {{brand}}; background: #FFFFFF; color: #0B6B5C; border-radius: 10px; font-size: 14px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          Gặp HR
+        </a>
+      </div>
+
+      <div style="display: flex; gap: 4px">
+        <button aria-label="Câu trả lời hữu ích" style="width: 44px; height: 36px; border: 1px solid #E1E4E8; background: #FFFFFF; border-radius: 8px; color: #555E6B; display: flex; align-items: center; justify-content: center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v11H3V10h4z"/><path d="M7 10l4-7a2 2 0 0 1 3 1.7L13 10h6a2 2 0 0 1 2 2.3l-1.4 7A2 2 0 0 1 17.6 21H7"/></svg>
+        </button>
+        <button aria-label="Câu trả lời chưa đúng" aria-pressed="true" style="width: 44px; height: 36px; border: 1px solid #9A4A06; background: #FDF0E1; border-radius: 8px; color: #9A4A06; display: flex; align-items: center; justify-content: center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: rotate(180deg)"><path d="M7 10v11H3V10h4z"/><path d="M7 10l4-7a2 2 0 0 1 3 1.7L13 10h6a2 2 0 0 1 2 2.3l-1.4 7A2 2 0 0 1 17.6 21H7"/></svg>
+        </button>
+      </div>
+
+      <div style="background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px">
+        <div style="font-size: 13px; font-weight: 600">Câu trả lời chưa ổn ở đâu?</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px">
+          <button style="min-height: 36px; padding: 6px 12px; border: 1px solid #C9CED4; background: #FFFFFF; color: #16181D; border-radius: 18px; font-size: 13px">Sai thông tin</button>
+          <button aria-pressed="true" style="min-height: 36px; padding: 6px 12px; border: 1px solid #0B6B5C; background: #E3F1ED; color: #0B6B5C; border-radius: 18px; font-size: 13px; font-weight: 500">Không có thông tin</button>
+          <button style="min-height: 36px; padding: 6px 12px; border: 1px solid #C9CED4; background: #FFFFFF; color: #16181D; border-radius: 18px; font-size: 13px">Chưa đủ chi tiết</button>
+          <button style="min-height: 36px; padding: 6px 12px; border: 1px solid #C9CED4; background: #FFFFFF; color: #16181D; border-radius: 18px; font-size: 13px">Không đúng câu mình hỏi</button>
+        </div>
+        <label for="fb" style="font-size: 12px; color: #555E6B">Góp ý thêm (không bắt buộc)</label>
+        <textarea id="fb" rows="2" style="box-sizing: border-box; width: 100%; padding: 8px 10px; border: 1px solid #8A929C; border-radius: 8px; font-size: 13px; resize: none">Mong có thêm thông tin về lộ trình tăng lương.</textarea>
+        <button style="align-self: flex-end; min-height: 40px; padding: 8px 16px; border: 0; background: {{brand}}; color: #FFFFFF; border-radius: 8px; font-size: 13px; font-weight: 500">Gửi phản hồi</button>
+      </div>
+    </div>
+
+    <div style="align-self: center; display: flex; align-items: center; gap: 8px; max-width: 360px; padding: 10px 14px; background: #EEF0F3; border-radius: 10px; font-size: 13px; color: #3F4752; line-height: 1.5">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M4 4h16v12H5.2L4 17.2V4z"/><path d="M8 9h8M8 12h5"/></svg>
+      <span>Đã gửi cuộc trò chuyện tới HR. HR sẽ phản hồi qua email trong giờ làm việc.</span>
+    </div>
+
+  </div>
+
+  <form style="display: flex; gap: 8px; align-items: center; padding: 12px 16px; background: #FFFFFF; border-top: 1px solid #ECEEF1">
+    <label for="ask2" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Câu hỏi của bạn</label>
+    <input id="ask2" type="text" placeholder="Nhập câu hỏi…" style="flex: 1; min-width: 0; height: 44px; box-sizing: border-box; padding: 0 14px; border: 1px solid #8A929C; border-radius: 22px; font-family: inherit; font-size: 14px">
+    <button type="button" aria-label="Gửi" style="width: 44px; height: 44px; border: 0; border-radius: 22px; background: {{brand}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+    </button>
+  </form>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"brand":{"editor":"color","default":"#0E7C6B","options":["#0E7C6B","#2346C7","#7A3FB0"]},"$preview":{"width":420,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { brand: this.props.brand ?? '#0E7C6B' };
+  }
+}
+</script>
+</body>
+</html>

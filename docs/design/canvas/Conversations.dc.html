@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Conversations</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#16181D;background:#F7F7F8}
+a{color:#2346C7}a:hover{color:#1D3BAA}
+p{margin:0}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #F7F7F8">
+  <div style="flex: 1 1 248px; display: flex">
+    <dc-import name="Sidebar" active="conversations" hint-size="248px,900px"></dc-import>
+  </div>
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 24px 32px 48px">
+    <div style="max-width: 1120px; display: flex; flex-direction: column; gap: 18px">
+
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+        <h1 style="margin: 0; font-size: 26px; font-weight: 600">Conversations</h1>
+        <span style="font-size: 12px; padding: 3px 10px; border-radius: 12px; background: #EEF0F3; color: #2B3038">Viewing as Hà Vũ · Reviewer</span>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+        <label for="s" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search first questions</label>
+        <input id="s" type="search" placeholder="Search first questions" style="flex: 1 1 240px; height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px">
+        <button aria-pressed="false" style="min-height: 40px; padding: 0 12px; border: 1px solid #C9CED4; border-radius: 20px; background: #FFFFFF; font-size: 13px">All</button>
+        <button aria-pressed="true" style="min-height: 40px; padding: 0 12px; border: 1px solid #2346C7; border-radius: 20px; background: #E8EEFC; color: #1D3BAA; font-size: 13px; font-weight: 600">Not helpful</button>
+        <button aria-pressed="false" style="min-height: 40px; padding: 0 12px; border: 1px solid #C9CED4; border-radius: 20px; background: #FFFFFF; font-size: 13px">Unanswered</button>
+        <button aria-pressed="false" style="min-height: 40px; padding: 0 12px; border: 1px solid #C9CED4; border-radius: 20px; background: #FFFFFF; font-size: 13px">Used a skill</button>
+        <label for="chn" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Channel</label>
+        <select id="chn" style="height: 40px; padding: 0 10px; border: 1px solid #8A929C; border-radius: 8px; font-size: 13px; background: #FFFFFF"><option>All channels</option><option>Employee Portal</option><option>Careers site</option><option>Console chat</option></select>
+      </div>
+      <p style="margin-top: -6px; font-size: 12px; color: #555E6B">Console chats appear only after the member rates an answer. Every opening is recorded in the audit log.</p>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+
+        <ul aria-label="Conversation list" style="flex: 1 1 280px; max-width: 340px; margin: 0; padding: 0; list-style: none; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; overflow: hidden">
+          <li><a href="#" aria-current="true" style="display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; background: #F5F7FE; border-left: 3px solid #2346C7; text-decoration: none; color: #16181D">
+            <span style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 600"><span>An Do</span><span style="font-weight: 400; font-size: 12px; color: #555E6B">10:42</span></span>
+            <span style="font-size: 13px; color: #3F4752">Khung lương cho senior engineer…</span>
+            <span style="font-size: 12px; color: #8A4205">Not helpful · Employee Portal</span>
+          </a></li>
+          <li><a href="#" style="display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-top: 1px solid #ECEEF1; text-decoration: none; color: #16181D">
+            <span style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 600"><span>Anonymous · a91f</span><span style="font-weight: 400; font-size: 12px; color: #555E6B">10:31</span></span>
+            <span style="font-size: 13px; color: #3F4752">Do you offer remote positions for QA?</span>
+            <span style="font-size: 12px; color: #8A4205">Not helpful · Careers site</span>
+          </a></li>
+          <li><a href="#" style="display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-top: 1px solid #ECEEF1; text-decoration: none; color: #16181D">
+            <span style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 600"><span>Bao Tran</span><span style="font-weight: 400; font-size: 12px; color: #555E6B">09:58</span></span>
+            <span style="font-size: 13px; color: #3F4752">Phụ cấp onsite ở Osaka tính sao?</span>
+            <span style="font-size: 12px; color: #8A4205">Not helpful · Employee Portal</span>
+          </a></li>
+          <li><a href="#" style="display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-top: 1px solid #ECEEF1; text-decoration: none; color: #16181D">
+            <span style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 600"><span>An Do</span><span style="font-weight: 400; font-size: 12px; color: #555E6B">09:20</span></span>
+            <span style="font-size: 13px; color: #3F4752">Phép năm còn lại có cộng dồn sang năm sau không?</span>
+            <span style="font-size: 12px; color: #8A4205">Not helpful · Console chat</span>
+          </a></li>
+          <li><a href="#" style="display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-top: 1px solid #ECEEF1; text-decoration: none; color: #16181D">
+            <span style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 600"><span>Khanh Ly</span><span style="font-weight: 400; font-size: 12px; color: #555E6B">Yesterday</span></span>
+            <span style="font-size: 13px; color: #3F4752">How do I get access to the Falcon repo?</span>
+            <span style="font-size: 12px; color: #8A4205">Not helpful · Employee Portal</span>
+          </a></li>
+        </ul>
+
+        <section aria-label="Transcript" style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 20px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px">
+          <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid #ECEEF1">
+            <div>
+              <h2 style="margin: 0; font-size: 16px; font-weight: 600">An Do · Employee Portal</h2>
+              <p style="margin-top: 2px; font-size: 12px; color: #555E6B">Groups: all-staff, project-falcon · Employee Assistant v7 · 12 Oct 10:40</p>
+            </div>
+            <span style="font-size: 12px; color: #555E6B">Kept 90 days · auto-deleted 10 Jan 2027</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <div style="font-size: 12px; font-weight: 600; color: #555E6B">User</div>
+            <p style="font-size: 14px">Khung lương cho senior engineer hiện nay là bao nhiêu?</p>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px; background: #F6F7F8; border-radius: 10px">
+            <div style="font-size: 12px; font-weight: 600; color: #555E6B">Assistant</div>
+            <p style="font-size: 14px; line-height: 1.6">Mình chưa tìm thấy thông tin này. Với câu hỏi về lương và đãi ngộ, bạn có thể trao đổi trực tiếp với HR.</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px">
+              <span style="font-size: 12px; padding: 2px 8px; border-radius: 10px; background: #FDF0E1; color: #8A4205">Rated not helpful · "Không có thông tin"</span>
+            </div>
+            <details open style="margin-top: 4px; border-top: 1px solid #E1E4E8; padding-top: 10px">
+              <summary style="font-size: 13px; font-weight: 500; cursor: pointer">Trace</summary>
+              <dl style="margin: 10px 0 0; display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 6px 12px; font-size: 13px">
+                <dt style="color: #555E6B">1 Gate</dt><dd style="margin: 0">vi · no personal data · no injection pattern</dd>
+                <dt style="color: #555E6B">2 Classifier</dt><dd style="margin: 0"><span style="font-family: 'IBM Plex Mono', monospace">information</span> · 0.89</dd>
+                <dt style="color: #555E6B">3 Script Matcher</dt><dd style="margin: 0">Low band · best "Payday &amp; payslip" 0.38</dd>
+                <dt style="color: #555E6B">4 Orchestrator</dt><dd style="margin: 0">Documents · 4 collections searched · Manager Handbook skipped (no access) · no passage above threshold → not found</dd>
+                <dt style="color: #555E6B">5 Response Guard</dt><dd style="margin: 0">Passed · no citations needed</dd>
+                <dt style="color: #555E6B">Model</dt><dd style="margin: 0; font-family: 'IBM Plex Mono', monospace">qwen3-14b-instruct@2026.09</dd>
+              </dl>
+            </details>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 6px">
+            <a href="Unanswered.dc.html" style="min-height: 40px; display: inline-flex; align-items: center; padding: 0 14px; border: 1px solid #C9CED4; border-radius: 8px; color: #16181D; font-size: 14px; text-decoration: none">Add to unanswered review</a>
+            <span style="align-self: center; font-size: 12px; color: #555E6B">Opening conversations is recorded in the audit log.</span>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1360}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

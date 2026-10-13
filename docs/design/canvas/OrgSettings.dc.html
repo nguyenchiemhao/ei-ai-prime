@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Organization settings</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#16181D;background:#F7F7F8}
+a{color:#2346C7}a:hover{color:#1D3BAA}
+p{margin:0}
+button,input,textarea{font-family:inherit}
+table{border-collapse:collapse;width:100%}
+th{font-size:12px;font-weight:600;color:#555E6B;text-align:left;padding:10px 12px;border-bottom:1px solid #E1E4E8;white-space:nowrap}
+td{font-size:14px;padding:12px;border-bottom:1px solid #ECEEF1;vertical-align:middle}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #F7F7F8">
+  <div style="flex: 1 1 248px; display: flex">
+    <dc-import name="Sidebar" active="organization" hint-size="248px,900px"></dc-import>
+  </div>
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 28px 32px 48px">
+    <div style="max-width: 1120px; display: flex; flex-direction: column; gap: 20px">
+
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+        <div>
+          <h1 style="margin: 0; font-size: 26px; font-weight: 600">Organization settings</h1>
+          <p style="margin-top: 4px; font-size: 14px; color: #555E6B">Mekong Devworks · applies to every workspace</p>
+        </div>
+        <span style="font-size: 12px; padding: 3px 10px; border-radius: 12px; background: #EEF0F3; color: #2B3038">Viewing as Linh Tran · Org Admin</span>
+      </div>
+
+      <section style="background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; overflow: hidden">
+        <div style="padding: 20px 20px 8px">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 600">Local models</h2>
+          <p style="margin-top: 4px; font-size: 13px; color: #555E6B">Run on the ei-ai platform. Data does not leave it. Versions are pinned; retirements are announced at least 30 days ahead.</p>
+        </div>
+        <div style="overflow-x: auto">
+          <table>
+            <thead><tr><th>Model</th><th>Version</th><th>Labels</th><th>Status</th><th>Used by</th></tr></thead>
+            <tbody>
+              <tr><td style="font-family: 'IBM Plex Mono', monospace">qwen3-14b-instruct</td><td>2026.09</td><td style="font-size: 13px">Vietnamese good · tool use · 32k</td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E6F4EA; color: #1E6B34">Available</span></td><td>Employee Assistant</td></tr>
+              <tr><td style="font-family: 'IBM Plex Mono', monospace">qwen3-8b-instruct</td><td>2026.09</td><td style="font-size: 13px">Vietnamese fair · faster</td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E6F4EA; color: #1E6B34">Available</span></td><td>Careers Assistant</td></tr>
+              <tr><td style="font-family: 'IBM Plex Mono', monospace">qwen3-14b-instruct</td><td>2026.06</td><td style="font-size: 13px">—</td><td><span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #FDF0E1; color: #8A4205">Retiring 30 Nov 2026</span></td><td style="color: #555E6B">None</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="padding: 14px 20px 20px; display: flex; flex-wrap: wrap; gap: 24px; font-size: 13px">
+          <div><span style="color: #555E6B">Embedding</span> <span style="font-family: 'IBM Plex Mono', monospace">bge-m3@2026.07</span></div>
+          <div><span style="color: #555E6B">Reranker</span> <span style="font-family: 'IBM Plex Mono', monospace">bge-reranker-v2-m3@2026.07</span></div>
+          <div style="color: #555E6B">Changing the embedding model re-indexes every document.</div>
+        </div>
+      </section>
+
+      <section style="padding: 20px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; justify-content: space-between">
+          <div style="flex: 1 1 420px">
+            <h2 style="margin: 0; font-size: 16px; font-weight: 600">Cloud models</h2>
+            <p style="margin-top: 4px; font-size: 13px; line-height: 1.55; color: #3F4752">When on, assistants set to a cloud model send questions, retrieved passages and recent conversation to that provider <strong>without masking</strong>, under your own contract with them. Collections marked <em>Local model only</em> are never sent. Local models are never replaced by cloud models automatically.</p>
+          </div>
+          <label style="display: flex; gap: 10px; align-items: center; font-size: 14px; font-weight: 500"><input type="checkbox" role="switch" style="width: 44px; height: 24px">Off</label>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; opacity: 0.6">
+          <div style="padding: 12px 14px; border: 1px solid #E1E4E8; border-radius: 10px; font-size: 14px"><strong style="font-weight: 600">OpenAI</strong> · your API key · not set</div>
+          <div style="padding: 12px 14px; border: 1px solid #E1E4E8; border-radius: 10px; font-size: 14px"><strong style="font-weight: 600">Anthropic</strong> · your API key · not set</div>
+        </div>
+      </section>
+
+      <section style="padding: 20px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; justify-content: space-between">
+          <div style="flex: 1 1 420px">
+            <h2 style="margin: 0; font-size: 16px; font-weight: 600">Jev by TypeSafe <span style="font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #E8EEFC; color: #1D3BAA; vertical-align: middle">Optional</span></h2>
+            <p style="margin-top: 4px; font-size: 13px; line-height: 1.55; color: #3F4752">Used only to pick the best Answer Script. Sends the current question with personal data masked, plus candidate script titles, to TypeSafe in the <strong>United States</strong>. Conversation history is never sent. If Jev is slow or unavailable, matching falls back to the local reranker.</p>
+          </div>
+          <label style="display: flex; gap: 10px; align-items: center; font-size: 14px; font-weight: 500"><input type="checkbox" role="switch" style="width: 44px; height: 24px">Off</label>
+        </div>
+        <p style="font-size: 12px; color: #555E6B">After turning it on here, each assistant opts in separately.</p>
+      </section>
+
+      <section style="padding: 20px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; display: flex; flex-direction: column; gap: 10px">
+        <label for="pol" style="font-size: 16px; font-weight: 600">Organization policy</label>
+        <p style="font-size: 13px; color: #555E6B">Added to every assistant, after the platform guardrails and before each assistant's own instructions.</p>
+        <textarea id="pol" rows="3" style="box-sizing: border-box; width: 100%; padding: 10px 12px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px; line-height: 1.5; resize: vertical">Do not name clients outside their project groups.
+Do not comment on competitors.
+Refer salary and contract questions to HR.</textarea>
+      </section>
+
+      <section style="padding: 20px; background: #FFFFFF; border: 1px solid #F1C99A; border-radius: 12px; display: flex; flex-direction: column; gap: 14px">
+        <div>
+          <h2 style="margin: 0; font-size: 16px; font-weight: 600; color: #6E3504">Emergency switches</h2>
+          <p style="margin-top: 4px; font-size: 13px; color: #3F4752">Take effect within seconds. Every use is recorded in the audit log.</p>
+        </div>
+        <div style="display: flex; flex-direction: column">
+          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #ECEEF1">
+            <div><div style="font-size: 14px; font-weight: 500">Stop all external AI</div><div style="font-size: 13px; color: #555E6B">Cloud models and Jev off for every assistant. Assistants on a cloud model show “temporarily unavailable”; script matching uses the local reranker.</div></div>
+            <button style="min-height: 40px; padding: 0 14px; border: 1px solid #9A4A06; border-radius: 8px; background: #FFFFFF; color: #8A4205; font-size: 14px">Stop now</button>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #ECEEF1">
+            <div><div style="font-size: 14px; font-weight: 500">Employee Portal widget</div><div style="font-size: 13px; color: #555E6B">Shows a maintenance message to users</div></div>
+            <button style="min-height: 40px; padding: 0 14px; border: 1px solid #9A4A06; border-radius: 8px; background: #FFFFFF; color: #8A4205; font-size: 14px">Turn off</button>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #ECEEF1">
+            <div><div style="font-size: 14px; font-weight: 500">Careers site widget</div><div style="font-size: 13px; color: #555E6B">Shows a maintenance message to visitors</div></div>
+            <button style="min-height: 40px; padding: 0 14px; border: 1px solid #9A4A06; border-radius: 8px; background: #FFFFFF; color: #8A4205; font-size: 14px">Turn off</button>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #ECEEF1">
+            <div><div style="font-size: 14px; font-weight: 500">Console chat · People Ops</div><div style="font-size: 13px; color: #555E6B">Shows a maintenance message on the Chat page</div></div>
+            <button style="min-height: 40px; padding: 0 14px; border: 1px solid #9A4A06; border-radius: 8px; background: #FFFFFF; color: #8A4205; font-size: 14px">Turn off</button>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 12px 0">
+            <div><div style="font-size: 14px; font-weight: 500">HR System connector</div><div style="font-size: 13px; color: #555E6B">Skills using it answer from documents instead</div></div>
+            <button style="min-height: 40px; padding: 0 14px; border: 1px solid #9A4A06; border-radius: 8px; background: #FFFFFF; color: #8A4205; font-size: 14px">Turn off</button>
+          </div>
+        </div>
+      </section>
+
+      <div style="display: flex; gap: 10px; align-items: center; padding: 12px 16px; border: 1px dashed #C9CED4; border-radius: 10px; font-size: 13px; color: #3F4752">
+        <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: #EEF0F3">Later</span>
+        <span>Audit log viewer, usage &amp; quota, organization theme, data export. Events are already recorded.</span>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

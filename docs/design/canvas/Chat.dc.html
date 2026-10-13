@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Chat</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#16181D;background:#F7F7F8}
+a{color:#2346C7}a:hover{color:#1D3BAA}
+p{margin:0}
+button,input,select,textarea{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #F7F7F8">
+  <div style="flex: 1 1 248px; display: flex">
+    <dc-import name="Sidebar" active="chat" hint-size="248px,900px"></dc-import>
+  </div>
+
+  <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-wrap: wrap; background: #FFFFFF">
+
+    <aside aria-label="Chat history" style="flex: 1 1 240px; max-width: 280px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; padding: 20px 14px; background: #FBFBFC; border-right: 1px solid #E1E4E8">
+      <button style="min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 8px; background: #2346C7; color: #FFFFFF; font-size: 14px; font-weight: 600">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        New chat
+      </button>
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <label for="hs" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search chats</label>
+        <input id="hs" type="search" placeholder="Search chats" style="height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px; background: #FFFFFF">
+      </div>
+
+      <nav aria-label="Recent chats" style="display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <div style="padding: 0 8px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #6B7380">Today</div>
+          <a href="#" aria-current="page" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 8px; background: #E8EEFC; color: #16181D; text-decoration: none">
+            <span style="font-size: 14px; font-weight: 600">Checklist onboarding tuần đầu</span>
+            <span style="font-size: 12px; color: #555E6B">Employee Assistant · 15:42</span>
+          </a>
+          <a href="#" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 8px; color: #16181D; text-decoration: none">
+            <span style="font-size: 14px">Ngày phép còn lại</span>
+            <span style="font-size: 12px; color: #555E6B">Employee Assistant · 10:05</span>
+          </a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <div style="padding: 0 8px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #6B7380">Yesterday</div>
+          <a href="#" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 8px; color: #16181D; text-decoration: none">
+            <span style="font-size: 14px">OT ngày lễ tính thế nào</span>
+            <span style="font-size: 12px; color: #555E6B">Employee Assistant · 16:20</span>
+          </a>
+          <a href="#" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 8px; color: #16181D; text-decoration: none">
+            <span style="font-size: 14px">Hiring process for QA roles</span>
+            <span style="font-size: 12px; color: #555E6B">Careers Assistant · 11:05</span>
+          </a>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <div style="padding: 0 8px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #6B7380">Previous 7 days</div>
+          <a href="#" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 8px; color: #16181D; text-decoration: none">
+            <span style="font-size: 14px">Lịch nghỉ Tết 2027</span>
+            <span style="font-size: 12px; color: #555E6B">Employee Assistant · 06 Oct</span>
+          </a>
+          <a href="#" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 8px; color: #16181D; text-decoration: none">
+            <span style="font-size: 14px">Quy định làm việc từ xa</span>
+            <span style="font-size: 12px; color: #555E6B">Employee Assistant · 03 Oct</span>
+          </a>
+        </div>
+      </nav>
+
+      <p style="margin-top: auto; padding: 0 8px; font-size: 12px; line-height: 1.5; color: #555E6B">Chats are private to you and kept 90 days. Reviewers can open rated conversations; every opening is audit-logged.</p>
+    </aside>
+
+    <main style="flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column">
+
+      <header style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid #E1E4E8">
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+          <label for="asst" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Assistant</label>
+          <select id="asst" aria-describedby="ident" style="height: 40px; padding: 0 10px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px; font-weight: 600; background: #FFFFFF">
+            <option>Employee Assistant</option>
+            <option>Careers Assistant</option>
+          </select>
+          <span style="font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 12px; background: #E6F4EA; color: #1E6B34">Live v7</span>
+          <span id="ident" style="font-size: 13px; color: #555E6B">Answering as Minh Pham · all-staff, people-ops</span>
+        </div>
+      </header>
+
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 22px; padding: 24px; max-width: 760px; width: 100%; box-sizing: border-box; margin: 0 auto">
+
+        <div style="align-self: flex-end; max-width: 520px; background: #2346C7; color: #FFFFFF; border-radius: 14px 4px 14px 14px; padding: 10px 14px; font-size: 15px; line-height: 1.5">Checklist tuần đầu cho nhân viên mới gồm những gì?</div>
+
+        <div style="display: flex; gap: 12px; align-items: flex-start">
+          <div style="flex: none; width: 32px; height: 32px; border-radius: 8px; background: #0E7C6B; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600">EA</div>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+            <article aria-label="Answer 1, selected" aria-current="true" style="display: flex; flex-direction: column; gap: 8px; background: #FFFFFF; border: 2px solid #2346C7; border-radius: 4px 14px 14px 14px; padding: 12px 14px">
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555E6B">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                Searched 2 collections · 5 passages
+              </div>
+              <div style="font-size: 15px; line-height: 1.65">
+                <p>Tuần đầu của nhân viên mới gồm 4 việc chính <a href="#c1" aria-label="Source 1: Onboarding Checklist 2026" style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 6px; box-sizing: border-box; border-radius: 6px; background: #E8EEFC; color: #1D3BAA; font-size: 12px; font-weight: 600; text-decoration: none; vertical-align: baseline">1</a>:</p>
+                <ol style="margin: 8px 0 0; padding-left: 22px">
+                  <li><strong>Ngày 1:</strong> nhận laptop, tài khoản email và Slack; IT kích hoạt 2FA <a href="#c2" aria-label="Source 2: IT Account Setup Guide" style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 6px; box-sizing: border-box; border-radius: 6px; background: #E8EEFC; color: #1D3BAA; font-size: 12px; font-weight: 600; text-decoration: none; vertical-align: baseline">2</a>.</li>
+                  <li><strong>Ngày 1–2:</strong> buổi giới thiệu công ty và ký các cam kết bảo mật.</li>
+                  <li><strong>Ngày 3:</strong> gặp buddy và PM của dự án được phân công.</li>
+                  <li><strong>Cuối tuần:</strong> hoàn thành khóa Security Awareness trên LMS.</li>
+                </ol>
+                <p style="margin-top: 8px">People Ops gửi checklist này cho quản lý trực tiếp trước ngày nhận việc 3 ngày <a href="#c1" aria-label="Source 1: Onboarding Checklist 2026" style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 6px; box-sizing: border-box; border-radius: 6px; background: #E8EEFC; color: #1D3BAA; font-size: 12px; font-weight: 600; text-decoration: none; vertical-align: baseline">1</a>.</p>
+              </div>
+            </article>
+            <div style="font-size: 12px; color: #1D3BAA; font-weight: 500">Selected · sources on the right</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center">
+              <button aria-label="Helpful" style="width: 40px; height: 36px; border: 1px solid #E1E4E8; background: #FFFFFF; border-radius: 8px; color: #555E6B; display: flex; align-items: center; justify-content: center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v11H3V10h4z"/><path d="M7 10l4-7a2 2 0 0 1 3 1.7L13 10h6a2 2 0 0 1 2 2.3l-1.4 7A2 2 0 0 1 17.6 21H7"/></svg>
+              </button>
+              <button aria-label="Not helpful" style="width: 40px; height: 36px; border: 1px solid #E1E4E8; background: #FFFFFF; border-radius: 8px; color: #555E6B; display: flex; align-items: center; justify-content: center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: rotate(180deg)"><path d="M7 10v11H3V10h4z"/><path d="M7 10l4-7a2 2 0 0 1 3 1.7L13 10h6a2 2 0 0 1 2 2.3l-1.4 7A2 2 0 0 1 17.6 21H7"/></svg>
+              </button>
+              <button aria-label="Copy answer" style="width: 40px; height: 36px; border: 1px solid #E1E4E8; background: #FFFFFF; border-radius: 8px; color: #555E6B; display: flex; align-items: center; justify-content: center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>
+              </button>
+              <a href="PlaygroundFromChat.dc.html" style="min-height: 36px; box-sizing: border-box; display: flex; align-items: center; gap: 6px; padding: 0 12px; border: 1px solid #C9CED4; border-radius: 8px; font-size: 13px; color: #16181D; text-decoration: none">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h6"/></svg>
+                Open in Playground
+              </a>
+              <span style="font-size: 12px; color: #555E6B">Builders and Workspace Admins only</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="align-self: flex-end; max-width: 520px; background: #2346C7; color: #FFFFFF; border-radius: 14px 4px 14px 14px; padding: 10px 14px; font-size: 15px; line-height: 1.5">Còn mình năm nay còn bao nhiêu ngày phép?</div>
+
+        <div style="display: flex; gap: 12px; align-items: flex-start">
+          <div style="flex: none; width: 32px; height: 32px; border-radius: 8px; background: #0E7C6B; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600">EA</div>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+            <article aria-label="Answer 2" style="display: flex; flex-direction: column; gap: 8px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 4px 14px 14px 14px; padding: 12px 14px">
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555E6B">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+                Checked HR System · skill: Check my leave balance
+              </div>
+              <p style="font-size: 15px; line-height: 1.65">Năm 2026, Minh còn <strong>6 ngày phép năm</strong> và <strong>5 ngày phép ốm</strong>.</p>
+              <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; max-width: 420px">
+                <div style="background: #F1F4FD; border-radius: 10px; padding: 10px 12px">
+                  <div style="font-size: 12px; color: #3F4752">Annual leave left</div>
+                  <div style="font-size: 22px; font-weight: 600; color: #1D3BAA">6 <span style="font-size: 13px; font-weight: 500; color: #3F4752">/ 14 days</span></div>
+                </div>
+                <div style="background: #F1F4FD; border-radius: 10px; padding: 10px 12px">
+                  <div style="font-size: 12px; color: #3F4752">Sick leave left</div>
+                  <div style="font-size: 22px; font-weight: 600; color: #1D3BAA">5 <span style="font-size: 13px; font-weight: 500; color: #3F4752">/ 5 days</span></div>
+                </div>
+              </div>
+              <p style="font-size: 12px; color: #555E6B">From HR System · updated 13 Oct 2026 09:00 · only your own data</p>
+            </article>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center">
+              <button aria-label="Helpful" style="width: 40px; height: 36px; border: 1px solid #E1E4E8; background: #FFFFFF; border-radius: 8px; color: #555E6B; display: flex; align-items: center; justify-content: center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v11H3V10h4z"/><path d="M7 10l4-7a2 2 0 0 1 3 1.7L13 10h6a2 2 0 0 1 2 2.3l-1.4 7A2 2 0 0 1 17.6 21H7"/></svg>
+              </button>
+              <button aria-label="Not helpful" style="width: 40px; height: 36px; border: 1px solid #E1E4E8; background: #FFFFFF; border-radius: 8px; color: #555E6B; display: flex; align-items: center; justify-content: center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: rotate(180deg)"><path d="M7 10v11H3V10h4z"/><path d="M7 10l4-7a2 2 0 0 1 3 1.7L13 10h6a2 2 0 0 1 2 2.3l-1.4 7A2 2 0 0 1 17.6 21H7"/></svg>
+              </button>
+              <button aria-label="Copy answer" style="width: 40px; height: 36px; border: 1px solid #E1E4E8; background: #FFFFFF; border-radius: 8px; color: #555E6B; display: flex; align-items: center; justify-content: center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>
+              </button>
+              <a href="PlaygroundFromChat.dc.html" style="min-height: 36px; box-sizing: border-box; display: flex; align-items: center; gap: 6px; padding: 0 12px; border: 1px solid #C9CED4; border-radius: 8px; font-size: 13px; color: #16181D; text-decoration: none">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h6"/></svg>
+                Open in Playground
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="padding: 0 24px 20px; max-width: 760px; width: 100%; box-sizing: border-box; margin: 0 auto; display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+          <button style="min-height: 36px; padding: 6px 12px; border: 1px solid #D3DCF7; background: #F1F4FD; color: #1D3BAA; border-radius: 18px; font-size: 13px">Mẫu email chào mừng nhân viên mới</button>
+          <button style="min-height: 36px; padding: 6px 12px; border: 1px solid #D3DCF7; background: #F1F4FD; color: #1D3BAA; border-radius: 18px; font-size: 13px">Quy trình xin nghỉ phép</button>
+          <button style="min-height: 36px; padding: 6px 12px; border: 1px solid #D3DCF7; background: #F1F4FD; color: #1D3BAA; border-radius: 18px; font-size: 13px">Lịch nghỉ Tết 2027</button>
+        </div>
+        <form style="display: flex; gap: 10px; align-items: flex-end; padding: 10px; border: 1px solid #8A929C; border-radius: 14px; background: #FFFFFF">
+          <label for="msg" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Message Employee Assistant</label>
+          <textarea id="msg" rows="2" placeholder="Ask Employee Assistant about policies, IT or projects…" style="flex: 1; min-width: 0; border: 0; resize: none; font-size: 15px; line-height: 1.5; padding: 4px 6px; outline-offset: 2px"></textarea>
+          <button type="button" aria-label="Send" style="flex: none; width: 44px; height: 44px; border: 0; border-radius: 10px; background: #2346C7; color: #FFFFFF; display: flex; align-items: center; justify-content: center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+          </button>
+        </form>
+        <p style="font-size: 12px; color: #555E6B; text-align: center">Enter to send · Shift+Enter for a new line · AI can be wrong, check the cited sources.</p>
+      </div>
+    </main>
+
+    <aside aria-label="Sources" style="flex: 1 1 260px; max-width: 320px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; padding: 20px 18px; border-left: 1px solid #E1E4E8; background: #FBFBFC">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Sources</h2>
+        <span style="font-size: 12px; color: #555E6B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">for: Checklist tuần đầu cho nhân viên mới gồm những gì?</span>
+      </div>
+
+      <article id="c1" style="display: flex; flex-direction: column; gap: 8px; padding: 14px; background: #FFFFFF; border: 1px solid #2346C7; border-radius: 10px">
+        <div style="display: flex; gap: 8px; align-items: baseline">
+          <span style="font-size: 12px; font-weight: 600; color: #2346C7">[1]</span>
+          <span style="font-size: 14px; font-weight: 600">Onboarding Checklist 2026 · §2 Week one</span>
+        </div>
+        <p style="font-size: 13px; line-height: 1.55; color: #3F4752">“Day 1: laptop, email and Slack accounts, 2FA activation by IT. Days 1–2: company introduction and NDA signing. Day 3: meet the assigned buddy and PM…”</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: space-between; align-items: center; font-size: 12px; color: #555E6B">
+          <span>Employee Handbook · relevance 0.89</span>
+          <a href="CollectionDetail.dc.html">Open in Knowledge</a>
+        </div>
+      </article>
+
+      <article id="c2" style="display: flex; flex-direction: column; gap: 8px; padding: 14px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 10px">
+        <div style="display: flex; gap: 8px; align-items: baseline">
+          <span style="font-size: 12px; font-weight: 600; color: #2346C7">[2]</span>
+          <span style="font-size: 14px; font-weight: 600">IT Account Setup Guide · p.2</span>
+        </div>
+        <p style="font-size: 13px; line-height: 1.55; color: #3F4752">“New accounts are created on the start date. Two-step verification must be activated before first sign-in…”</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: space-between; align-items: center; font-size: 12px; color: #555E6B">
+          <span>IT &amp; Security · relevance 0.77</span>
+          <a href="CollectionDetail.dc.html">Open in Knowledge</a>
+        </div>
+      </article>
+
+      <p style="font-size: 12px; line-height: 1.5; color: #555E6B">“Open in Knowledge” is shown to roles with Knowledge access. Other roles see the quoted passage only.</p>
+      <p style="font-size: 12px; line-height: 1.5; color: #555E6B">You only see passages from collections your groups can read. Answers never include restricted documents you cannot open.</p>
+    </aside>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

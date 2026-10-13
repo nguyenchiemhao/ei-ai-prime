@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Glossary</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#16181D;background:#F7F7F8}
+a{color:#2346C7}a:hover{color:#1D3BAA}
+p{margin:0}
+button,input{font-family:inherit}
+table{border-collapse:collapse;width:100%}
+th{font-size:12px;font-weight:600;color:#555E6B;text-align:left;padding:10px 12px;border-bottom:1px solid #E1E4E8;white-space:nowrap}
+td{font-size:14px;padding:12px;border-bottom:1px solid #ECEEF1;vertical-align:middle}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #F7F7F8">
+  <div style="flex: 1 1 248px; display: flex">
+    <dc-import name="Sidebar" active="glossary" hint-size="248px,900px"></dc-import>
+  </div>
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 28px 32px 48px">
+    <div style="max-width: 1120px; display: flex; flex-direction: column; gap: 20px">
+
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+        <div>
+          <h1 style="margin: 0; font-size: 26px; font-weight: 600">Glossary</h1>
+          <p style="margin-top: 4px; font-size: 14px; color: #555E6B">Abbreviations and synonyms used to widen search and script matching. A question about "BHXH" also finds documents that say "social insurance".</p>
+        </div>
+        <button style="min-height: 44px; padding: 0 14px; border: 1px solid #C9CED4; border-radius: 8px; background: #FFFFFF; font-size: 14px">Import CSV</button>
+      </div>
+
+      <form style="padding: 16px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end">
+        <div style="flex: 1 1 180px; display: flex; flex-direction: column; gap: 6px">
+          <label for="term" style="font-size: 13px; font-weight: 500">Term</label>
+          <input id="term" type="text" placeholder="e.g. SA" style="height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px">
+        </div>
+        <div style="flex: 3 1 320px; display: flex; flex-direction: column; gap: 6px">
+          <label for="syn" style="font-size: 13px; font-weight: 500">Also means (comma-separated, any language)</label>
+          <input id="syn" type="text" placeholder="e.g. solution architect, kiến trúc sư giải pháp" style="height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px">
+        </div>
+        <button type="button" style="min-height: 44px; padding: 0 18px; border: 0; border-radius: 8px; background: #2346C7; color: #FFFFFF; font-size: 14px; font-weight: 600">Add term</button>
+      </form>
+
+      <section style="background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; overflow: hidden">
+        <div style="overflow-x: auto">
+          <table>
+            <thead><tr><th>Term</th><th>Also means</th><th>Matches · 7d</th><th>Added by</th><th><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Actions</span></th></tr></thead>
+            <tbody>
+              <tr><td style="font-family: 'IBM Plex Mono', monospace; font-weight: 500">OT</td><td>overtime · làm thêm giờ · tăng ca</td><td>126</td><td>Thao Nguyen</td><td><a href="#">Edit</a></td></tr>
+              <tr><td style="font-family: 'IBM Plex Mono', monospace; font-weight: 500">BHXH</td><td>bảo hiểm xã hội · social insurance</td><td>34</td><td>Thao Nguyen</td><td><a href="#">Edit</a></td></tr>
+              <tr><td style="font-family: 'IBM Plex Mono', monospace; font-weight: 500">PTO</td><td>paid time off · nghỉ phép có lương · phép năm</td><td>51</td><td>Thao Nguyen</td><td><a href="#">Edit</a></td></tr>
+              <tr><td style="font-family: 'IBM Plex Mono', monospace; font-weight: 500">WFH</td><td>work from home · remote · làm việc từ xa</td><td>29</td><td>Thao Nguyen</td><td><a href="#">Edit</a></td></tr>
+              <tr><td style="font-family: 'IBM Plex Mono', monospace; font-weight: 500">onsite</td><td>client site · làm việc tại khách hàng</td><td>18</td><td>Thao Nguyen</td><td><a href="#">Edit</a></td></tr>
+              <tr><td style="font-family: 'IBM Plex Mono', monospace; font-weight: 500">PM</td><td>project manager · quản lý dự án</td><td>44</td><td>Minh Pham</td><td><a href="#">Edit</a></td></tr>
+              <tr><td style="font-family: 'IBM Plex Mono', monospace; font-weight: 500">DoD</td><td>Definition of Done · tiêu chí hoàn thành</td><td>7</td><td>Minh Pham</td><td><a href="#">Edit</a></td></tr>
+              <tr><td style="font-family: 'IBM Plex Mono', monospace; font-weight: 500">Tết</td><td>Lunar New Year · nghỉ Tết · Tet holiday</td><td>22</td><td>Thao Nguyen</td><td><a href="#">Edit</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <p style="font-size: 13px; color: #555E6B">Matching ignores diacritics and letter case, so "bao hiem xa hoi" and "Bảo hiểm xã hội" are treated the same.</p>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

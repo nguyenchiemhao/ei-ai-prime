@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Channel appearance</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#16181D;background:#F7F7F8}
+a{color:#2346C7}a:hover{color:#1D3BAA}
+p{margin:0}
+button,input,textarea,select{font-family:inherit}
+label{font-size:13px;font-weight:500}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #F7F7F8">
+  <div style="flex: 1 1 248px; display: flex">
+    <dc-import name="Sidebar" active="channels" hint-size="248px,900px"></dc-import>
+  </div>
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 24px 32px 48px">
+    <div style="max-width: 1120px; display: flex; flex-direction: column; gap: 20px">
+
+      <nav aria-label="Breadcrumb" style="font-size: 13px; color: #555E6B"><a href="ChannelSettings.dc.html">Channels</a> / Employee Portal widget</nav>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 600">Employee Portal widget</h1>
+        <div style="display: flex; gap: 10px; align-items: center">
+          <span style="font-size: 12px; color: #555E6B">Applies immediately</span>
+          <button style="min-height: 40px; padding: 0 16px; border: 0; border-radius: 8px; background: #2346C7; color: #FFFFFF; font-size: 14px; font-weight: 600">Save</button>
+        </div>
+      </div>
+
+      <div role="tablist" style="display: flex; gap: 4px; border-bottom: 1px solid #E1E4E8">
+        <a role="tab" aria-selected="false" href="ChannelSettings.dc.html" style="padding: 10px 14px; font-size: 14px; color: #3F4752; text-decoration: none">Access &amp; embed</a>
+        <a role="tab" aria-selected="true" href="ChannelAppearance.dc.html" style="padding: 10px 14px; font-size: 14px; font-weight: 600; color: #1D3BAA; border-bottom: 2px solid #2346C7; text-decoration: none">Appearance &amp; content</a>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+
+        <div style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+          <section style="padding: 20px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+            <h2 style="grid-column: 1 / -1; margin: 0; font-size: 16px; font-weight: 600">Appearance</h2>
+
+            <fieldset style="grid-column: 1 / -1; margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px">
+              <legend style="font-size: 13px; font-weight: 500; margin-bottom: 8px">Brand color</legend>
+              <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+                <button aria-label="Teal, selected" aria-pressed="true" style="width: 44px; height: 44px; border-radius: 22px; border: 3px solid #16181D; background: #0E7C6B"></button>
+                <button aria-label="Blue" style="width: 44px; height: 44px; border-radius: 22px; border: 1px solid #C9CED4; background: #2346C7"></button>
+                <button aria-label="Purple" style="width: 44px; height: 44px; border-radius: 22px; border: 1px solid #C9CED4; background: #7A3FB0"></button>
+                <button aria-label="Light yellow" style="width: 44px; height: 44px; border-radius: 22px; border: 1px solid #C9CED4; background: #F3D46B"></button>
+                <label for="hex" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Hex color</label>
+                <input id="hex" type="text" value="#0E7C6B" style="width: 110px; height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid #8A929C; border-radius: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 13px">
+                <span style="font-size: 13px; color: #1E6B34">White text contrast 5.1:1 · passes AA</span>
+              </div>
+            </fieldset>
+
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="nm">Assistant name</label>
+              <input id="nm" type="text" value="Mekong Assistant" style="height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <span style="font-size: 13px; font-weight: 500">Avatar</span>
+              <div style="display: flex; gap: 10px; align-items: center">
+                <span style="width: 44px; height: 44px; border-radius: 10px; background: #0E7C6B; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600">MD</span>
+                <button style="min-height: 40px; padding: 0 12px; border: 1px solid #C9CED4; border-radius: 8px; background: #FFFFFF; font-size: 13px">Upload PNG</button>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="pos">Launcher position</label>
+              <select id="pos" style="height: 44px; padding: 0 10px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px; background: #FFFFFF"><option>Bottom right</option><option>Bottom left</option></select>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="th">Theme</label>
+              <select id="th" style="height: 44px; padding: 0 10px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px; background: #FFFFFF"><option>Match the user's system</option><option>Light</option><option>Dark</option></select>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="ui">Widget language</label>
+              <select id="ui" style="height: 44px; padding: 0 10px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px; background: #FFFFFF"><option>From token, else browser</option><option>English</option><option>Vietnamese</option></select>
+            </div>
+            <div style="display: flex; align-items: flex-end">
+              <p style="font-size: 12px; color: #555E6B">Inheriting defaults from an organization theme comes in the MVP.</p>
+            </div>
+          </section>
+
+          <section style="padding: 20px; background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 12px; display: flex; flex-direction: column; gap: 14px">
+            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+              <h2 style="margin: 0; font-size: 16px; font-weight: 600">Greeting &amp; suggestions</h2>
+              <div role="tablist" style="display: flex; gap: 4px; padding: 4px; background: #EEF0F3; border-radius: 10px">
+                <button role="tab" aria-selected="false" style="min-height: 34px; padding: 0 12px; border: 0; border-radius: 7px; background: transparent; font-size: 13px; color: #3F4752">English</button>
+                <button role="tab" aria-selected="true" style="min-height: 34px; padding: 0 12px; border: 0; border-radius: 7px; background: #FFFFFF; font-size: 13px; font-weight: 600">Vietnamese</button>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label for="gr">Greeting</label>
+              <textarea id="gr" rows="2" style="box-sizing: border-box; width: 100%; padding: 10px 12px; border: 1px solid #8A929C; border-radius: 8px; font-size: 14px; resize: vertical">Chào {name}! Mình là trợ lý nội bộ của Mekong Devworks. Bạn cần hỏi gì về chính sách, IT hay dự án?</textarea>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <span style="font-size: 13px; font-weight: 500">Suggested questions</span>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px">
+                <span style="font-size: 13px; padding: 6px 10px; border-radius: 16px; background: #EEF0F3">Quy trình xin nghỉ phép</span>
+                <span style="font-size: 13px; padding: 6px 10px; border-radius: 16px; background: #EEF0F3">Lịch nghỉ Tết 2027</span>
+                <span style="font-size: 13px; padding: 6px 10px; border-radius: 16px; background: #EEF0F3">Cài VPN thế nào?</span>
+                <button style="min-height: 32px; padding: 0 10px; border: 1px dashed #C9CED4; border-radius: 16px; background: transparent; font-size: 13px">Add</button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <aside aria-label="Preview" style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 10px">
+          <div style="font-size: 13px; font-weight: 600; color: #3F4752">Preview</div>
+          <div style="padding: 20px; background: #E9ECEF; border-radius: 12px; display: flex; flex-direction: column; align-items: flex-end; gap: 14px">
+            <div style="width: 100%; max-width: 340px; background: #FFFFFF; border: 1px solid #D5D9DE; border-radius: 16px; overflow: hidden">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: #0E7C6B; color: #FFFFFF">
+                <span style="width: 32px; height: 32px; border-radius: 9px; background: #FFFFFF; color: #0E7C6B; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">MD</span>
+                <span style="font-weight: 600; font-size: 14px">Mekong Assistant</span>
+              </div>
+              <div style="padding: 14px; background: #F6F7F8; display: flex; flex-direction: column; gap: 10px">
+                <div style="background: #FFFFFF; border: 1px solid #E1E4E8; border-radius: 4px 12px 12px 12px; padding: 10px 12px; font-size: 13px; line-height: 1.5">Chào An! Mình là trợ lý nội bộ của Mekong Devworks. Bạn cần hỏi gì về chính sách, IT hay dự án?</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px">
+                  <span style="font-size: 12px; padding: 5px 10px; border-radius: 14px; border: 1px solid #CFE6D6; background: #F1F7F5; color: #0B6B5C">Quy trình xin nghỉ phép</span>
+                  <span style="font-size: 12px; padding: 5px 10px; border-radius: 14px; border: 1px solid #CFE6D6; background: #F1F7F5; color: #0B6B5C">Lịch nghỉ Tết 2027</span>
+                </div>
+              </div>
+              <div style="padding: 10px 14px; border-top: 1px solid #ECEEF1"><div style="height: 40px; border: 1px solid #C9CED4; border-radius: 20px"></div></div>
+            </div>
+            <span aria-hidden="true" style="width: 56px; height: 56px; border-radius: 28px; background: #0E7C6B; display: flex; align-items: center; justify-content: center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H8l-4 4V5z"/></svg>
+            </span>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1140}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
