@@ -1,6 +1,6 @@
 # ei-ai assistant — Quyết định thiết kế giao diện
 
-- **Cập nhật:** 2026-10-12
+- **Cập nhật:** 2026-10-13
 - **Giai đoạn:** thiết kế giao diện cho bản thử (D61, D65 trong [phan-bien-va-quyet-dinh.md](../workshop/phan-bien-va-quyet-dinh.md))
 - **Mục đích:** dùng giao diện để kiểm tra, hình dung ý tưởng và xác định hướng làm, trước khi chọn tech stack và kiến trúc.
 - **Đầu vào:** [tong-hop.md](../workshop/tong-hop.md) — phạm vi bản thử (mục 6), nền móng F1–F15 (mục 5), thuật ngữ chính thức (mục 3.3).
@@ -50,6 +50,8 @@
 |---|---|---|---|---|
 | **Employee Assistant** — hỗ trợ nhân viên về chính sách, quy trình, IT, dự án | Widget trong **cổng nội bộ** (Employee Portal) | Nhân viên đã đăng nhập; nhóm lấy từ token (`all-staff`, `managers`, `project-falcon`…) | Token ký (D11) | Tiếng Việt, tiếng Anh |
 | **Careers Assistant** — trả lời ứng viên về công ty, quy trình tuyển dụng, phúc lợi | Widget trên **trang tuyển dụng công khai** | Ứng viên ẩn danh | Ẩn danh có giới hạn (D2, D15) | Tiếng Anh, tiếng Việt |
+
+| **Employee Assistant** (cùng Assistant) | **Console chat** — trang Chat trên console của ei-ai (D67) | Thành viên console, ví dụ Minh Pham (Builder) hoặc An Do (Member); nhóm do Org Admin gán | Phiên đăng nhập console | Tiếng Việt, tiếng Anh |
 
 Hai Assistant thể hiện được: Assistant ↔ Channel (D5), chế độ đăng nhập và ẩn danh (D2), phân quyền tri thức (D8).
 
@@ -105,7 +107,7 @@ OT ↔ overtime ↔ làm thêm giờ · PTO ↔ paid time off ↔ nghỉ phép c
 | Thao Nguyen | Knowledge Editor (HR) | Tài liệu, kịch bản, glossary |
 | Quang Le | Developer | Connector, Tool, khóa token |
 | Hà Vũ | Reviewer | Xem hội thoại, trace |
-| An Do | Nhân viên — nhóm `all-staff`, `project-falcon` | Người dùng cuối đã đăng nhập |
+| An Do | Nhân viên — nhóm `all-staff`, `project-falcon`; vai trò Member trên console (D67) | Người dùng cuối đã đăng nhập (widget và trang Chat) |
 | Ứng viên ẩn danh | — | Người dùng cuối trên trang tuyển dụng |
 
 ---
@@ -152,9 +154,10 @@ Nhãn: **P** = trong bản thử; **Later** = vẽ để hình dung, ngoài ph�
 | B19 | Câu chưa trả lời được — gắn nhãn nguyên nhân, hành động (tạo kịch bản, thêm tài liệu) | D44 | P |
 | B20 | Organization settings — Model providers (danh mục local có phiên bản, BYOK), công tắc cloud và Jev kèm cảnh báo, chính sách Organization | D17, D18, D19, D21, D53 | P |
 | B21 | Organization settings — công tắc khẩn cấp | D55 | P |
-| B22 | Members & roles | D48 | P |
+| B22 | Members & roles + vai trò Member, nhóm tri thức, External user ID (D67) | D48, D67 | P |
 | B23 | Audit log | D50 | Later (sự kiện đã ghi từ bản thử, giao diện để MVP) |
 | B24 | Usage & quota | D7, D58 | Later |
+| B25 | **Chat** (mục đầu tiên dưới OVERVIEW): danh sách hội thoại có tìm kiếm, hội thoại có trích dẫn, bảng Sources, thẻ kết quả Skill, câu gợi ý; Channel nội bộ "Console chat" (B16) và công tắc bật Assistant cho Console chat (B7) | D67 | P (sau M2) |
 
 ---
 
@@ -177,6 +180,7 @@ Nhãn: **P** = trong bản thử; **Later** = vẽ để hình dung, ngoài ph�
 | Conversations · Unanswered | B18–B19 |
 | OrgSettings | B20–B21 (gộp) |
 | Members | B22 |
+| ConsoleChat (**chưa vẽ** — tham chiếu tạm: [screens/console-chat.png](screens/console-chat.png)) | B25; kèm cập nhật Sidebar, Members, ChannelSettings, AssistantConfig (DSN-01, EA-85) |
 | — | B23, B24 chưa vẽ riêng; chỉ xuất hiện dưới dạng nhãn "Later" |
 
 ### Vấn đề bản vẽ làm lộ ra (chờ quyết định)
@@ -199,3 +203,4 @@ Nhãn: **P** = trong bản thử; **Later** = vẽ để hình dung, ngoài ph�
 | 2026-10-12 | Tạo file; chốt UI1–UI6; doanh nghiệp giả định Mekong Devworks; danh sách màn hình A1–A8, B1–B24 |
 | 2026-10-12 | Vẽ xong 25 artboard trên canvas; ghi nhận vấn đề V1–V4 |
 | 2026-10-13 | V1 được duyệt (WGT-11); tạo DSN-01 (EA-85) gắn canvas vào backlog, ghi điểm lệch X1–X15 |
+| 2026-10-13 | D67: thêm trang Chat trên console (B25), vai trò Member, Channel nội bộ "Console chat"; ảnh tham chiếu tạm `screens/console-chat.png`; artboard ConsoleChat giao cho DSN-01 (EA-85) |

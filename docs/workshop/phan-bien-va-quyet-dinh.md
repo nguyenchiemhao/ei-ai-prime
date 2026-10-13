@@ -1,6 +1,6 @@
 # ei-ai assistant — Phản biện, câu hỏi & quyết định
 
-- **Cập nhật:** 2026-10-12
+- **Cập nhật:** 2026-10-13
 - **Giai đoạn:** Workshop phân tích sản phẩm — **đã xong Vòng 0, Vòng 1, Vòng 2**; tổng hợp ở [tong-hop.md](tong-hop.md). Vòng 3 (chức năng bổ sung) để sau khi có bản thử. Vòng 1 gồm Module 1 (Knowledge Base), Module 2 (Chatbot Widget), Module 3 (Appearance), Module 4 (AI Model Settings), Module 6 (Answer Scripts), pipeline xử lý câu hỏi, Module 7 + 9 (Skills/Tools, Data Connectors) và Module 10 (Memory, Schedule, MCP)
 - **Nguồn:** các phiên thảo luận theo [idea-discuss-prompt.md](../../idea-discuss-prompt.md)
 
@@ -93,6 +93,7 @@ Câu định vị ban đầu dùng cụm "chạy hoàn toàn nội bộ" đã đ
 | D64 | **Tự xây lõi, dùng lại thư viện mã nguồn mở** (đọc file, chỉ mục, phục vụ model); không dựa trên một nền tảng hoàn chỉnh. Kiểm tra ngắn 1–2 ngày về thư viện dùng lại được và giấy phép trước khi chốt hẳn. | 4 |
 | D65 | **Giai đoạn thiết kế bắt đầu bằng thiết kế giao diện**, dùng giao diện để kiểm tra/hình dung ý tưởng và xác định hướng làm; tech stack, kiến trúc và mô hình dữ liệu làm sau. | 4 |
 | D66 | **Doanh nghiệp giả định đổi thành công ty công nghệ làm outsource** (Mekong Devworks, quản lý đội software engineer) thay cho cửa hàng điện máy; Skill mẫu là "Check my leave balance" qua HR System API thay cho tra cứu đơn hàng (cập nhật D63). Các quyết định thiết kế giao diện ghi riêng ở [design-decisions.md](../design/design-decisions.md). | 4 |
+| D67 | **Chat trực tiếp trên console** — bề mặt thứ hai bên cạnh widget, cùng pipeline (mở rộng D2, D5; yêu cầu của chủ dự án 2026-10-13, WGT-12/EA-88). Thành viên đã đăng nhập console có trang **Chat** để hỏi Assistant ngay trên web. (1) Mọi vai trò Workspace đều dùng được; thêm vai trò **Member** chỉ thấy Chat (bổ sung D48). (2) Nhóm quyền tri thức (D8) do Org Admin gán cho từng thành viên ở Members & roles, lưu phía server; sau này lấy từ claim SSO/OIDC. (3) Danh tính cho Skill: trường **External user ID** của từng thành viên, server gắn vào token nội bộ, LLM không thấy (giữ D32). (4) Mỗi Workspace có sẵn một **Channel nội bộ "Console chat"** (không xóa được, không có mã nhúng), nên dùng lại giới hạn tần suất, lưu 90 ngày (D13), công tắc khẩn cấp (D55), đo sử dụng (D58) và trang Conversations. (5) Danh sách chọn Assistant: chỉ bản Published được bật cho Console chat và nhóm của người dùng được phép; bản Draft dùng Playground. (6) Reviewer chỉ mở được hội thoại Console chat có 👍/👎, mỗi lần mở ghi audit (D50); câu chưa trả lời được vẫn vào Unanswered. (7) Thuộc bản thử, làm sau M2. | 4 |
 
 ---
 
