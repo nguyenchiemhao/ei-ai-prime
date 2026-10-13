@@ -41,18 +41,18 @@ The owner could not answer yet → **every question is attached to its ticket wi
 
 | Epic | Jira | Milestone | Points |
 |---|---|---|---|
-| E0 Tech foundation, tech stack & UI design | EA-1 | before M0 | 19 |
+| E0 Tech foundation, tech stack & UI design | EA-1 | before M0 | 22 |
 | E1 Multi-tenant, security & observability foundations | EA-2 | M0 | 76 |
-| E2 Knowledge Base & permission-aware RAG | EA-3 | M1 | 52 |
-| E3 Widget & Channel | EA-4 | M2 | 62 |
+| E2 Knowledge Base & permission-aware RAG | EA-3 | M1 | 55 |
+| E3 Widget & Channel | EA-4 | M2 | 70 |
 | E4 5-step pipeline & Answer Scripts | EA-5 | M3 | 48 |
 | E5 Jev Decision Provider | EA-6 | M3b | 19 |
 | E6 Thin slice of Skills & Connectors | EA-7 | M4 | 27 |
 | E7 Assistant configuration & operations | EA-8 | M5 | 49 |
 | E8 Quality evaluation & test data | EA-9 | cross-cutting | 26 |
-| **Prototype total (E0–E8)** | | | **378** |
+| **Prototype total (E0–E8)** | | | **392** |
 | E9 MVP hardening (after the prototype, incl. SET-05 staging) | EA-10 | MVP | 55 |
-| **Grand total** | | | **433** |
+| **Grand total** | | | **447** |
 
 ## 4. Story summary
 
@@ -64,6 +64,7 @@ Points are stored as `sp-N` labels (Story Points field not enabled in EA — see
 | SET-02 | EA-12 | Spike: OSS libraries & licences | 3 | Highest | — |
 | SET-03 | EA-13 | Repo skeleton, one-command local env, CI | 5 | Highest | SET-01, SET-02 |
 | SET-04 | EA-14 | Spike: model-evaluation infra (rented GPU) | 3 | High | — |
+| SET-06 ⓟ✔ | EA-86 | Licence allow-list in CI + NOTICES in every image | 3 | High | SET-03 |
 | DSN-01 ⓟ | EA-85 | UI design: canvas, visual language, X1–X15 | 3 | High | — |
 | FND-01 | EA-18 | Multi-tenant data model + RLS | 8 | Highest | SET-03 |
 | FND-02 | EA-19 | Tenant-isolation tests in CI | 5 | Highest | FND-01 |
@@ -89,6 +90,7 @@ Points are stored as `sp-N` labels (Story Points field not enabled in EA — see
 | KB-06 | EA-37 | RAG with citations, strict mode, "Ask this collection" | 8 | Highest | KB-05, EVL-03 |
 | KB-07 | EA-38 | Replace/delete documents with immediate effect | 5 | High | KB-04 |
 | KB-08 | EA-39 | Glossary + query expansion | 5 | High | KB-05 |
+| KB-09 ⓟ✔ | EA-87 | Spike: Vietnamese keyword tokenisation without an unlicensed segmenter (blocks KB-04) | 3 | High | — |
 | WGT-01 | EA-40 | Channel, allowed sites, signing keys, embed code | 8 | Highest | FND-12, FND-06 |
 | WGT-02 | EA-41 | Iframe widget + streaming | 8 | Highest | WGT-01, KB-06 |
 | WGT-03 | EA-42 | Host-signed JWT + group permissions | 8 | Highest | WGT-01, KB-05 |
@@ -99,6 +101,7 @@ Points are stored as `sp-N` labels (Story Points field not enabled in EA — see
 | WGT-08 | EA-47 | Encrypted conversations, 90-day retention | 5 | High | WGT-02, FND-03 |
 | WGT-09 | EA-48 | Mobile + maintenance/busy states | 5 | Medium | WGT-02 |
 | WGT-10 ⓟ✔ | EA-49 | Local demo site (Employee Portal :4001, Careers :4002) + token-signing backend | 3 | High | WGT-01 |
+| WGT-12 ⓟ✔ | EA-88 | Console Chat page for signed-in members + D67 in the plan docs | 8 | Medium | WGT-05, WGT-06, WGT-08 |
 | WGT-11 ⓟ✔ | EA-50 | "Talk to HR" email hand-off (V1; MailHog locally) | 5 | Medium | WGT-08, PIPE-03 |
 | PIPE-01 | EA-51 | Pipeline frame + Gate | 8 | Highest | WGT-02, FND-08, FND-09, FND-11 |
 | PIPE-02 | EA-52 | Local 7-class Classifier | 8 | High | PIPE-01, EVL-01 |
@@ -148,6 +151,7 @@ flowchart LR
   SET02[SET-02 Licences] --> SET03
   SET03 --> FND01[FND-01 RLS] --> FND04[FND-04 CLI] --> FND05[FND-05 Sign-in] --> FND06[FND-06 RBAC]
   FND06 --> KB01[KB-01 Collection] --> KB02[KB-02 Upload] --> KB04[KB-04 Index] --> KB05[KB-05 Permission filter] --> KB06[KB-06 RAG]
+  KB09[KB-09 VI tokenisation] --> KB04
   KB06 --> WGT02[WGT-02 Widget] --> PIPE01[PIPE-01 Gate]
   FND12[FND-12 Draft/Publish] --> WGT01[WGT-01 Channel] --> WGT02
   PIPE01 --> PIPE02[PIPE-02 Classifier] --> PIPE07[PIPE-07 Orchestrator]
