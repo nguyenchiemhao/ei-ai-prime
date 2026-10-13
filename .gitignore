@@ -1,0 +1,18 @@
+# Agent pipeline scratch space (plans, reviews, QA reports, screenshots)
+.work/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+dist/
+build/
+__pycache__/
+.venv/
+
+# Playwright
+test-results/
+playwright-report/
