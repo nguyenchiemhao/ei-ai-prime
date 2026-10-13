@@ -1,7 +1,7 @@
 # ei-ai assistant — Prototype & MVP backlog (Jira EA)
 
 - **Updated:** 2026-10-13
-- **Sources:** [tong-hop.md](../workshop/tong-hop.md), [phan-bien-va-quyet-dinh.md](../workshop/phan-bien-va-quyet-dinh.md) (D1–D66), [jev-spike.md](../workshop/jev-spike.md), [design-decisions.md](../design/design-decisions.md)
+- **Sources:** [tong-hop.md](../workshop/tong-hop.md), [phan-bien-va-quyet-dinh.md](../workshop/phan-bien-va-quyet-dinh.md) (D1–D67), [jev-spike.md](../workshop/jev-spike.md), [design-decisions.md](../design/design-decisions.md)
 - **Jira:** project `EA` — https://nguyenchiemhao2205.atlassian.net/jira/software/projects/EA/issues
 - **Story details** (full template: User Story, Given/When/Then AC, Expected Result, **Design reference**, technical notes, NFR, tests, open questions + proposals, DoD) live in the Jira ticket descriptions, all written in English. This file is the summary.
 - **Design:** canvas "ei-ai Prototype UI" (25 artboards) — https://claude.ai/artifact/4YiSppZaEbjh9C5YSMgHUF — hub ticket DSN-01 (EA-85).
@@ -41,18 +41,18 @@ The owner could not answer yet → **every question is attached to its ticket wi
 
 | Epic | Jira | Milestone | Points |
 |---|---|---|---|
-| E0 Tech foundation, tech stack & UI design | EA-1 | before M0 | 22 |
-| E1 Multi-tenant, security & observability foundations | EA-2 | M0 | 76 |
+| E0 Tech foundation, tech stack & UI design | EA-1 | before M0 | 24 |
+| E1 Multi-tenant, security & observability foundations | EA-2 | M0 | 81 |
 | E2 Knowledge Base & permission-aware RAG | EA-3 | M1 | 55 |
-| E3 Widget & Channel | EA-4 | M2 | 70 |
+| E3 Widget & Channel | EA-4 | M2 | 77 |
 | E4 5-step pipeline & Answer Scripts | EA-5 | M3 | 48 |
 | E5 Jev Decision Provider | EA-6 | M3b | 19 |
 | E6 Thin slice of Skills & Connectors | EA-7 | M4 | 27 |
 | E7 Assistant configuration & operations | EA-8 | M5 | 49 |
 | E8 Quality evaluation & test data | EA-9 | cross-cutting | 26 |
-| **Prototype total (E0–E8)** | | | **392** |
+| **Prototype total (E0–E8)** | | | **406** |
 | E9 MVP hardening (after the prototype, incl. SET-05 staging) | EA-10 | MVP | 55 |
-| **Grand total** | | | **447** |
+| **Grand total** | | | **461** |
 
 ## 4. Story summary
 
@@ -65,7 +65,7 @@ Points are stored as `sp-N` labels (Story Points field not enabled in EA — see
 | SET-03 | EA-13 | Repo skeleton, one-command local env, CI | 5 | Highest | SET-01, SET-02 |
 | SET-04 | EA-14 | Spike: model-evaluation infra (rented GPU) | 3 | High | — |
 | SET-06 ⓟ✔ | EA-86 | Licence allow-list in CI + NOTICES in every image | 3 | High | SET-03 |
-| DSN-01 ⓟ | EA-85 | UI design: canvas, visual language, X1–X15 | 3 | High | — |
+| DSN-01 ⓟ | EA-85 | UI design: canvas, visual language, X1–X15, ConsoleChat artboard + D67 updates | 5 | High | — |
 | FND-01 | EA-18 | Multi-tenant data model + RLS | 8 | Highest | SET-03 |
 | FND-02 | EA-19 | Tenant-isolation tests in CI | 5 | Highest | FND-01 |
 | FND-03 | EA-20 | Per-Org encryption keys, per-Org vectors | 8 | High | FND-01 |
@@ -78,6 +78,7 @@ Points are stored as `sp-N` labels (Story Points field not enabled in EA — see
 | FND-10 | EA-27 | Egress proxy + allowlist | 5 | High | SET-03 |
 | FND-11 | EA-28 | Vietnamese normalisation (NFC, tone marks, accent stripping) | 3 | Highest | SET-03 |
 | FND-12 | EA-29 | Assistant Draft/Published | 5 | High | FND-01 |
+| FND-13 ⓟ✔ | EA-89 | Member role (Chat only), per-member knowledge groups, External user ID (D67) | 5 | Medium | FND-06 |
 | EVL-01 | EA-16 | Dataset: 40 scripts + 400 questions | 8 | Highest | — |
 | EVL-02 | EA-30 | One-command platform evaluation suite | 8 | High | FND-07, EVL-03 |
 | EVL-03 | EA-17 | Sample KB documents + RAG questions | 5 | High | — |
@@ -101,7 +102,9 @@ Points are stored as `sp-N` labels (Story Points field not enabled in EA — see
 | WGT-08 | EA-47 | Encrypted conversations, 90-day retention | 5 | High | WGT-02, FND-03 |
 | WGT-09 | EA-48 | Mobile + maintenance/busy states | 5 | Medium | WGT-02 |
 | WGT-10 ⓟ✔ | EA-49 | Local demo site (Employee Portal :4001, Careers :4002) + token-signing backend | 3 | High | WGT-01 |
-| WGT-12 ⓟ✔ | EA-88 | Console Chat page for signed-in members + D67 in the plan docs | 8 | Medium | WGT-05, WGT-06, WGT-08 |
+| WGT-12 ⓟ✔ | EA-88 | Console Chat page: citations, Sources panel, Skill cards (D67) | 5 | Medium | WGT-13, WGT-05, WGT-06, WGT-08 |
+| WGT-13 ⓟ✔ | EA-90 | Built-in Console chat Channel; pipeline with the member's session identity (D67) | 5 | Medium | WGT-03, FND-13 |
+| WGT-14 ⓟ✔ | EA-91 | Console chat history + tone-insensitive search, 90-day retention, rated-only review (D67) | 5 | Medium | WGT-08, WGT-12 |
 | WGT-11 ⓟ✔ | EA-50 | "Talk to HR" email hand-off (V1; MailHog locally) | 5 | Medium | WGT-08, PIPE-03 |
 | PIPE-01 | EA-51 | Pipeline frame + Gate | 8 | Highest | WGT-02, FND-08, FND-09, FND-11 |
 | PIPE-02 | EA-52 | Local 7-class Classifier | 8 | High | PIPE-01, EVL-01 |

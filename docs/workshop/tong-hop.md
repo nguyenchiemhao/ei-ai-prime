@@ -1,9 +1,9 @@
 # ei-ai assistant — Tổng hợp workshop phân tích sản phẩm
 
-- **Cập nhật:** 2026-10-12
+- **Cập nhật:** 2026-10-13
 - **Phạm vi:** kết quả Vòng 0, 1, 2 của workshop. Vòng 3 (chức năng bổ sung) để sau khi có bản thử.
 - **Dùng để:** đầu vào cho giai đoạn thiết kế (kiến trúc, tech stack, mô hình dữ liệu).
-- **Chi tiết từng quyết định và phản biện:** [phan-bien-va-quyet-dinh.md](phan-bien-va-quyet-dinh.md) (D1–D60, P1–P75). Mã `Dxx` trong tài liệu này trỏ tới file đó.
+- **Chi tiết từng quyết định và phản biện:** [phan-bien-va-quyet-dinh.md](phan-bien-va-quyet-dinh.md) (D1–D67, P1–P75). Mã `Dxx` trong tài liệu này trỏ tới file đó.
 - **Kế hoạch spike Jev:** [jev-spike.md](jev-spike.md).
 
 Mục 6 và mục 9 là đề xuất của tài liệu tổng hợp, đã được chủ dự án xác nhận (D61, D62).
@@ -18,6 +18,8 @@ Mục 6 và mục 9 là đề xuất của tài liệu tổng hợp, đã đư�
 **Triển khai (D1, D6):** hướng chính là một bản cài tập trung do bên mình vận hành cho nhiều khách (mỗi khách là một Organization). Hướng phụ là bản tự host theo hợp đồng. Một codebase duy nhất, luôn chạy multi-tenant.
 
 **Người dùng cuối (D2):** ưu tiên người dùng đã đăng nhập trên web app của khách (danh tính do backend của khách ký). Chế độ ẩn danh có nhưng bị giới hạn.
+
+**Chat trực tiếp trên console (D67):** ngoài widget nhúng, thành viên đã đăng nhập console của ei-ai có trang **Chat** để dùng Assistant như một web app — cùng pipeline, cùng phân quyền tri thức và Skill, qua một Channel nội bộ "Console chat" có sẵn trong mỗi Workspace.
 
 **Khác biệt so với Dify / MaxKB / AnythingLLM** (P1):
 1. Biết người dùng là ai một cách tin cậy, và phân quyền tri thức theo người hỏi (D8, D11).
@@ -40,7 +42,8 @@ Mục 6 và mục 9 là đề xuất của tài liệu tổng hợp, đã đư�
 | Chuyên gia nghiệp vụ | Knowledge Editor |
 | Người xem chất lượng | Reviewer |
 | Quản lý | Viewer |
-| Người dùng cuối (đã đăng nhập / ẩn danh) | Không thuộc RBAC — quyền đến từ token (D8, D11) |
+| Nhân viên dùng trợ lý trên console | Member — chỉ thấy trang Chat; nhóm tri thức và External user ID do Org Admin gán (D67) |
+| Người dùng cuối của widget (đã đăng nhập / ẩn danh) | Không thuộc RBAC — quyền đến từ token (D8, D11) |
 
 Ba quyền nhạy cảm tách riêng: đọc hội thoại (Reviewer), quản lý secret/Connector (Developer), Publish (Builder).
 
@@ -53,7 +56,7 @@ Ba quyền nhạy cảm tách riêng: đọc hội thoại (Reviewer), quản l�
 ```
 Platform (bản cài tập trung hoặc tự host)
 └── Organization  (= một khách hàng; khóa mã hóa riêng)
-    ├── Người dùng quản trị + vai trò
+    ├── Thành viên console + vai trò (kể cả Member) · nhóm tri thức · External user ID (D67)
     ├── Model providers (local / BYOK cloud) · công tắc cloud · công tắc Jev
     ├── Theme mặc định · chính sách Organization
     └── Workspace  (ranh giới dữ liệu & phân quyền)
@@ -65,7 +68,7 @@ Platform (bản cài tập trung hoặc tự host)
         └── Assistant  (Draft → Published, quay lại được)
             ├── Model (ghim phiên bản) · Instructions (3 tầng) · preset
             ├── Gắn: Collection/Folder · bộ kịch bản · Skill
-            └── Channel (1..n) — Widget
+            └── Channel (1..n) — Widget, hoặc Channel nội bộ "Console chat" có sẵn (D67)
                 ├── Domain được phép · khóa ký token · chế độ ẩn danh
                 ├── Giao diện ghi đè từng thuộc tính
                 └── Conversation → Message (+ trace, phản hồi)
@@ -132,7 +135,8 @@ Câu hỏi
 | Pipeline | 5 bước; Classifier 7 loại, local; Orchestrator kiểu lai | D26–D28 |
 | Skills, Connector | Lát mỏng trong MVP: HTTP Tool chỉ đọc + Skill cố định; danh tính gắn từ token; API HTTPS hoặc tự host; không text-to-SQL; MCP chỉ từ xa | D31–D35, D40 |
 | Memory, Schedule | Không memory trong MVP; không tự học chung; Schedule là thuộc tính thời gian | D36–D39 |
-| Multi-tenancy, RBAC, audit | Cách ly hai lớp + khóa theo Organization; RBAC ba tầng; 2FA; audit log | D46, D48–D50 |
+| Multi-tenancy, RBAC, audit | Cách ly hai lớp + khóa theo Organization; RBAC ba tầng (thêm vai trò Member chỉ dùng Chat); 2FA; audit log | D46, D48–D50, D67 |
+| Chat trên console | Trang Chat cho thành viên đã đăng nhập; Channel nội bộ có sẵn; nhóm và External user ID do Org Admin gán; Reviewer chỉ mở hội thoại có đánh giá | D67 |
 | Bảo mật, quyền riêng tư | Giới hạn thiệt hại khi bị chèn lệnh; hội thoại nguyên văn mã hóa, log luôn che; công tắc khẩn cấp | D51–D53, D55 |
 | Chất lượng, hiệu năng, observability | Bộ đo ba tầng; mục tiêu độ trễ; không cache câu trả lời; đo sử dụng và trace từ bản thử | D56–D59 |
 | Tiếng Việt | Chuẩn hóa Unicode, chỉ mục bỏ dấu từ ngày đầu; cách xưng hô | D60 |
@@ -183,6 +187,7 @@ Những thứ dưới đây **không thể thêm sau** mà không phải làm l�
 | Pipeline | Đủ 5 bước: Gate, Classifier (luật + embedding), Script Matcher (reranker local; **Jev nếu đã có key**), Orchestrator, Response Guard (trích dẫn hợp lệ, canary) | Sàng lọc đầu vào ghi log |
 | Kịch bản | Hỏi–đáp cố định + biến; nguyên văn/diễn đạt lại; 3 dải; import CSV; trạng thái và ngày bắt đầu/kết thúc; nút thử khớp | Tạo kịch bản từ câu chưa trả lời được, thống kê từng kịch bản |
 | Skill, Connector | **Một Connector HTTP** + Tool chỉ đọc khai báo thủ công + **một Skill kiểu cố định** (ví dụ tra cứu đơn hàng); danh tính gắn từ token; proxy đầu ra; Playground với token thử | Import OpenAPI, nhiều Skill, trace Tool trong giao diện |
+| Chat trên console | Trang Chat (sau M2): hội thoại có trích dẫn, bảng Sources, thẻ kết quả Skill, lịch sử 90 ngày có tìm kiếm, vai trò Member (D67) | Chia sẻ hội thoại, tải file trong chat, giao diện mobile, SSO |
 | Vận hành | Công tắc: tắt Channel, tắt Tool, tắt cloud/Jev | Tắt Jev toàn nền tảng qua giao diện |
 | Quan sát | Trace, số liệu sử dụng, dashboard cơ bản, danh sách câu chưa trả lời được | Cảnh báo, analytics đầy đủ, giao diện audit |
 
