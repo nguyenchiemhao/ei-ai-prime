@@ -21,7 +21,7 @@ improvement proposals.
 | T4 | Code Reviewer is separate from Developer (no self-review). |
 | T5 | Review tooling: built-in `code-review` skill (effort `high`) + `security-review` for auth / tenant / token / identity / connector work. Developer handles feedback with `superpowers:receiving-code-review`. `pr-review-toolkit` is a phase-2 option. |
 | T6 | E2E tooling is scoped to the QA agent through inline `mcpServers`: Playwright MCP (`@playwright/mcp`) and Chrome DevTools MCP (`chrome-devtools-mcp`). Playwright test files are committed under `e2e/`. |
-| T7 | Agents hand off through files in `.work/EA-<n>/` (git-ignored). The Planner posts the plan as a Jira comment for owner review (updated in place on re-plan); the Lead posts the final summary as a Jira comment. |
+| T7 | Agents hand off through files in `.work/EA-<n>/` (git-ignored). The Planner posts a short, non-technical plan summary as a Jira comment for owner review (updated in place on re-plan); the Lead posts the final summary as a Jira comment. |
 | T8 | Coding rules in two layers: project `CLAUDE.md` (stack-agnostic, applies now) and `docs/dev/coding-rules.md` (stack-specific part filled once SET-01 / EA-11 picks the stack). |
 | T9 | Loop limits: 3 review rounds, 3 QA rounds; then stop and ask the owner. Blocking open questions also stop the pipeline. |
 | T10 | Improvements: product/code ideas → proposed tickets (label `proposed`), created only with owner approval (auto mode: listed in the Jira comment only). Process ideas → `docs/dev/team-retro.md`. |

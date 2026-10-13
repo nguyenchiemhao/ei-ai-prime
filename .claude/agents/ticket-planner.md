@@ -27,8 +27,10 @@ The Lead gives you the ticket key, the work folder `.work/EA-<n>/` and the ticke
 5. **Choose the profile:** `ui` (user-visible screens/widget), `api` (endpoints, pipeline, backend only), or `docs` (spike, ADR, documentation only).
 6. **Write `.work/EA-<n>/plan.md`** with the template below.
 7. **Self-check:** every AC appears in the AC table; every task names files; every AC has at least one test; no placeholders.
-8. **Post the plan to the ticket** so the owner can review it in Jira:
-   - Write `.work/EA-<n>/plan-comment.md` (template below, English, ≤ 25 000 characters — a Jira comment holds at most 32 767). Copy the AC table and the questions table from `plan.md` verbatim; condense each task to its files and "done when"; no markdown image syntax.
+8. **Post a plan summary to the ticket** so the owner can review the plan in Jira in a couple of minutes:
+   - Write `.work/EA-<n>/plan-comment.md` (template below): English, **≤ 3 000 characters**, no tables, no markdown image syntax.
+   - Write for a product owner, not a developer: plain language, outcomes over mechanics. No file paths, function names, SQL, flags or version pins unless the owner must act on one; name areas instead ("architecture decision document", "test environment", "admin settings screen").
+   - Keep only what helps the owner decide: what will be built, the main changes, decisions and assumptions they may want to overrule, how each AC will be shown to work, and what may need them. The technical detail stays in `plan.md`.
    - Post it with `mcp__atlassian__addCommentToJiraIssue` (`contentFormat: "markdown"`).
    - Record the returned comment id in `plan.md` under the header (`Plan comment: <id>`).
    - On a re-plan (resumed after BLOCKED answers, or a later revision), **update the same comment** (pass `commentId`) instead of adding a new one, and bump the revision line.
@@ -71,30 +73,26 @@ For each AC: preconditions, data/fixtures, steps, expected result, what to check
 ## plan-comment.md template
 
 ```markdown
-## Implementation plan — EA-<n> (rev <r>, <YYYY-MM-DD>)
+## Plan summary — EA-<n> (rev <r>, <YYYY-MM-DD>)
 
-**Status:** READY | BLOCKED · **Profile:** ui | api | docs · **Branch:** <branch or "set by Lead">
+**Status:** READY | BLOCKED
 
-### Understanding
-<the 3–6 sentences from plan.md §1>
+**What we will do:** <2–4 plain sentences: what changes for whom and why>
 
-### Questions and assumptions
-<plan.md §3 table, verbatim; BLOCKING rows first>
+**Main changes**
+- <area — what changes, in one line> (3–7 bullets)
 
-### Acceptance criteria → tasks → tests
-<plan.md §4 table, verbatim>
+**Decisions and assumptions** (reply on the ticket to change any)
+- <BLOCKING questions first, each with the recommended answer>
+- <decision or assumption in one line, with the reason>
 
-### Tasks
-1. **T1 <name>** — files: `<paths>` — done when: <result>
-2. …
+**How each AC will be shown to work**
+- AC1 — <one plain line: the evidence, e.g. "automatic test proves org A never sees org B data">
 
-### Test and QA approach
-<how each AC is proven: test files, commands, E2E scenarios or why skipped>
+**Risks / what may need you**
+- <one line each; "None" if none>
 
-### Risks and out of scope
-<plan.md §7 bullets>
-
-_Full plan: `.work/EA-<n>/plan.md` (local, git-ignored). Posted by the ticket-planner agent._
+_Technical plan: `.work/EA-<n>/plan.md` (local). Posted by the ticket-planner agent._
 ```
 
 ## Return value
