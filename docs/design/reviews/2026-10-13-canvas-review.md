@@ -100,7 +100,7 @@
 | CH-14 | Low | Accessibility | ChatStates | No live region described for streamed text and status | Annotate a polite `aria-live` region and the Stop button | Fixed in canvas (rev 2026-10-13) |
 | CH-15 | Low | Copy | Chat | Meaning of N and M in "Searched N collections · M passages" was undefined | N = collections that contributed passages after reranking; M = passages sent to the model | Ticket edit (EA-88) |
 | CH-16 | Info | Content | Chat | Relevance scores (0.89) mean little to Members | Keep per EA-88; revisit with usage data | Deferred (after prototype feedback) |
-| CH-17 | Low | Consistency | Chat, ChatMember, ChatStates | The Assistant avatar "EA" uses the widget brand teal #0E7C6B inside the admin console, with no rule for where the colour comes from | Avatar colour comes from the Assistant (initials on a per-Assistant colour, default admin accent); record it when ADM-01 builds Assistant identity | Deferred (ADM-01 Assistant identity) |
+| CH-17 | Low | Consistency | Chat, ChatMember, ChatStates | The Assistant avatar "EA" uses the widget brand teal #0E7C6B inside the admin console, with no rule for where the colour comes from | Avatar colour comes from the Assistant (initials on a per-Assistant colour, default admin accent); record it when ADM-01 builds Assistant identity | Ticket: DSN-02 (EA-92) style rules incl. avatar; built with ADM-01 |
 | CH-18 | Low | Consistency | Chat | The "Open in Playground" secondary button keeps the light #C9CED4 border while the fields beside it use #8A929C | Keep #C9CED4 for secondary buttons (their text label identifies them); the darker border is reserved for fields so they read as inputs | Deferred (by design, documented in tokens) |
 | GL-01 | High | D67 coverage | Members | Members lacked the Member role, knowledge groups, External user ID and the Chat/Playground rows of the role matrix | Add the Member column, Knowledge groups and External user ID with help text | Fixed in canvas (rev 2026-10-13) |
 | GL-02 | High | D67 coverage | ChannelSettings, AssistantConfig, OrgSettings, Assistants, AssistantInstructions | No built-in Console chat Channel, no "Available in Console chat" switch, no Console chat emergency switch (D55); "Live on" lines omitted Console chat | Built-in channel row and detail page; switch with "who can use it"; emergency switch row; Live-on lines updated | Fixed in canvas (rev 2026-10-13) — ChannelConsoleChat |
@@ -118,7 +118,7 @@
 | GL-14 | Info | Consistency | All | About 50 distinct hex values, including one-off tints | Consolidated into tokens with a map of legacy values | Fixed in tokens |
 | GL-15 | Info | IA | Sidebar | "Skills & Connectors" opens the Skill editor directly (no Skills list); acceptable with one Skill | Add a list when a second Skill exists | Deferred (one Skill in the prototype) |
 | GL-16 | Info | Naming | Main, Chat | The widget shows the Channel display name "Mekong Assistant" while Chat shows the Assistant name "Employee Assistant" | Intentional: Channel appearance vs Assistant; do not change | Deferred (by design) |
-| GL-17 | Low | Decision D58 | Dashboard | The "By assistant" table has no Console chat row | Add a channel split when ADM-08 is built | Deferred (ADM-08 build; totals change) |
+| GL-17 | Low | Decision D58 | Dashboard | The "By assistant" table has no Console chat row | Add a channel split when ADM-08 is built | Ticket: ADM-10 (EA-93), with ADM-08 |
 | GL-18 | Medium | Scope | Conversations | "Search messages" implied full-text search (X14) | Placeholder "Search first questions" | Fixed in canvas (rev 2026-10-13) |
 | GL-19 | Medium | Decision D20 | AssistantInstructions | Layer 2 (Organization policy) did not say that changes apply immediately (X15) | State "Changes apply immediately to every assistant" | Fixed in canvas (rev 2026-10-13); Owner decision (X15) |
 
@@ -202,6 +202,6 @@ How each element of the owner's chat brief stood before this revision, what was 
   - end-user data deletion (MVP-04);
   - rollback in version history (MVP-07);
   - Organization theme with inherited/overridden tags (MVP-08).
-- Dashboard channel split for Console chat (GL-17, with ADM-08).
-- Assistant avatar colour rule (CH-17, with ADM-01).
+- Dashboard channel split for Console chat: ADM-10 (EA-93), with ADM-08 (GL-17).
+- UI style rules (colour roles, spacing, type, radius, component states) and the Assistant avatar rule: DSN-02 (EA-92), avatar built with ADM-01 (CH-17, GL-14).
 - Re-check X16 hit areas once the frontend exists (SET-03 token import, EA-13).

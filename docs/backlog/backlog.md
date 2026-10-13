@@ -41,18 +41,18 @@ The owner could not answer yet → **every question is attached to its ticket wi
 
 | Epic | Jira | Milestone | Points |
 |---|---|---|---|
-| E0 Tech foundation, tech stack & UI design | EA-1 | before M0 | 24 |
+| E0 Tech foundation, tech stack & UI design | EA-1 | before M0 | 29 |
 | E1 Multi-tenant, security & observability foundations | EA-2 | M0 | 81 |
 | E2 Knowledge Base & permission-aware RAG | EA-3 | M1 | 55 |
 | E3 Widget & Channel | EA-4 | M2 | 77 |
 | E4 5-step pipeline & Answer Scripts | EA-5 | M3 | 48 |
 | E5 Jev Decision Provider | EA-6 | M3b | 19 |
 | E6 Thin slice of Skills & Connectors | EA-7 | M4 | 27 |
-| E7 Assistant configuration & operations | EA-8 | M5 | 49 |
+| E7 Assistant configuration & operations | EA-8 | M5 | 52 |
 | E8 Quality evaluation & test data | EA-9 | cross-cutting | 26 |
-| **Prototype total (E0–E8)** | | | **406** |
+| **Prototype total (E0–E8)** | | | **414** |
 | E9 MVP hardening (after the prototype, incl. SET-05 staging) | EA-10 | MVP | 55 |
-| **Grand total** | | | **461** |
+| **Grand total** | | | **469** |
 
 ## 4. Story summary
 
@@ -64,6 +64,7 @@ Points are stored as `sp-N` labels (Story Points field not enabled in EA — see
 | SET-02 | EA-12 | Spike: OSS libraries & licences | 3 | Highest | — |
 | SET-03 | EA-13 | Repo skeleton, one-command local env, CI | 5 | Highest | SET-01, SET-02 |
 | SET-04 | EA-14 | Spike: model-evaluation infra (rented GPU) | 3 | High | — |
+| DSN-02 ⓟ✔ | EA-92 | UI style rules: colour roles, spacing, type, radius, component states, Assistant avatar; canvas made consistent | 5 | Medium | DSN-01 |
 | SET-06 ⓟ✔ | EA-86 | Licence allow-list in CI + NOTICES in every image | 3 | High | SET-03 |
 | DSN-01 ⓟ | EA-85 | UI design: canvas review, X1–X20, console Chat states and Member view, D67 updates, tokens | 5 | High | — |
 | FND-01 | EA-18 | Multi-tenant data model + RLS | 8 | Highest | SET-03 |
@@ -130,6 +131,7 @@ Points are stored as `sp-N` labels (Story Points field not enabled in EA — see
 | ADM-06 | EA-72 | Playground + 5-step trace | 8 | High | PIPE-08, WGT-03 |
 | ADM-07 | EA-73 | Conversations (Reviewer) | 5 | Medium | WGT-08, PIPE-08 |
 | ADM-08 | EA-74 | Dashboard + unanswered questions | 5 | Medium | PIPE-08, WGT-06, WGT-08 |
+| ADM-10 ⓟ✔ | EA-93 | Dashboard channel filter + Console chat split | 3 | Medium | ADM-08, WGT-13 |
 | MVP-01 | EA-75 | 2FA (TOTP) | 5 | Low | FND-06 |
 | MVP-02 | EA-76 | Audit log UI + CSV | 5 | Low | FND-08 |
 | MVP-03 | EA-77 | Org quotas + per-Channel cost cap | 8 | Low | FND-09, WGT-04 |
