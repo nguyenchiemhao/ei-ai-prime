@@ -20,7 +20,7 @@ Design: `docs/superpowers/specs/2026-10-13-dev-agent-team-design.md`.
 
 | Agent | Dispatch with | Returns |
 |---|---|---|
-| `ticket-planner` | key, work folder | `STATUS: READY|BLOCKED <plan path>` |
+| `ticket-planner` | key, work folder, branch | `STATUS: READY|BLOCKED <plan path> (comment <id>)` |
 | `developer` | key, work folder, branch | `STATUS: DONE|BLOCKED <dev-log path>` |
 | `code-reviewer` | key, work folder, round N, base branch | `STATUS: PASS|CHANGES_REQUESTED <review path>` |
 | `qa-e2e` | key, work folder, round k | `STATUS: PASS|FAIL|SKIPPED …` |
@@ -52,9 +52,9 @@ Take the first ticket whose "is blocked by" links are all Done. Tell the owner w
 - Jira: transition to *In Progress* (list transitions first) — via `jira-ticket-management`.
 
 ### 4. Plan
-Dispatch `ticket-planner`. Then read `plan.md` and check: every AC is in the table, every task names files, profile is set.
-- `BLOCKED` → ask the owner the blocking questions (AskUserQuestion, with the planner's options and recommendation), resume the planner with the answers, repeat.
-- Write the branch name into `plan.md`.
+Dispatch `ticket-planner` with the branch name, so it lands in `plan.md` and the Jira plan comment. Then read `plan.md` and check: every AC is in the table, every task names files, profile is set, branch is filled.
+- Check the planner posted the plan comment on the ticket (comment id in its return line and in `plan.md`); the owner reviews the plan there. If it is missing, resume the planner once to post it; if that fails too, post `plan-comment.md` yourself via `jira-ticket-management`.
+- `BLOCKED` → ask the owner the blocking questions (AskUserQuestion, with the planner's options and recommendation), resume the planner with the answers (it updates the same comment), repeat.
 
 ### 5. Implement
 Dispatch `developer`. `BLOCKED` → ask the owner, resume the developer with the answer.
