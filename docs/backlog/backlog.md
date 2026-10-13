@@ -222,17 +222,17 @@ Canvas: https://claude.ai/artifact/4YiSppZaEbjh9C5YSMgHUF. Every UI ticket has a
 | X6 | "Talk to HR" tagged Later | Remove "Later" (WGT-11 approved); the webhook stays Later | Decided |
 | X7 | Variables `{name}` vs `{user.name}` | `{name}`, `{page}` | Decided |
 | X8 | Answer length field | Keep (ADM-01) | Decided |
-| X9 | Access level per script set | Same 3 levels as Collections | Owner to confirm |
+| X9 | Access level per script set | Same 3 levels as Collections | Decided |
 | X10 | Version history (rollback = MVP) | Read-only list; rollback in MVP-07 | Decided |
 | X11 | Connector timeout/size | 5/10 s, 64/256 KB; platform caps 10 s / 256 KB | Decided |
 | X12 | `EiAI.setTokenProvider` vs `ei.identify` | Use the design's API | Decided |
 | X13 | "local models take over" when external AI is stopped (contradicts D18) | Keep D18; canvas wording fixed (ADM-05) | Decided |
 | X14 | "Search messages" box in Conversations | Simple substring search over first questions ("Search first questions"); full-text in the MVP (ADM-07) | Decided |
-| X15 | Org policy not going through Draft/Publish | Effective immediately (= Q7) | Owner to confirm |
-| X16 | Target size: the rule says 44 px, the canvas uses 36/40 px controls | End-user surfaces need a 44x44 px hit area (visible control may be smaller); admin desktop at least 24x24 px; inline chips at least 24x24 px | Owner to confirm |
-| X17 | Form-field borders #C9CED4 are 1.58:1 on white (WCAG 1.4.11) | New token `border.field` #8A929C (3.15:1) on input, select, textarea and the Chat composer; applied across the canvas | Owner to confirm |
-| X18 | Chat Sources "Open" goes to the admin Collection page, a dead end for Members | Roles with Knowledge access see "Open in Knowledge"; Members see the quoted passage only | Owner to confirm |
-| X19 | "Open in Playground" from Chat: placement and meaning | Per-answer action for Builder and Workspace Admin; re-runs the question on the live version as the signed-in member (not the stored trace) | Owner to confirm |
-| X20 | Source of greeting and suggestions in the console Chat (WGT-06 per Channel vs EA-88 AC6 per Assistant) | Console chat Channel holds them per Assistant (EN/VI) | Owner to confirm |
+| X15 | Org policy not going through Draft/Publish | Effective immediately (= Q7) | Decided |
+| X16 | Target size: the rule says 44 px, the canvas uses 36/40 px controls | End-user surfaces need a 44x44 px hit area (visible control may be smaller); admin desktop at least 24x24 px; inline chips at least 24x24 px | Decided |
+| X17 | Form-field borders #C9CED4 are 1.58:1 on white (WCAG 1.4.11) | New token `border.field` #8A929C (3.15:1) on input, select, textarea and the Chat composer; applied across the canvas | Decided |
+| X18 | Chat Sources "Open" goes to the admin Collection page, a dead end for Members | Roles with Knowledge access see "Open in Knowledge"; Members see the quoted passage only | Decided |
+| X19 | "Open in Playground" from Chat: placement and meaning | Per-answer action for Builder and Workspace Admin; re-runs the question on the live version as the signed-in member (not the stored trace) | Decided |
+| X20 | Source of greeting and suggestions in the console Chat (WGT-06 per Channel vs EA-88 AC6 per Assistant) | Console chat Channel holds them per Assistant (EN/VI) | Decided |
 
 **Artboards still to draw:** 2FA (MVP-01), audit log (MVP-02), usage & quota (MVP-03), end-user data deletion (MVP-04), rollback (MVP-07), Org Theme (MVP-08) — before the MVP phase.

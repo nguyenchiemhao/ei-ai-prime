@@ -181,7 +181,7 @@ How each element of the owner's chat brief stood before this revision, what was 
 
 ## 7. Decisions for the owner
 
-The canvas already uses each proposal below. Confirm it or change it in [design-decisions.md](../design-decisions.md) §6.
+**Confirmed by the owner on 2026-10-13: every recommendation below is accepted** and recorded as Decided in [design-decisions.md](../design-decisions.md) §6.
 
 | # | Question | Recommendation |
 |---|---|---|
