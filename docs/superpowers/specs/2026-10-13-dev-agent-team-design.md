@@ -21,7 +21,7 @@ improvement proposals.
 | T4 | Code Reviewer is separate from Developer (no self-review). |
 | T5 | Review tooling: built-in `code-review` skill (effort `high`) + `security-review` for auth / tenant / token / identity / connector work. Developer handles feedback with `superpowers:receiving-code-review`. `pr-review-toolkit` is a phase-2 option. |
 | T6 | E2E tooling is scoped to the QA agent through inline `mcpServers`: Playwright MCP (`@playwright/mcp`) and Chrome DevTools MCP (`chrome-devtools-mcp`). Playwright test files are committed under `e2e/`. |
-| T7 | Agents hand off through files in `.work/EA-<n>/` (git-ignored). The Lead posts the final summary as a Jira comment. |
+| T7 | Agents hand off through files in `.work/EA-<n>/` (git-ignored). The Planner posts the plan as a Jira comment for owner review (updated in place on re-plan); the Lead posts the final summary as a Jira comment. |
 | T8 | Coding rules in two layers: project `CLAUDE.md` (stack-agnostic, applies now) and `docs/dev/coding-rules.md` (stack-specific part filled once SET-01 / EA-11 picks the stack). |
 | T9 | Loop limits: 3 review rounds, 3 QA rounds; then stop and ask the owner. Blocking open questions also stop the pipeline. |
 | T10 | Improvements: product/code ideas → proposed tickets (label `proposed`), created only with owner approval (auto mode: listed in the Jira comment only). Process ideas → `docs/dev/team-retro.md`. |
@@ -31,7 +31,7 @@ improvement proposals.
 | Agent | File | Model | Writes | Output |
 |---|---|---|---|---|
 | Lead | `.claude/skills/ship-ticket/SKILL.md` (main session) | session model | `.work/EA-<n>/final.md`, git commit, Jira | final report |
-| Planner | `.claude/agents/ticket-planner.md` | opus | `.work/EA-<n>/plan.md` | `STATUS: READY` or `BLOCKED` |
+| Planner | `.claude/agents/ticket-planner.md` | opus | `.work/EA-<n>/plan.md`, `plan-comment.md`, Jira plan comment | `STATUS: READY` or `BLOCKED` |
 | Developer | `.claude/agents/developer.md` | sonnet | source code, unit tests, `dev-log.md` | `STATUS: DONE` or `BLOCKED` |
 | Code Reviewer | `.claude/agents/code-reviewer.md` | opus | `review-<N>.md` | `STATUS: PASS` or `CHANGES_REQUESTED` |
 | QA E2E | `.claude/agents/qa-e2e.md` | sonnet | `e2e/**`, `qa-report.md`, `screenshots/` | `STATUS: PASS`, `FAIL` or `SKIPPED` |
