@@ -32,12 +32,8 @@ class Settings:
 
     @classmethod
     def from_env(cls, env: Mapping[str, str]) -> "Settings":
-        # Unset means production: the strictest environment is the safe default.
-        environment = env.get("EI_AI_ENV", "production")
-        if environment not in ENVIRONMENTS:
-            raise SettingsError(f"EI_AI_ENV must be one of {', '.join(ENVIRONMENTS)}")
         return cls(
-            environment=environment,
+            environment=_environment(env),
             database_url=_required(env, "DATABASE_URL"),
             valkey_url=_required(env, "VALKEY_URL"),
         )
@@ -48,6 +44,35 @@ class Settings:
             f"database_url={mask_url(self.database_url)!r}, "
             f"valkey_url={mask_url(self.valkey_url)!r})"
         )
+
+
+@dataclass(frozen=True)
+class MigrationSettings:
+    """Settings of the migration step, apart from Settings: the API never reads the owner URL."""
+
+    environment: str
+    migration_database_url: str
+
+    @classmethod
+    def from_env(cls, env: Mapping[str, str]) -> "MigrationSettings":
+        return cls(
+            environment=_environment(env),
+            migration_database_url=_required(env, "MIGRATION_DATABASE_URL"),
+        )
+
+    def __repr__(self) -> str:
+        return (
+            f"MigrationSettings(environment={self.environment!r}, "
+            f"migration_database_url={mask_url(self.migration_database_url)!r})"
+        )
+
+
+def _environment(env: Mapping[str, str]) -> str:
+    # Unset means production: the strictest environment is the safe default.
+    environment = env.get("EI_AI_ENV", "production")
+    if environment not in ENVIRONMENTS:
+        raise SettingsError(f"EI_AI_ENV must be one of {', '.join(ENVIRONMENTS)}")
+    return environment
 
 
 def _required(env: Mapping[str, str], name: str) -> str:

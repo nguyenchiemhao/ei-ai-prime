@@ -1,7 +1,8 @@
 // Entry point of the local integration environment: node scripts/dev.mjs <command> (npm run up|down|...).
 // Node built-ins only, so it works right after `git clone` on Windows, macOS and Linux, and in CI.
 //
-//   up [--no-model] [--demo]   checks, creates .env on first run, builds and starts, waits until healthy
+//   up [--no-model] [--demo]   checks, creates .env on first run, starts db, migrates, builds and starts the rest, waits until healthy
+//   migrate                    starts db if needed and applies the database migrations (idempotent)
 //   down                       stops and removes the containers (volumes are kept)
 //   reset                      down + deletes the database volume only (never the model cache)
 //   seed                       loads the Mekong Devworks demo data (ei-ai seed demo in the api container)
@@ -18,6 +19,7 @@ import {
   upProfileArgs,
 } from "./lib/docker.mjs";
 import { memoryWarning } from "./lib/memory-preflight.mjs";
+import { runMigrations } from "./lib/migrate.mjs";
 import { resetDatabase } from "./lib/reset.mjs";
 
 const URLS = [
@@ -109,6 +111,13 @@ async function up(argv) {
       "Starting with the model. The first start downloads ~2.5 GB (see README); later starts reuse the cached volume.",
     );
   }
+  // The schema must exist (and pass the schema guard) before the API starts: db first, then migrate.
+  const dbCode = compose([...profileArgs, "up", "--detach", "--wait", "db"]).code;
+  if (dbCode !== 0 || runMigrations() !== 0) {
+    fail(
+      "\nnpm run up stopped before starting the services: the database migration did not complete.",
+    );
+  }
   const code = await runWithTicks(
     "docker",
     ["compose", ...profileArgs, "up", "--detach", "--build", "--wait"],
@@ -138,6 +147,12 @@ async function up(argv) {
   console.log("Demo data: npm run seed    Stop: npm run down");
 }
 
+function migrate() {
+  ensureEnv(ROOT);
+  const dbCode = compose(["--profile", "core", "up", "--detach", "--wait", "db"]).code;
+  process.exit(dbCode !== 0 ? dbCode : runMigrations());
+}
+
 function down() {
   process.exit(compose([...ALL_PROFILE_ARGS, "down", "--remove-orphans"]).code);
 }
@@ -160,6 +175,9 @@ switch (command) {
   case "reset":
     reset();
     break;
+  case "migrate":
+    migrate();
+    break;
   case "seed":
     process.exit(compose([...ALL_PROFILE_ARGS, "exec", "-T", "api", "ei-ai", "seed", "demo"]).code);
     break;
@@ -171,6 +189,6 @@ switch (command) {
     break;
   default:
     fail(
-      "usage: node scripts/dev.mjs up [--no-model] [--demo] | down | reset | seed | ps | logs [service]",
+      "usage: node scripts/dev.mjs up [--no-model] [--demo] | down | reset | migrate | seed | ps | logs [service]",
     );
 }

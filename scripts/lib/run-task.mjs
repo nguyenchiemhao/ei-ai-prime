@@ -2,13 +2,15 @@
 import path from "node:path";
 import { ensureEnv } from "./ensure-env.mjs";
 import { ROOT, compose, run } from "./docker.mjs";
+import { runMigrations } from "./migrate.mjs";
 import { tasks } from "./tasks.mjs";
 
 const isWindows = process.platform === "win32";
 
-/** Starts only what the integration tests need, waiting until it is healthy. */
+/** Starts only what the integration tests need, waiting until it is healthy, then migrates the database. */
 function startServices() {
-  return compose(["--profile", "core", "up", "--detach", "--wait", "db", "valkey"]).code;
+  const started = compose(["--profile", "core", "up", "--detach", "--wait", "db", "valkey"]).code;
+  return started !== 0 ? started : runMigrations();
 }
 
 function runBackendInContainer(task) {

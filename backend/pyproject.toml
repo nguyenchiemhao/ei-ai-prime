@@ -12,6 +12,8 @@ dependencies = [
   "uvicorn==0.54.0",
   "pydantic==2.14.1",
   "psycopg[binary]==3.3.6",
+  "sqlalchemy[asyncio]==2.1.4",
+  "alembic==1.20.0",
   "redis==8.1.0",
 ]
 
@@ -19,6 +21,7 @@ dependencies = [
 dev = [
   "pytest==9.1.1",
   "pytest-cov==7.1.0",
+  "pytest-asyncio==1.4.0",
   "httpx==0.28.1",
   "ruff==0.17.0",
   "mypy==2.4.0",
@@ -32,6 +35,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "ei_ai.seed" = ["data/*.json"]
+"ei_ai.db.migrations" = ["script.py.mako"]
 
 [tool.ruff]
 target-version = "py312"
@@ -40,6 +44,9 @@ cache-dir = "/tmp/.ruff_cache"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["ei_ai", "support"]
 
 [tool.mypy]
 strict = true
@@ -50,11 +57,18 @@ plugins = ["pydantic.mypy"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = ["integration: needs the Compose stack (db, valkey); run with -m integration"]
+markers = [
+  "integration: needs the Compose stack (db, valkey); run with -m integration",
+  "benchmark: RLS overhead measurement (FND-01 NFR); run with npm run backend -- bench-rls",
+]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 addopts = "-ra --strict-markers -p no:cacheprovider"
 
 [tool.coverage.run]
 source = ["ei_ai"]
+# Migrations are exercised by the integration tests, which run without coverage.
+omit = ["*/ei_ai/db/migrations/*"]
 
 [tool.coverage.report]
 fail_under = 70

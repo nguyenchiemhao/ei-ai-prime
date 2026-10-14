@@ -1,6 +1,6 @@
 import pytest
 
-from ei_ai.settings import Settings, SettingsError
+from ei_ai.settings import MigrationSettings, Settings, SettingsError
 
 VALID = {
     "EI_AI_ENV": "local",
@@ -47,3 +47,33 @@ def test_repr_masks_password() -> None:
     assert "s3cret-pw" not in text
     assert "***" in text
     assert "db:5432/ei_ai" in text
+
+
+def test_migration_settings_read_the_owner_url_and_mask_it_in_repr() -> None:
+    env = {
+        "EI_AI_ENV": "local",
+        "MIGRATION_DATABASE_URL": "postgresql://ei_ai_migrator:s3cret-pw@db:5432/ei_ai",
+    }
+
+    settings = MigrationSettings.from_env(env)
+
+    assert settings.environment == "local"
+    assert settings.migration_database_url == env["MIGRATION_DATABASE_URL"]
+    assert "s3cret-pw" not in repr(settings)
+    assert "***" in repr(settings)
+
+
+def test_migration_settings_need_only_the_migration_url() -> None:
+    with pytest.raises(SettingsError) as error:
+        MigrationSettings.from_env({"EI_AI_ENV": "local", "DATABASE_URL": "postgresql://x"})
+
+    assert "MIGRATION_DATABASE_URL" in str(error.value)
+
+
+def test_migration_settings_reject_unknown_environment() -> None:
+    env = {"EI_AI_ENV": "staging", "MIGRATION_DATABASE_URL": "postgresql://x"}
+
+    with pytest.raises(SettingsError) as error:
+        MigrationSettings.from_env(env)
+
+    assert "EI_AI_ENV" in str(error.value)

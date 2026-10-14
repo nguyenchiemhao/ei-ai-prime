@@ -14,7 +14,17 @@ test("tasks_pin_the_backend_commands", () => {
   assert.deepEqual(tasks["backend:format"], { backend: ["ruff", "format", "--check", "."] });
   assert.deepEqual(tasks["backend:typecheck"], { backend: ["mypy"] });
   assert.deepEqual(tasks["backend:test"], {
-    backend: ["pytest", "-m", "not integration", "--cov=ei_ai", "--cov-report=term-missing"],
+    backend: [
+      "pytest",
+      "-m",
+      "not integration and not benchmark",
+      "--cov=ei_ai",
+      "--cov-report=term-missing",
+    ],
+  });
+  assert.deepEqual(tasks["backend:bench-rls"], {
+    backend: ["pytest", "-m", "benchmark", "--no-cov", "-s"],
+    services: true,
   });
   assert.deepEqual(tasks["backend:openapi"], {
     backend: ["pytest", "tests/test_openapi_export.py"],

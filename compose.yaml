@@ -16,8 +16,9 @@ name: ei-ai
 x-llm-alias: &llm_alias "${LLM_ALIAS:-qwen3-4b-instruct-2507}"
 
 services:
-  # PostgreSQL 16 + pgvector 0.8.x. The init script creates the application role (never a superuser,
-  # never BYPASSRLS). Tables and RLS policies arrive with FND-01.
+  # PostgreSQL 16 + pgvector 0.8.x. The init scripts create the application role ei_ai_app (never a
+  # superuser, never BYPASSRLS, never an owner) and the migration/owner role ei_ai_migrator. Tables and
+  # RLS policies come from the Alembic migrations (service "migrate").
   db:
     image: pgvector/pgvector:0.8.7-pg16
     profiles: ["core"]
@@ -25,6 +26,8 @@ services:
       POSTGRES_DB: ei_ai
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run npm run up to create .env}
       APP_DB_PASSWORD: ${APP_DB_PASSWORD:?run npm run up to create .env}
+      # Only for the first-start init script that creates ei_ai_migrator.
+      MIGRATION_DB_PASSWORD: ${MIGRATION_DB_PASSWORD:?run npm run up to create .env}
     volumes:
       - db-data:/var/lib/postgresql/data
       - ./infra/db/init:/docker-entrypoint-initdb.d:ro
@@ -151,7 +154,29 @@ services:
       EI_AI_ENV: test
       EI_AI_REPO_ROOT: /workspace
       DATABASE_URL: postgresql://ei_ai_app:${APP_DB_PASSWORD:?run npm run up to create .env}@db:5432/ei_ai
+      # Owner role: integration tests use it for fixture cleanup and for the schema guard negative tests.
+      MIGRATION_DATABASE_URL: postgresql://ei_ai_migrator:${MIGRATION_DB_PASSWORD:?run npm run up to create .env}@db:5432/ei_ai
       VALKEY_URL: redis://valkey:6379/0
+
+  # One-shot database migration: "ei-ai db upgrade" (Alembic to head, then the schema guard). Not started
+  # by "up" itself: npm run up / npm run migrate / test-integration run it explicitly after db is healthy.
+  # With the backend test container it is the only service that holds the owner credentials; the API never does.
+  migrate:
+    build:
+      context: ./backend
+      target: runtime
+    profiles: ["tools"]
+    command: ["ei-ai", "db", "upgrade"]
+    environment:
+      EI_AI_ENV: local
+      MIGRATION_DATABASE_URL: postgresql://ei_ai_migrator:${MIGRATION_DB_PASSWORD:?run npm run up to create .env}@db:5432/ei_ai
+    depends_on:
+      db:
+        condition: service_healthy
+        # db is in profile "core"; "required: false" lets commands that enable only the "tools"
+        # profile (build, backend tasks) load the project. The migrate step runs with both profiles.
+        required: false
+    mem_limit: 256m
 
   # Profile "demo" (npm run up -- --demo) is reserved for later tickets; nothing runs there yet:
   #   host-demo    WGT-10 (EA-49): two host sites on 127.0.0.1:4001 and 127.0.0.1:4002

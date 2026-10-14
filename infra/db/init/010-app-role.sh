@@ -1,7 +1,8 @@
 #!/bin/sh
 # Creates the application login role and the vector extension (runs once, when the data volume is
-# first initialised, as the superuser). No table is created here: the schema, the roles' grants on it
-# and the RLS policies belong to the migrations of FND-01. The role can never bypass RLS.
+# first initialised, as the superuser). No table is created here: the schema, the role's grants on it
+# and the RLS policies come from the migrations, which run as ei_ai_migrator (020-migrator-role.sh).
+# The role can never bypass RLS and never owns an object.
 set -eu
 
 psql -v ON_ERROR_STOP=1 -v pw="$APP_DB_PASSWORD" --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<'SQL'

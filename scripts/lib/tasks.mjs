@@ -22,7 +22,13 @@ export const tasks = {
   "backend:format": { backend: ["ruff", "format", "--check", "."] },
   "backend:typecheck": { backend: ["mypy"] },
   "backend:test": {
-    backend: ["pytest", "-m", "not integration", "--cov=ei_ai", "--cov-report=term-missing"],
+    backend: [
+      "pytest",
+      "-m",
+      "not integration and not benchmark",
+      "--cov=ei_ai",
+      "--cov-report=term-missing",
+    ],
   },
   "backend:openapi": { backend: ["pytest", "tests/test_openapi_export.py"] },
   "backend:openapi-export": {
@@ -30,6 +36,12 @@ export const tasks = {
   },
   "backend:test-integration": {
     backend: ["pytest", "-m", "integration", "--no-cov"],
+    services: true,
+  },
+
+  // RLS overhead measurement (FND-01 NFR); output goes to docs/architecture/data-model.md.
+  "backend:bench-rls": {
+    backend: ["pytest", "-m", "benchmark", "--no-cov", "-s"],
     services: true,
   },
 

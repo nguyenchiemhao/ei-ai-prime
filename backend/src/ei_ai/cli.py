@@ -1,4 +1,7 @@
-"""Command line entry point: ``ei-ai seed demo``. Exit codes: 0 done, 1 failed, 2 refused/usage."""
+"""Command line entry point: ``ei-ai seed demo``, ``ei-ai db upgrade``, ``ei-ai db current``.
+
+Exit codes: 0 done, 1 failed, 2 refused/usage.
+"""
 
 import argparse
 import asyncio
@@ -6,9 +9,11 @@ import os
 import sys
 from collections.abc import Sequence
 
+from ei_ai.db.migrate import current_revision, guard_violations, upgrade_head
+from ei_ai.db.migrations.roles import MigrationRoleError
 from ei_ai.readiness import check_database
 from ei_ai.seed.demo import SeedRefused, run_demo_seed
-from ei_ai.settings import Settings, SettingsError
+from ei_ai.settings import MigrationSettings, Settings, SettingsError
 
 
 def check_database_sync(database_url: str) -> None:
@@ -22,11 +27,14 @@ def _parser() -> argparse.ArgumentParser:
     seed.add_subparsers(dest="dataset", required=True).add_parser(
         "demo", help="Mekong Devworks demo data (local and test only)"
     )
+    database = commands.add_parser("db", help="database migrations (run as the migration role)")
+    actions = database.add_subparsers(dest="action", required=True)
+    actions.add_parser("upgrade", help="apply migrations to head, then run the schema guard")
+    actions.add_parser("current", help="print the current revision")
     return parser
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    _parser().parse_args(argv)  # only "seed demo" exists; argparse exits 2 on anything else
+def _seed() -> int:
     try:
         settings = Settings.from_env(os.environ)
     except SettingsError as error:
@@ -45,3 +53,54 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
     print(summary)
     return 0
+
+
+def _migration_url() -> str | None:
+    try:
+        return MigrationSettings.from_env(os.environ).migration_database_url
+    except SettingsError as error:
+        print(f"configuration error: {error}", file=sys.stderr)
+        return None
+
+
+def _db_upgrade() -> int:
+    url = _migration_url()
+    if url is None:
+        return 1
+    try:
+        upgrade_head(url)
+        print(f"database revision: {current_revision(url)}")
+        violations = guard_violations(url)
+    except MigrationRoleError as error:
+        print(f"db upgrade refused: {error}", file=sys.stderr)  # our own safe message
+        return 1
+    except Exception as error:
+        # Exception class only: messages can carry connection strings (D52).
+        print(f"db upgrade failed ({type(error).__name__})", file=sys.stderr)
+        return 1
+    for violation in violations:
+        print(f"schema guard: {violation}", file=sys.stderr)
+    if violations:
+        print(f"schema guard: {len(violations)} violations", file=sys.stderr)
+        return 1
+    print("schema guard: 0 violations")
+    return 0
+
+
+def _db_current() -> int:
+    url = _migration_url()
+    if url is None:
+        return 1
+    try:
+        print(f"database revision: {current_revision(url)}")
+    except Exception as error:
+        print(f"db current failed ({type(error).__name__})", file=sys.stderr)
+        return 1
+    return 0
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = _parser().parse_args(argv)  # argparse exits 2 on anything unknown
+    if args.command == "seed":
+        return _seed()
+    return _db_upgrade() if args.action == "upgrade" else _db_current()
