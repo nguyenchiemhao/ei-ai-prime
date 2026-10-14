@@ -35,7 +35,7 @@ Used by the Developer and Code Reviewer agents and by humans. The short, non-neg
 
 ## 2. Stack-specific
 
-> Decided in ADR-001 (`docs/architecture/adr-001-tech-stack.md`). The ADR stays "Proposed" until the owner approves it; these rules apply from approval. Follow the conventions of any code already in the repo.
+> Decided in ADR-001 (`docs/architecture/adr-001-tech-stack.md`), accepted by the owner on 2026-10-14; these rules apply now. Follow the conventions of any code already in the repo.
 
 ### Backend
 - Language/version, formatter, linter, type checker: Python 3.12, FastAPI (Pydantic v2); ruff for lint and format; mypy in strict mode for new modules.

@@ -1,6 +1,6 @@
 # ADR-001: Tech stack and overall architecture
 
-- Status: Proposed
+- Status: Accepted (approved by the owner on 2026-10-14)
 - Date: 2026-10-13
 - Deciders: Hao (Howie) C. NGUYEN (PO/Tech Lead), AI agent team
 - Ticket: EA-11 (SET-01)
@@ -218,7 +218,7 @@ Option tables show the licence (verified against the project's licence file or r
 
 **Reasons:**
 - A self-hosted customer runs the same images as the hosted product, configured only through environment variables (C7, section 6).
-- The dev machine runs Docker Engine 20.10 and Compose 2.17, so the compose files use only features available there (profiles, health-check conditions, `mem_limit`, `tmpfs`, named volumes).
+- The dev machine was first planned against Docker Engine 20.10 and Compose 2.17 and now runs Engine 29.8.2 with Compose v5.6.0 (measured 2026-10-14); the compose files keep to features that exist in both (profiles, health-check conditions, `mem_limit`, `tmpfs`, named volumes), so they are intended to stay compatible with Compose 2.17 (that version is no longer tested anywhere; SET-03 CI should pin and test a minimum version).
 - Staging and cloud choices are out of scope (D47, SET-05).
 
 ### 3.13 Authentication and identity tokens
@@ -404,7 +404,7 @@ Result: React and Preact can implement every DSN-01 token and component. Both sh
 
 ## 8. Dev machine fit and RAM budget
 
-Target machine: Windows 11, Ryzen 5 5600G (6 cores), 16 GB RAM, no GPU. Docker Desktop with WSL2 gives its VM about half of the host RAM by default (about 8 GB).
+Target machine: Windows 11, Ryzen 5 5600G (6 cores), 16 GB RAM, no GPU. Docker Desktop with WSL2 gives its VM about half of the host RAM by default; on this machine `docker info` reports a VM `MemTotal` of 7.2 GB.
 
 **The one command** (infrastructure part of the chosen stack; app services are added by SET-03):
 
@@ -418,9 +418,9 @@ It starts PostgreSQL 16 with pgvector, Valkey and the llama.cpp model server. SE
 |---|---|---|---|
 | Windows 11 + IDE + browser (outside the VM) | about 5 to 6 GB | not measured here | host-managed |
 | WSL2 and Docker VM overhead | about 0.5 GB | not measured here | inside the VM cap |
-| PostgreSQL 16 + pgvector | about 0.3 to 0.5 GB | pending Docker (command below) | 1 GB (PoC `mem_limit`) |
-| Valkey 8 | about 0.1 GB | pending Docker | 256 MB |
-| llama.cpp, Qwen3-4B-Instruct-2507 Q4_K_M, context 8192 | about 4.0 GB: 2.5 GB weights + 1.2 GB KV cache + buffers | pending Docker | 6 GB |
+| PostgreSQL 16 + pgvector | about 0.3 to 0.5 GB | 82 to 87 MiB (small test data) | 1 GB (PoC `mem_limit`) |
+| Valkey 8 | about 0.1 GB | 15 to 19 MiB | 256 MB |
+| llama.cpp, Qwen3-4B-Instruct-2507 Q4_K_M, context 8192 | about 4.0 GB: 2.5 GB weights + 1.2 GB KV cache + buffers | 4.84 to 4.86 GiB on the first run (model downloaded in that session); 2.85 to 2.86 GiB after a restart with the model cached | 6 GB |
 | Embedding model (bge-m3, 8-bit GGUF or similar) | about 0.6 to 1.1 GB | not part of the PoC | to set in SET-03 |
 | Reranker (bge-reranker-v2-m3) | about 0.6 to 1.1 GB | not part of the PoC | to set in SET-03 |
 | API (uvicorn, one worker) | about 0.4 GB | not part of the PoC | to set in SET-03 |
@@ -430,15 +430,20 @@ It starts PostgreSQL 16 with pgvector, Valkey and the llama.cpp model server. SE
 Reading the table:
 
 - KV cache: Qwen3-4B-Instruct-2507 has 36 layers, 8 key-value heads and head dimension 128, so one token needs 2 x 36 x 8 x 128 x 2 bytes = 147,456 bytes at 16-bit precision; 8192 tokens need about 1.2 GB (config from the model repository, section 12).
-- PoC services (the one command): PostgreSQL, Valkey and the model together have hard limits of about 7.3 GB and expected use of about 4.5 GB, so they fit inside the default 8 GB VM cap with the 16 GB host.
+- PoC services (the one command): the hard limits add up to 7.25 GiB (1 GiB + 256 MiB + 6 GiB), which is more than the VM's 6.7 GiB (`docker info` MemTotal 7,215,038,464 bytes = 7.2 GB, 12 CPUs, no `.wslconfig`), so `mem_limit` alone does not prevent a VM-wide out-of-memory; the PoC fits because of its measured use. Measured use: about 5.0 GiB on the first run (`docker stats`: 4.86 + 0.09 + 0.02 GiB) and about 3.0 GiB after a restart with the model cached (2.85 + 0.09 + 0.02 GiB). Against the VM's 6.7 GiB and the roughly 0.5 GB of VM overhead (table above), the conservative first-run figure leaves about 1.2 to 1.7 GiB of headroom. The model figure differs between the two cases for this reason: after a restart, the container's cgroup shows `anon` about 3.05 GB and `file` under 20 MB (the weights are held in anonymous memory), while on the first run the page cache of the file written by the download is also charged to the container (`file` 2.2 GB). That cache is reclaimable under pressure. The budget keeps the conservative first-run figure.
 - Full application stack: containers add up to about 8 to 9 GB with the embedding model, the reranker, the API, the worker and the dev servers. The default VM cap is too small, so set `%UserProfile%\.wslconfig` to `memory=10GB` (then `wsl --shutdown`). That leaves about 6 GB for Windows, the IDE and the browser, which is tight but workable at 16 GB; closing the browser or running the reranker on demand are the first levers.
-- All numbers are estimates until measured. Command for the measured column: `docker stats --no-stream` while the stack is up.
+- The "Measured" column for the three PoC services comes from `docker stats --no-stream` on 2026-10-14 with the stack up and one 64-token request served; the other rows are estimates until SET-03 measures the full stack.
 
 Model run on this machine:
 
 - Image: `ghcr.io/ggml-org/llama.cpp:server-b11580` (multi-architecture manifest, linux/amd64 verified in the registry).
-- Model: Hugging Face repository `unsloth/Qwen3-4B-Instruct-2507-GGUF` at revision `a06e946bb6b655725eafa393f4a9745d460374c9`, file `Qwen3-4B-Instruct-2507-Q4_K_M.gguf`, 2,497,281,120 bytes, sha256 `3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597` (from the repository's file metadata, Apache-2.0). The compose file downloads exactly this revision (`-mu <resolve URL at the commit>`), and `test_downloaded_model_file_matches_recorded_sha256` hashes the cached file and compares it with this value. Alternative: the official `Qwen/Qwen3-4B-GGUF` `Qwen3-4B-Q4_K_M.gguf`, sha256 `7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5`.
-- Measured time to healthy, time to first token and tokens per second: Owner verification pending. Docker Desktop was not available while this ADR was written. Steps: start the command above; wait until `docker compose -f poc/stack-spike/compose.yaml ps` shows `model` healthy (first run downloads about 2.5 GB); run `docker compose -f poc/stack-spike/compose.yaml run --rm -e CHECK_MODEL=1 poc pytest tests/stack -v -s`; run `docker stats --no-stream`; copy the `METRICS` line and the memory column here.
+- Model: Hugging Face repository `unsloth/Qwen3-4B-Instruct-2507-GGUF` at revision `a06e946bb6b655725eafa393f4a9745d460374c9`, file `Qwen3-4B-Instruct-2507-Q4_K_M.gguf`, 2,497,281,120 bytes, sha256 `3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597` (from the repository's file metadata, Apache-2.0). The compose file downloads exactly this revision (`-m /models/<file> -mu <resolve URL at the commit>`; build b11580 needs `-m` as well, because with `-mu` alone it starts in router mode with no model and `/health` still answers 200), and `test_downloaded_model_file_matches_recorded_sha256` hashes the cached file and compares it with this value. Alternative: the official `Qwen/Qwen3-4B-GGUF` `Qwen3-4B-Q4_K_M.gguf`, sha256 `7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5`.
+- Measured on this machine on 2026-10-14 (Docker Engine 29.8.2, Compose v5.6.0, Docker VM 7.2 GB RAM, 12 CPUs, `-t 6`, context 8192):
+  - Time to healthy: 153 s from `up -d` on the first run (about 2 minutes of that is the 2.5 GB download, then the model loads); 11 s on a restart with the model already cached.
+  - `METRICS ttft_s=0.45 tokens_per_s=12.86 prompt_tokens=20 completion_tokens=64` (one Vietnamese prompt, streamed through the OpenAI Python SDK; first-token time is for a short prompt).
+  - The cached file is `/models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf` (2,497,281,120 bytes), `sha256sum` and the pytest check both give `3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597`, equal to the value above. llama.cpp also writes a `.etag` file next to it.
+  - `tests/stack` with `CHECK_MODEL=1`: 5 passed in 8 s.
+  - These figures only show that the stack starts and streams; they are not quality or latency conclusions (D4, R8).
 
 Quality and latency conclusions are not drawn on this machine. The dev machine proves only that the stack starts and streams; quality and latency against the D57 targets are measured on a rented GPU in SET-04 and EVL (D4, R2, R8).
 
@@ -461,7 +466,7 @@ Test list (26 items in `tests/isolation`, run twice against a live database to p
 | `test_rls_tables.py` (9) | reads only own-org documents; query without an application filter still returns only own rows; zero rows without tenant context (three tables); rejects insert for another org (42501); update and delete of another org's row affect 0 rows; rejects cross-org reference via composite foreign key; organizations table shows only the current org; app role is not superuser and cannot bypass RLS |
 | `test_rls_vectors.py` (9) | vector search as A never returns B even when B is nearest; raw similarity query without filter returns only own vectors; no tenant context returns nothing; rejects vector insert for another org (42501); app role cannot read a partition directly; each org has its own partition with an HNSW index; rejects k outside 1 to 40 (3 inputs) |
 
-Result of the last run: pending, because Docker Desktop was not available while the PoC was written. Run `docker compose -f poc/stack-spike/compose.yaml run --rm poc pytest tests/isolation -v` twice and record the counts here (expected: 26 passed, 0 skipped, both times).
+Result of the last run (2026-10-14, `docker compose -f poc/stack-spike/compose.yaml run --rm poc pytest tests/isolation -v`, run twice in a row against the same live database without `down`): 26 passed, 0 skipped, 0 failed, both times (0.77 s and 0.31 s). A manual `select count(*) from documents` as `poc_app` with no tenant context returned 0 while the superuser saw 6 rows in the same database. Other runs: `tests/docs` 40 passed; `tests/stack` without `CHECK_MODEL` 2 passed, 3 skipped; with `CHECK_MODEL=1` 5 passed; `ruff check` and `ruff format --check` clean.
 
 Rules that FND-01 and FND-02 must keep:
 
@@ -533,8 +538,9 @@ Follow-ups:
 - FND-01 (EA-18): adopt the RLS pattern, role setup and composite foreign keys from the PoC in Alembic migrations.
 - KB-05 (EA-36): the PoC search helper accepts at most k = 40 (the HNSW `ef_search` default). Retrieval with permission filters must set `hnsw.ef_search` and `hnsw.iterative_scan` inside the query transaction and test recall under filters (F5).
 - FND-07 (EA-24): implement the gateway and the model catalog with checksums, verified when the model server starts (llama-server does not verify them); pick the exact embedding and reranker artefacts and their publishers.
+- SET-03 (EA-13) and FND-07 (EA-24): the model service healthcheck must prove that a model is loaded, for example by checking that the configured alias is listed in `/v1/models` (or by a 1-token completion). llama.cpp b11580 answers `/health` with 200 while it runs in router mode with no model (this happens if `-m` is dropped from the command), so `/health` alone lets `service_healthy` dependants start against an empty server. The PoC guards against this only with the opt-in `CHECK_MODEL=1` tests.
 - SET-02 (EA-12): done, the binding licence list is `docs/architecture/oss-license-review.md`; SET-03 adds the notices file and the licence scan to CI.
-- Status: this ADR stays Proposed until the owner approves it; SET-03 should not start before approval.
+- Status: accepted by the owner on 2026-10-14; SET-03 can start.
 
 ## 12. References
 

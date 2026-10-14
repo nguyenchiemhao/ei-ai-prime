@@ -40,3 +40,9 @@ When the same finding shows up in two or more tickets, propose a rule for `docs/
 
 ## 2026-10-14 — Retro changes applied
 Applied after owner approval: EA-11 (Docker engine preflight), EA-12 (reviewer mutation proofs), EA-85 (design tickets on the canvas run by the Lead), EA-16 (Lead-run steps with a leak check first; selection JQL excludes `Blocked`), plus the owner's run rules: ask before picking a ticket from another epic, Blocked rule with an owner-action comment, `--merge` / `--push` arguments, *Human Review* when an AC or the DoD still needs a person, resume agents after API errors. Files: `.claude/skills/ship-ticket/SKILL.md`, `.claude/agents/ticket-planner.md`, `.claude/agents/code-reviewer.md`, `.claude/skills/jira-ticket-management/references/jira-conventions.md`.
+
+## 2026-10-14 — EA-11 (resumed)
+- Rounds: review 3 (round 3 = first runtime review), QA 1 (PASS, pytest in Docker); escalations: none this run (unblocked after the owner enabled virtualization and updated Docker Desktop).
+- What went well: the opt-in model tests caught a real llama.cpp bug (router mode, no model loaded, `/health` still 200) that two static reviews had passed; reviewer mutations on a separate compose project proved the RLS tests bite.
+- What slowed us down: review 2 was a PASS on static reading only, so the ticket looked review-complete while its riskiest part had never run. A Bash safety check rejected `docker compose run --rm poc sh -c "…"` as an unchecked `rm`.
+- Proposed change: `.claude/agents/code-reviewer.md` — when the checks cannot run (environment down), the verdict is `PASS (static)` and the Lead must schedule a runtime round before commit. Lead/agents: run container commands without `sh -c` after `--rm` (one `run --rm poc <cmd>` per command).
