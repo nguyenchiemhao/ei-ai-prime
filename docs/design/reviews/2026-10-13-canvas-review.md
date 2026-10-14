@@ -174,7 +174,7 @@ How each element of the owner's chat brief stood before this revision, what was 
   - Main, WidgetNotFound, WidgetMobile, Glossary, ScriptEditor.
   - The field border (X17) is applied wherever there are fields.
 - **Repo:**
-  - design tokens and contrast table: [../tokens/](../tokens/);
+  - design tokens and contrast table: [../../../packages/design-tokens/](../../../packages/design-tokens/);
   - canvas checks: [../checks/](../checks/);
   - read-only canvas mirror: [../canvas/](../canvas/);
   - X1–X20 decisions: [../design-decisions.md](../design-decisions.md) §6.

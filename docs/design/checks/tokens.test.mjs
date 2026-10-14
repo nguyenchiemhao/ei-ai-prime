@@ -1,5 +1,5 @@
-// EA-85 (DSN-01) AC3, AC4: checks of docs/design/tokens/design-tokens.json (W3C design-token format)
-// and of the contrast table in docs/design/tokens/README.md.
+// EA-85 (DSN-01) AC3, AC4: checks of packages/design-tokens/design-tokens.json (W3C design-token format)
+// and of the contrast table in packages/design-tokens/README.md.
 // AC3: the file is valid, every reference resolves, and the required tokens hold the EA-85 values.
 // AC4: every pair in the README recomputes to its stated WCAG 2.x contrast ratio and meets its minimum,
 //      and every text pair in use is listed.
@@ -15,8 +15,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
-const TOKENS_FILE = path.resolve(ROOT, process.env.TOKENS_FILE || "docs/design/tokens/design-tokens.json");
-const README_FILE = path.resolve(ROOT, process.env.TOKENS_README || "docs/design/tokens/README.md");
+const TOKENS_FILE = path.resolve(ROOT, process.env.TOKENS_FILE || "packages/design-tokens/design-tokens.json");
+const README_FILE = path.resolve(ROOT, process.env.TOKENS_README || "packages/design-tokens/README.md");
 
 const REQUIRED_VALUES = {
   "color.text.primary": "#16181D",

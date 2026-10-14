@@ -1,0 +1,5 @@
+# gitleaks configuration (EA-13 / SET-03): the default rule set, no allowlist.
+# Add an [[allowlists]] entry only for a finding that is proven to be a false positive, and say why
+# in a comment above it.
+[extend]
+useDefault = true

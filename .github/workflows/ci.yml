@@ -1,0 +1,89 @@
+# CI (EA-13 / SET-03). Every step calls the same task runner as `npm run check` (scripts/lib/tasks.mjs),
+# so a local run and a CI run execute the same commands. The four jobs run in parallel; the slowest one
+# is the wall-clock time (target: 10 minutes or less).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node scripts/task.mjs frontend:lint
+      - run: node scripts/task.mjs frontend:typecheck
+      - run: node scripts/task.mjs frontend:test
+      - run: node scripts/task.mjs frontend:build
+      - run: node scripts/task.mjs frontend:api-types
+
+  backend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - run: pip install -e "backend[dev]"
+      - run: npm run backend -- lint --native
+      - run: npm run backend -- format --native
+      - run: npm run backend -- typecheck --native
+      - run: npm run backend -- test --native
+      - run: npm run backend -- openapi --native
+
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node scripts/task.mjs repo:node-checks
+      - run: node scripts/task.mjs repo:actionlint
+      - run: node scripts/task.mjs repo:secret-scan
+
+  stack:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - run: node scripts/install-compose.mjs
+      - run: node scripts/install-compose.mjs --verify
+      - run: docker compose version
+      - run: npm run up -- --no-model
+      - run: node scripts/smoke.mjs
+      - run: npm run seed
+      - run: npm run seed
+      - run: npm run backend -- test-integration
+      - if: always()
+        run: npm run down

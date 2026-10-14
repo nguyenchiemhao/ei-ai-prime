@@ -1,0 +1,11 @@
+{
+  "name": "@ei-ai/i18n",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared VI/EN message catalog read by the admin UI (react-i18next) and the widget (small t()).",
+  "exports": {
+    "./en.json": "./messages/en.json",
+    "./vi.json": "./messages/vi.json"
+  }
+}

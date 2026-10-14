@@ -1,0 +1,14 @@
+# Build contexts are small on purpose: only sources the images need.
+.git
+.work
+.env
+.env.*
+**/node_modules
+**/dist
+**/__pycache__
+**/.mypy_cache
+**/.pytest_cache
+**/.ruff_cache
+docs
+eval
+e2e

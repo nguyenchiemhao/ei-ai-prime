@@ -1,0 +1,22 @@
+{
+  "common": {
+    "productName": "ei-ai",
+    "language": {
+      "label": "Language",
+      "en": "English",
+      "vi": "Tiếng Việt"
+    }
+  },
+  "admin": {
+    "title": "Administration",
+    "api": {
+      "checking": "API: checking…",
+      "ok": "API: OK",
+      "unavailable": "API: unavailable"
+    }
+  },
+  "widget": {
+    "greeting": "Hello! How can I help you today?",
+    "conversationLabel": "Conversation"
+  }
+}

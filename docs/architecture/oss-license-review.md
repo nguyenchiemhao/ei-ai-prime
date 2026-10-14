@@ -9,7 +9,7 @@ Not legal advice. This is an engineering review of published licence terms, read
 
 ## 1. Scope, assumptions and method
 
-Scope: every third-party library, model, service and platform that the ADR chose, listed as an option or that the ticket names (file parsing, chunking, embedding and reranker weights, vector store, keyword search, model server, JWT, Vietnamese text, Dify/MaxKB/AnythingLLM), plus every pin in `poc/stack-spike/`. Our own core is not listed (D64).
+Scope: every third-party library, model, service and platform that the ADR chose, listed as an option or that the ticket names (file parsing, chunking, embedding and reranker weights, vector store, keyword search, model server, JWT, Vietnamese text, Dify/MaxKB/AnythingLLM), plus every pin of the product (`backend/pyproject.toml`, `compose.yaml` and the Dockerfiles; checked by `reviews_every_product_pin`). Our own core is not listed (D64).
 
 Assumptions:
 
@@ -92,6 +92,8 @@ Vocabulary used in the tables:
 | HashiCorp Vault | 2.1.2; 1.15.0 and newer | BUSL-1.1 | Key management option | no | Source-available: Business Source License bars competing hosted or embedded offerings | do not use | OpenBao | | https://github.com/hashicorp/vault/blob/main/LICENSE |
 | OpenBao | 2.7.1 | MPL-2.0 | Key management, later (FND-03) | no | Low: file-level copyleft, unmodified use | approved | | Not chosen yet; licence file of the release is kept if shipped | https://github.com/openbao/openbao/blob/main/LICENSE |
 | Base image python:3.12.15-slim-bookworm | python:3.12.15-slim-bookworm (Debian 12) | GPL-2.0-or-later AND LGPL-2.1-or-later AND PSF-2.0 | API and worker image base | yes | Aggregated OS packages: Debian packages with GPL and LGPL licences, plus Python PSF-2.0 | approved with conditions | | Pin the image digest; keep package source pointers; checked in MVP-10 | https://hub.docker.com/_/python https://docs.python.org/3/license.html |
+| Base image node:22.23.3-bookworm-slim | node:22.23.3-bookworm-slim (Debian 12) | MIT AND GPL-2.0-or-later AND LGPL-2.1-or-later | Build stage of the admin and widget images (compiles the apps; nothing from it is shipped) | no | Aggregated OS packages: Debian packages with GPL and LGPL licences, used while building only | dev only | | | https://hub.docker.com/_/node https://github.com/nodejs/node/blob/main/LICENSE |
+| Image nginxinc/nginx-unprivileged:1.30.5-alpine3.24 | nginx 1.30.5 on Alpine 3.24 (image nginxinc/nginx-unprivileged:1.30.5-alpine3.24) | BSD-2-Clause AND GPL-2.0-only AND MIT | Serves the compiled admin UI and widget as static files (non-root, port 8080) | yes | Aggregated OS packages: Alpine packages include GPL licensed tools | approved with conditions | | Pin the image digest; keep package source pointers; checked in MVP-10 | https://hub.docker.com/r/nginxinc/nginx-unprivileged https://nginx.org/LICENSE |
 | Base image postgres:16 on Debian bookworm | postgres:16-bookworm (under pgvector/pgvector:0.8.7-pg16) | GPL-2.0-or-later AND LGPL-2.1-or-later AND PostgreSQL | Database image base | yes | Aggregated OS packages: Debian packages with GPL and LGPL licences | approved with conditions | | Pin the image digest; keep package source pointers; checked in MVP-10 | https://github.com/pgvector/pgvector/blob/v0.8.7/Dockerfile |
 | Base image alpine | alpine:3.24 (under valkey/valkey:8.1.10-alpine) | GPL-2.0-only AND MIT | Valkey image base | yes | Aggregated OS packages: Alpine packages include GPL licensed tools | approved with conditions | | Pin the image digest; keep package source pointers; checked in MVP-10 | https://github.com/valkey-io/valkey-container/blob/mainline/8.1/alpine/Dockerfile |
 | Base image ubuntu:24.04 | ubuntu:24.04 (under ghcr.io/ggml-org/llama.cpp:server-b11580) | GPL-2.0-or-later AND LGPL-2.1-or-later | llama.cpp image base | yes | Aggregated OS packages: Ubuntu packages with GPL and LGPL licences | approved with conditions | | Pin the image digest; keep package source pointers; checked in MVP-10 | https://github.com/ggml-org/llama.cpp/blob/b11580/.devops/cpu.Dockerfile |
@@ -117,10 +119,11 @@ Vocabulary used in the tables:
 | react-i18next | 17.0.16 | MIT | Admin i18n, VI and EN | yes | Low: permissive | approved | | | https://registry.npmjs.org/react-i18next/17.0.16 |
 | IBM Plex Sans (@fontsource/ibm-plex-sans) | 5.3.0 | OFL-1.1 | Admin and widget font, DSN-01 | yes | Low: permissive font licence | approved with conditions | | Ship the OFL text and copyright line with the font files; do not sell the fonts on their own; Reserved Font Name "Plex" applies to modified versions | https://registry.npmjs.org/@fontsource%2Fibm-plex-sans/5.3.0 https://github.com/IBM/plex/blob/master/LICENSE.txt |
 | IBM Plex Mono (@fontsource/ibm-plex-mono) | 5.3.0 | OFL-1.1 | Admin and widget code font, DSN-01 | yes | Low: permissive font licence | approved with conditions | | Same conditions as IBM Plex Sans | https://registry.npmjs.org/@fontsource%2Fibm-plex-mono/5.3.0 https://github.com/IBM/plex/blob/master/LICENSE.txt |
-| TypeScript | 7.0.2 | Apache-2.0 | Frontend type checking | dev only | Low: permissive | dev only | | Compiler output is not covered by the licence | https://registry.npmjs.org/typescript/7.0.2 |
+| TypeScript | 5.9.3 | Apache-2.0 | Frontend type checking | dev only | Low: permissive | dev only | | Compiler output is not covered by the licence | https://registry.npmjs.org/typescript/5.9.3 |
 | Vitest | 5.0.4 | MIT | Frontend unit tests | dev only | Low: permissive | dev only | | | https://registry.npmjs.org/vitest/5.0.4 |
 | Playwright (@playwright/test) | 1.64.0 | Apache-2.0 | End-to-end tests | dev only | Low: permissive | dev only | | | https://registry.npmjs.org/@playwright%2Ftest/1.64.0 |
 | pytest | 9.1.1 | MIT | Backend tests | dev only | Low: permissive | dev only | | | https://pypi.org/project/pytest/9.1.1/ |
+| pytest-cov | 7.1.0 | MIT | Backend test coverage (70 % gate in CI) | dev only | Low: permissive | dev only | | | https://pypi.org/project/pytest-cov/7.1.0/ |
 | pytest-asyncio | 1.4.0 | Apache-2.0 | Async backend tests | dev only | Low: permissive | dev only | | | https://pypi.org/project/pytest-asyncio/1.4.0/ |
 | ruff | 0.17.0 | MIT | Lint and format | dev only | Low: permissive | dev only | | | https://pypi.org/project/ruff/0.17.0/ |
 | mypy | 2.4.0 | MIT | Type check | dev only | Low: permissive | dev only | | | https://pypi.org/project/mypy/2.4.0/ |
@@ -202,8 +205,8 @@ Components with verdict `approved` or `approved with conditions` (conditions in 
 - Backend: FastAPI, Pydantic, uvicorn, httpx, PyJWT, argon2-cffi, cryptography, structlog, OpenTelemetry, Python unicodedata; OpenBao and anyascii if needed.
 - Egress: Smokescreen.
 - Frontend: React, Preact, Vite, Radix UI primitives, TanStack Query, i18next, react-i18next, DOMPurify, IBM Plex Sans and Mono.
-- Dev and CI only: TypeScript, Vitest, Playwright, pytest, pytest-asyncio, ruff, mypy, Docker Engine, Docker Desktop (licence terms apply), underthesea and pyvi (evaluation only); Docker Compose files are shipped, the Compose binary is not.
-- Base images: python:3.12.15-slim-bookworm, postgres on Debian bookworm, alpine, ubuntu:24.04 (aggregation conditions).
+- Dev and CI only: TypeScript, Vitest, Playwright, pytest, pytest-cov, pytest-asyncio, ruff, mypy, Docker Engine, Docker Desktop (licence terms apply), underthesea and pyvi (evaluation only); Docker Compose files are shipped, the Compose binary is not.
+- Base images: python:3.12.15-slim-bookworm, nginxinc/nginx-unprivileged on Alpine (serves the admin UI and widget), postgres on Debian bookworm, alpine, ubuntu:24.04 (aggregation conditions); node:22.23.3-bookworm-slim is used in build stages only and is not shipped.
 
 ## 8. Open items and hand-offs
 

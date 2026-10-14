@@ -219,6 +219,7 @@ Option tables show the licence (verified against the project's licence file or r
 **Reasons:**
 - A self-hosted customer runs the same images as the hosted product, configured only through environment variables (C7, section 6).
 - The dev machine was first planned against Docker Engine 20.10 and Compose 2.17 and now runs Engine 29.8.2 with Compose v5.6.0 (measured 2026-10-14); the compose files keep to features that exist in both (profiles, health-check conditions, `mem_limit`, `tmpfs`, named volumes), so they are intended to stay compatible with Compose 2.17 (that version is no longer tested anywhere; SET-03 CI should pin and test a minimum version).
+- Amendment 2026-10-14 (SET-03, EA-13): the tested minimum is Compose 2.20.3, not 2.17. Compose 2.17.3 to 2.20.2 cannot build images against Docker Engine 29 ("failed to list workers"); the bisect and the pinned version are in `scripts/lib/compose-version.mjs`. The text above is the original decision and is kept as it was.
 - Staging and cloud choices are out of scope (D47, SET-05).
 
 ### 3.13 Authentication and identity tokens

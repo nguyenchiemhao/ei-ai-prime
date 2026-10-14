@@ -1,0 +1,22 @@
+{
+  "common": {
+    "productName": "ei-ai",
+    "language": {
+      "label": "Ngôn ngữ",
+      "en": "English",
+      "vi": "Tiếng Việt"
+    }
+  },
+  "admin": {
+    "title": "Quản trị",
+    "api": {
+      "checking": "API: đang kiểm tra…",
+      "ok": "API: hoạt động",
+      "unavailable": "API: không khả dụng"
+    }
+  },
+  "widget": {
+    "greeting": "Xin chào! Tôi có thể giúp gì cho bạn hôm nay?",
+    "conversationLabel": "Cuộc trò chuyện"
+  }
+}
