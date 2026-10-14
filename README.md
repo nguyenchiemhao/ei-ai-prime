@@ -131,7 +131,7 @@ Staging does not exist yet, so a ticket's acceptance criteria are verified in th
 
 ## CI
 
-`.github/workflows/ci.yml` runs on every pull request, on pushes to `main` and manually. Four jobs run in parallel on `ubuntu-24.04`, each with a 10 minute limit; a newer push to the same branch cancels the older run. Every step calls the same task runner as `npm run check`.
+`.github/workflows/ci.yml` runs on every push to any branch (ticket branches and `main`) and manually, so a branch is checked without opening a pull request. Four jobs run in parallel on `ubuntu-24.04`, each with a 10 minute limit; a newer push to the same branch cancels the older run. Every step calls the same task runner as `npm run check`.
 
 | Job | Steps |
 |---|---|
@@ -140,7 +140,7 @@ Staging does not exist yet, so a ticket's acceptance criteria are verified in th
 | `checks` | all Node checks (design, licence review, ADR, EVL-01, compose structure, README, CI file), actionlint, gitleaks over the full history |
 | `stack` | Compose 2.20.3 (the minimum), `npm run up -- --no-model` (applies the migrations and runs the schema guard), smoke test, `npm run seed` twice, integration tests, `npm run down` |
 
-Any failing step fails the job and the pull request. **Owner step:** in the GitHub repository settings (Branch protection or a ruleset for `main`), require the four checks `frontend`, `backend`, `checks` and `stack` before merging; this cannot be set from the repository.
+Any failing step fails the job and the commit status (also shown on a pull request for that commit). **Owner step:** in the GitHub repository settings (Branch protection or a ruleset for `main`), require the four checks `frontend`, `backend`, `checks` and `stack` before merging; this cannot be set from the repository.
 
 The model is not started in CI (download and RAM); it is verified locally with `npm run up`.
 

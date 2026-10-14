@@ -40,10 +40,12 @@ test("the_workflow_defines_the_four_jobs", () => {
   assert.deepEqual(Object.keys(allJobs).sort(), ["backend", "checks", "frontend", "stack"]);
 });
 
-test("runs_on_pull_request", () => {
+// Owner decision 2026-10-14: CI runs on every push to any branch (ticket branches and main), so a
+// branch is checked without opening a pull request. No pull_request trigger, to avoid double runs.
+test("runs_on_every_branch_push", () => {
   const on = text.slice(text.indexOf("\non:"), text.indexOf("\npermissions:"));
-  assert.match(on, /^ {2}pull_request:/m);
-  assert.match(on, /^ {2}push:/m);
+  assert.match(on, /^ {2}push:\n {4}branches: \["\*\*"\]$/m);
+  assert.doesNotMatch(on, /^ {2}pull_request:/m);
   assert.match(on, /^ {2}workflow_dispatch:/m);
 });
 
