@@ -11,7 +11,13 @@ import { ROOT, compose } from "../lib/docker.mjs";
 
 const RAW = fs.readFileSync(path.join(ROOT, "compose.yaml"), "utf8");
 const PROFILES = ["--profile", "core", "--profile", "model", "--profile", "tools"];
-const DUMMY = { POSTGRES_PASSWORD: "dummy-postgres-pw", APP_DB_PASSWORD: "dummy-app-pw" };
+const DUMMY = {
+  POSTGRES_PASSWORD: "dummy-postgres-pw",
+  APP_DB_PASSWORD: "dummy-app-pw",
+  MIGRATION_DB_PASSWORD: "dummy-migrator-pw",
+};
+// One-shot tool services: not started by "up", so no healthcheck.
+const ONE_SHOT = ["backend-tools", "migrate"];
 
 function envFile(values) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ei-ai-compose-"));
@@ -55,13 +61,16 @@ test("compose_has_the_project_name_and_the_expected_services_per_profile", () =>
   assert.equal(resolved.name, "ei-ai");
   assert.deepEqual(byProfile("core"), ["admin", "api", "db", "valkey", "widget"]);
   assert.deepEqual(byProfile("model"), ["model"]);
-  assert.deepEqual(byProfile("tools"), ["backend-tools"]);
+  assert.deepEqual(byProfile("tools"), ["backend-tools", "migrate"]);
 });
 
 test("core_services_have_healthcheck_and_mem_limit", () => {
-  for (const name of Object.keys(services).filter((n) => n !== "backend-tools")) {
-    assert.ok(services[name].healthcheck?.test, `${name}: no healthcheck`);
-    assert.ok(Number(services[name].mem_limit) > 0, `${name}: no mem_limit`);
+  for (const name of Object.keys(services)) {
+    if (!ONE_SHOT.includes(name))
+      assert.ok(services[name].healthcheck?.test, `${name}: no healthcheck`);
+    // The test container (backend-tools) has never had a hard limit; migrate, a one-shot service, does.
+    if (name !== "backend-tools")
+      assert.ok(Number(services[name].mem_limit) > 0, `${name}: no mem_limit`);
   }
 });
 
@@ -107,7 +116,7 @@ test("published_ports_are_fixed_and_loopback_only", () => {
     "api 127.0.0.1:8000",
     "widget 127.0.0.1:3001",
   ]);
-  for (const name of ["db", "valkey", "model", "backend-tools"])
+  for (const name of ["db", "valkey", "model", "backend-tools", "migrate"])
     assert.equal(services[name].ports, undefined, `${name} must not publish a port`);
   assert.ok(
     !published.some(({ port }) => port === 4001 || port === 4002),
@@ -129,6 +138,50 @@ test("passwords_come_from_required_env_vars", () => {
       `ei_ai_app:${DUMMY.APP_DB_PASSWORD}@db:5432/ei_ai`,
     ),
   );
+});
+
+test("only_migrate_and_backend_tools_get_the_migrator_credentials", () => {
+  // AC5: the migration/owner role is used by the one-shot migrate service and the test container only.
+  const holders = Object.entries(services)
+    .filter(([, service]) =>
+      Object.entries(service.environment ?? {}).some(
+        ([name, value]) =>
+          name.startsWith("MIGRATION_") || String(value).includes("ei_ai_migrator"),
+      ),
+    )
+    .map(([name]) => name)
+    .sort();
+  assert.deepEqual(holders, ["backend-tools", "db", "migrate"]);
+  // db only receives the password, to create the role in its first-start init script.
+  assert.deepEqual(
+    Object.keys(services.db.environment).filter((name) => name.startsWith("MIGRATION_")),
+    ["MIGRATION_DB_PASSWORD"],
+  );
+  assert.ok(
+    services.migrate.environment.MIGRATION_DATABASE_URL.includes(
+      `ei_ai_migrator:${DUMMY.MIGRATION_DB_PASSWORD}@db:5432/ei_ai`,
+    ),
+  );
+  assert.ok(
+    services["backend-tools"].environment.MIGRATION_DATABASE_URL.includes(
+      `ei_ai_migrator:${DUMMY.MIGRATION_DB_PASSWORD}@db:5432/ei_ai`,
+    ),
+  );
+});
+
+test("api_has_no_migrator_or_superuser_credentials", () => {
+  const environment = JSON.stringify(services.api.environment);
+  for (const forbidden of ["MIGRATION_", "ei_ai_migrator", "POSTGRES_PASSWORD", "postgres:"])
+    assert.ok(!environment.includes(forbidden), `api environment contains ${forbidden}`);
+});
+
+test("migrate_runs_ei_ai_db_upgrade_from_the_runtime_image", () => {
+  const migrate = services.migrate;
+  assert.equal(migrate.build.target, "runtime");
+  assert.deepEqual(migrate.command, ["ei-ai", "db", "upgrade"]);
+  assert.equal(migrate.depends_on.db.condition, "service_healthy");
+  assert.equal(migrate.environment.EI_AI_ENV, "local");
+  assert.equal(migrate.ports, undefined);
 });
 
 test("compose_refuses_to_start_without_credentials", () => {

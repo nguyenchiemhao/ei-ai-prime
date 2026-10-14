@@ -21,6 +21,7 @@
     "up": "node scripts/dev.mjs up",
     "down": "node scripts/dev.mjs down",
     "reset": "node scripts/dev.mjs reset",
+    "migrate": "node scripts/dev.mjs migrate",
     "seed": "node scripts/dev.mjs seed",
     "ps": "node scripts/dev.mjs ps",
     "logs": "node scripts/dev.mjs logs",

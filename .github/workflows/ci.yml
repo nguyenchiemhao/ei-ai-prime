@@ -3,10 +3,11 @@
 # is the wall-clock time (target: 10 minutes or less).
 name: CI
 
+# Runs on every push to any branch (owner decision 2026-10-14), so a ticket branch is checked without a
+# pull request; the commit status still shows on any PR for that commit.
 on:
-  pull_request:
   push:
-    branches: [main]
+    branches: ["**"]
   workflow_dispatch:
 
 permissions:

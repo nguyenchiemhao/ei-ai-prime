@@ -1,6 +1,38 @@
 {
   "components": {
     "schemas": {
+      "CurrentOrganization": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "CurrentOrganization",
+        "type": "object"
+      },
+      "ErrorCode": {
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "ErrorCode",
+        "type": "object"
+      },
       "HealthStatus": {
         "properties": {
           "status": {
@@ -87,6 +119,45 @@
           }
         },
         "summary": "Liveness probe"
+      }
+    },
+    "/organization": {
+      "get": {
+        "description": "Always the Organization of the verified token or session. An ``org_id`` sent in a header or\nquery parameter is ignored (D32); the database also restricts the query to that Organization\n(D46), so the explicit filter below is the first of two layers.",
+        "operationId": "get_organization_organization_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentOrganization"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "No valid identity (detail: unauthenticated)"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "The Organization does not exist (not_found)"
+          }
+        },
+        "summary": "The Organization of the verified identity"
       }
     },
     "/readyz": {

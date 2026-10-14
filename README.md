@@ -41,7 +41,7 @@ cd ei-ai-prime
 npm run up
 ```
 
-On the first run `npm run up` creates `.env` with generated passwords (git-ignored; keep it, the database volume uses these passwords), builds the images, starts every service and waits until all are healthy. It prints the elapsed time and the URLs:
+On the first run `npm run up` creates `.env` with generated passwords (git-ignored; keep it, the database volume uses these passwords), builds the images, starts the database, applies the database migrations (`schema guard: 0 violations` must be printed), starts every service and waits until all are healthy. It prints the elapsed time and the URLs:
 
 | What | URL |
 |---|---|
@@ -65,7 +65,7 @@ All ports are fixed and bound to `127.0.0.1` only. The database, Valkey and the 
 npm run seed
 ```
 
-Runs `ei-ai seed demo` inside the API container. It refuses to run unless the environment is `local` or `test` (exit code 2), validates the versioned Mekong Devworks manifest (Organization "Mekong Devworks", Workspace "People Ops", six members), checks that the application database role can connect, and prints the same summary on every run. It writes no rows yet: the tables arrive with FND-01 and ticket FND-04 (EA-21) loads this manifest into the database and keeps the same command.
+Runs `ei-ai seed demo` inside the API container. It refuses to run unless the environment is `local` or `test` (exit code 2), validates the versioned Mekong Devworks manifest (Organization "Mekong Devworks", Workspace "People Ops", six members), checks that the application database role can connect, and prints the same summary on every run. It writes no rows yet: the tables exist since FND-01 (`npm run migrate`), and ticket FND-04 (EA-21) loads this manifest into them and keeps the same command.
 
 ## Running tests and checks
 
@@ -83,7 +83,9 @@ Runs `ei-ai seed demo` inside the API container. It refuses to run unless the en
 | `npm run backend -- typecheck` | `mypy` (strict) |
 | `npm run backend -- test` | pytest unit tests with a 70 % coverage gate |
 | `npm run backend -- openapi` | The committed OpenAPI document matches the app (`npm run backend -- openapi-export` rewrites it) |
-| `npm run backend -- test-integration` | Starts the database and Valkey, then runs the integration tests against them |
+| `npm run backend -- test-integration` | Starts the database and Valkey, applies the migrations, then runs the integration tests against them |
+| `npm run migrate` | Starts the database if needed and applies the database migrations as the owner role, then runs the schema guard; safe to repeat |
+| `npm run backend -- bench-rls` | The RLS overhead benchmark (100 000 rows, FND-01); not part of `npm run check` |
 | `node scripts/run-node-checks.mjs` | Document and repository checks (design tokens, licence review, ADR, EVL-01 data set, packages, scripts); fails when a pattern matches no file or a check runs 0 tests |
 | `npm test` | Frontend tests, Node checks and backend unit tests |
 | `npm run check` | **Everything CI runs**, in four jobs (frontend, backend, checks, stack), with PASS/FAIL and the duration of each step. `-- --skip-stack` skips the Docker stack job; the stack job starts the stack without the model and stops it at the end. |
@@ -112,7 +114,7 @@ npm run e2e                         # all specs; or: npm run e2e -- e2e/<area>/<
 | `e2e/` | Playwright end-to-end specs per ticket (`e2e/<area>/<ticket>-<slug>.spec.ts`) and their tsconfig; configuration is `playwright.config.ts` at the root |
 | `eval/` | Evaluation data sets (EVL-01 Mekong Devworks) and their checks |
 | `examples/` | Reserved slots for the host demo site and the HR API mock (profile `demo`) |
-| `infra/` | Infrastructure files mounted into containers (database init script) |
+| `infra/` | Infrastructure files mounted into containers (database init scripts: roles) |
 | `packages/` | `design-tokens/`, `i18n/`, `api-types/` shared by the apps |
 | `scripts/` | Node scripts behind the `npm run` commands, the repository checks and CI helpers (no npm dependencies) |
 
@@ -129,16 +131,16 @@ Staging does not exist yet, so a ticket's acceptance criteria are verified in th
 
 ## CI
 
-`.github/workflows/ci.yml` runs on every pull request, on pushes to `main` and manually. Four jobs run in parallel on `ubuntu-24.04`, each with a 10 minute limit; a newer push to the same branch cancels the older run. Every step calls the same task runner as `npm run check`.
+`.github/workflows/ci.yml` runs on every push to any branch (ticket branches and `main`) and manually, so a branch is checked without opening a pull request. Four jobs run in parallel on `ubuntu-24.04`, each with a 10 minute limit; a newer push to the same branch cancels the older run. Every step calls the same task runner as `npm run check`.
 
 | Job | Steps |
 |---|---|
 | `frontend` | `npm ci`, lint, type check, unit tests, build, API types in sync |
 | `backend` | ruff, ruff format, mypy, pytest with coverage gate, OpenAPI in sync |
 | `checks` | all Node checks (design, licence review, ADR, EVL-01, compose structure, README, CI file), actionlint, gitleaks over the full history |
-| `stack` | Compose 2.20.3 (the minimum), `npm run up -- --no-model`, smoke test, `npm run seed` twice, integration tests, `npm run down` |
+| `stack` | Compose 2.20.3 (the minimum), `npm run up -- --no-model` (applies the migrations and runs the schema guard), smoke test, `npm run seed` twice, integration tests, `npm run down` |
 
-Any failing step fails the job and the pull request. **Owner step:** in the GitHub repository settings (Branch protection or a ruleset for `main`), require the four checks `frontend`, `backend`, `checks` and `stack` before merging; this cannot be set from the repository.
+Any failing step fails the job and the commit status (also shown on a pull request for that commit). **Owner step:** in the GitHub repository settings (Branch protection or a ruleset for `main`), require the four checks `frontend`, `backend`, `checks` and `stack` before merging; this cannot be set from the repository.
 
 The model is not started in CI (download and RAM); it is verified locally with `npm run up`.
 
@@ -154,6 +156,7 @@ Hard limits in `compose.yaml` (the model server is the large one) and what Docke
 | `api` | 512m | 52 MiB |
 | `admin` | 64m | 11 MiB |
 | `widget` | 64m | 12 MiB |
+| `migrate` | 256m | one-shot, exits after migrating (not started by `up`) |
 
 The limits add up to about 7.9 GB, more than the 6.7-7.2 GB that Docker Desktop gives WSL2 by default; the measured use is lower (see Prerequisites for `.wslconfig`).
 
@@ -162,6 +165,7 @@ The limits add up to about 7.9 GB, more than the 6.7-7.2 GB that Docker Desktop 
 - **Git Bash rewrites container paths** (`-w /repo` becomes `C:/Program Files/Git/repo`): prefix manual commands with `MSYS_NO_PATHCONV=1`. The npm commands are not affected (they start Docker without a shell).
 - **Line endings:** `.gitattributes` forces LF. If shell scripts fail in containers with `\r` errors, run `git add --renormalize .` and re-checkout the files.
 - **Port already in use** (3000, 3001, 8000): stop the other program, or stop another copy of the stack (`npm run down`). The ports are fixed on purpose.
+- **The migrate step fails with `password authentication failed for user "ei_ai_migrator"` (or the role does not exist):** the database volume was created before FND-01, so it has no migration role. Run `npm run reset` once (it deletes only the local database; nothing is lost yet) and then `npm run up`.
 - **Password errors after deleting `.env`:** the database volume keeps the passwords of its first start. Either restore the old `.env` or run `npm run reset` (this deletes the local database).
 - **The model never becomes healthy:** its check passes only when `/v1/models` lists the configured model alias. Look at `npm run logs -- model`: a first start downloads about 2.5 GB, a download error or too little memory (see `.wslconfig`) shows there. `npm run up -- --no-model` skips it.
 - **Slow first model download:** below about 3.8 MB/s the 2.5 GB download needs more than the 10 minute start period, so `npm run up` can stop waiting after about 11 minutes (and report a failure) while the download goes on in the background. Check progress with `npm run logs -- model`; when the download has finished and the model has loaded, run `npm run up` again.

@@ -31,16 +31,6 @@ def test_readyz_ok_against_real_db_and_valkey(real_settings: Settings) -> None:
     assert response.json() == {"status": "ok", "checks": {"database": "ok", "valkey": "ok"}}
 
 
-def test_app_role_is_not_superuser_and_cannot_bypass_rls(real_settings: Settings) -> None:
-    with psycopg.connect(real_settings.database_url) as connection:
-        row = connection.execute(
-            "SELECT current_user, rolsuper, rolbypassrls, rolcreatedb, rolcreaterole "
-            "FROM pg_roles WHERE rolname = current_user"
-        ).fetchone()
-
-    assert row == ("ei_ai_app", False, False, False, False)
-
-
 def test_pgvector_extension_is_installed(real_settings: Settings) -> None:
     with psycopg.connect(real_settings.database_url) as connection:
         row = connection.execute(

@@ -18,6 +18,6 @@ def settings() -> Settings:
 
 @pytest.fixture
 def clean_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[pytest.MonkeyPatch]:
-    for name in ("EI_AI_ENV", "DATABASE_URL", "VALKEY_URL"):
+    for name in ("EI_AI_ENV", "DATABASE_URL", "VALKEY_URL", "MIGRATION_DATABASE_URL"):
         monkeypatch.delenv(name, raising=False)
     yield monkeypatch

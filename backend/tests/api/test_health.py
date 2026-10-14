@@ -60,4 +60,4 @@ def test_readyz_does_not_log_exception_messages(caplog: "pytest.LogCaptureFixtur
 def test_openapi_describes_both_probes() -> None:
     schema = _client().get("/openapi.json").json()
 
-    assert set(schema["paths"]) == {"/healthz", "/readyz"}
+    assert {"/healthz", "/readyz"} <= set(schema["paths"])
