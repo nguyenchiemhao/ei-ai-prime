@@ -44,6 +44,3 @@ export function App() {
     </main>
   );
 }
-
-// Deliberate lint error to prove CI fails (EA-13 AC3); reverted in the next commit.
-const ciLintProbe = 1;
