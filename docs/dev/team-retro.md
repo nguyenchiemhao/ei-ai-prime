@@ -31,3 +31,9 @@ When the same finding shows up in two or more tickets, propose a rule for `docs/
 - What went well: the planner's review plan was precise enough to finish without the developer; Node checks on the canvas files caught a section-numbering gap and short table cells.
 - What slowed us down: subagents cannot write to claude.ai artifacts, so the first run kept edits in a local copy and the owner could not see progress on the canvas.
 - Proposed change: `.claude/skills/ship-ticket/SKILL.md` — for design tickets on the claude.ai canvas, the Lead edits and publishes the canvas directly (no developer/reviewer subagents), publishes early, and mirrors the files to `docs/design/canvas/` in the same commit.
+
+## 2026-10-14 — EA-16
+- Rounds: review 3, QA 0 (SKIPPED, profile docs); cross-labelling runs 3 (2 superseded); escalations: none. One developer run stopped on an API rate limit and was resumed.
+- What went well: the reviewer's mutation runs on scratch copies (tree checksummed before/after) found real gaps: an always-green README regex, a blind sheet whose row order leaked the group, and guide examples that gave away labels.
+- What slowed us down: the developer cannot launch subagents, so the independent second labeller had to be run by the Lead between developer phases; two "blind" runs had to be redone because blindness was not checked before running them. The selection JQL also returns `Blocked` tickets (status category To Do).
+- Proposed change: `.claude/agents/ticket-planner.md` — for any blind/independent human-or-LLM step, plan a leak check (no ids, ordering or examples that reveal labels) that must pass before the step runs, and assign the step to the Lead up front. `.claude/skills/ship-ticket/SKILL.md` step 2 — add `AND status != Blocked` to the selection JQL.
