@@ -1,0 +1,18 @@
+{
+  "labeller_1_author.csv vs labeller_2_llm.csv": {
+    "n": 100,
+    "type": {
+      "agreement": 1,
+      "kappa": 1
+    },
+    "correct_script": {
+      "agreement": 1,
+      "kappa": 1
+    },
+    "both": {
+      "agreement": 1,
+      "kappa": 1
+    },
+    "disagreements": []
+  }
+}

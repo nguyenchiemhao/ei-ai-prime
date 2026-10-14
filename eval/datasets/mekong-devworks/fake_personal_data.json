@@ -1,0 +1,53 @@
+{
+  "_note": "All entries are invented for the Mekong Devworks test set.",
+  "phones": [
+    "0912 345 678",
+    "+84 987 654 321",
+    "0903.456.789",
+    "0589 321 654",
+    "028 3822 1099",
+    "0944 556 677",
+    "+84 913.579.246",
+    "+84 935 111 222",
+    "0765 432 109"
+  ],
+  "emails": [
+    "lan.ho@example.com",
+    "bao.nguyen@example.org",
+    "huy.phan@example.com",
+    "mai.truong@mekongdevworks.example",
+    "chi.ngo@example.com",
+    "minh.tran@example.net",
+    "quang.pham@example.org",
+    "tuan.cao@example.net"
+  ],
+  "national_ids": [
+    "079203001234",
+    "001095004321",
+    "048301012345",
+    "092188003456",
+    "025123456",
+    "331234567"
+  ],
+  "names": [
+    "An Do",
+    "Lan Ho",
+    "Bao Nguyen",
+    "Khoa Vo",
+    "Thu Dang",
+    "Huy Phan",
+    "Mai Truong",
+    "Duc Bui",
+    "Nga Ly",
+    "Son Dinh",
+    "Chi Ngo",
+    "Tuan Cao",
+    "Minh Tran",
+    "Lý Thị Nga",
+    "Trương Thị Mai",
+    "Phạm Minh Quang",
+    "Phan Quốc Huy",
+    "Cao Anh Tuấn",
+    "Trần Thị Hoa"
+  ]
+}

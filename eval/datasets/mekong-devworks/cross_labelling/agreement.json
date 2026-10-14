@@ -1,0 +1,31 @@
+{
+  "labeller_1_author.csv vs labeller_2_llm.csv": {
+    "n": 100,
+    "type": {
+      "agreement": 1,
+      "kappa": 1
+    },
+    "correct_script": {
+      "agreement": 0.99,
+      "kappa": 0.9885136687342063
+    },
+    "both": {
+      "agreement": 0.99,
+      "kappa": 0.9895865875247318
+    },
+    "disagreements": [
+      {
+        "key": "r-053",
+        "id": "q-0081",
+        "a": {
+          "type": "information",
+          "correct_script": "laptop-request"
+        },
+        "b": {
+          "type": "information",
+          "correct_script": "NONE"
+        }
+      }
+    ]
+  }
+}
