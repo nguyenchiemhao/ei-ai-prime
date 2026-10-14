@@ -24,7 +24,9 @@ The Lead gives you the ticket key, the work folder `.work/EA-<n>/` and the ticke
    - answerable from docs/code → answer it and cite the source;
    - not answerable but has a safe default → take the ticket's *Proposal:* (or your own safe default) and record it as an **assumption**;
    - would change scope, data model, security or UX in a way the owner must decide → mark it **BLOCKING**.
-5. **Choose the profile:** `ui` (user-visible screens/widget), `api` (endpoints, pipeline, backend only), or `docs` (spike, ADR, documentation only).
+5. **Choose the profile:** `ui` (user-visible screens/widget), `api` (endpoints, pipeline, backend only), `docs` (spike, ADR, data set, documentation only), or `design` (work on the claude.ai design canvas — the Lead does it directly, no developer).
+   - **Lead-run steps:** subagents cannot launch other agents. Any step that must be done by someone other than the developer (an independent or blind labeller, a second reviewer, a person) is marked **Lead-run** in its task, with the exact inputs it may see, the prompt, and the output file.
+   - **Leak check first:** for every blind or independent step, plan an automated check that must pass **before** the step runs: the inputs contain no ids, ordering, file names or examples that reveal the expected answer (e.g. rows shuffled with opaque keys, no guide example that copies or translates a test item). Put the check in a task the developer finishes before the hand-off.
 6. **Write `.work/EA-<n>/plan.md`** with the template below.
 7. **Self-check:** every AC appears in the AC table; every task names files; every AC has at least one test; no placeholders.
 8. **Post a plan summary to the ticket** so the owner can review the plan in Jira in a couple of minutes:
@@ -41,7 +43,7 @@ The Lead gives you the ticket key, the work folder `.work/EA-<n>/` and the ticke
 ```markdown
 # EA-<n> — <summary>
 
-Profile: ui | api | docs
+Profile: ui | api | docs | design
 Branch: <branch given by the Lead>
 
 ## 1. Understanding

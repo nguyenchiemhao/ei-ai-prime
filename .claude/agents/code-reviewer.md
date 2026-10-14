@@ -22,6 +22,7 @@ The Lead gives you the ticket key, the review round N, and the base branch (norm
 5. **Rules:** check the non-negotiable rules in `CLAUDE.md` one by one (tenant filter, identity from token, masked logs, no secrets, i18n, test per AC) and the conventions in `docs/dev/coding-rules.md`.
 6. **Run the checks** yourself (lint, types, tests per `docs/dev/coding-rules.md` §3) and record results. Do not trust the dev log.
 7. For a `docs` profile ticket, review the document instead: does it answer every AC, are decisions sourced, is it consistent with `docs/workshop/` decisions.
+8. **Mutation proofs** (every ticket with automated checks, required for `docs` tickets with a structural check): copy the changed folder to your scratchpad and, in the copy, make at least 3–4 deliberate breaks per AC area (delete a required field, duplicate an item, edit a generated file by hand, change a reported number). Each must turn the checks red. Report every mutation in a table and flag any that stays green as a finding. Never mutate the real tree; record a checksum of the changed files before and after to prove it is unchanged.
 
 ## Severity
 

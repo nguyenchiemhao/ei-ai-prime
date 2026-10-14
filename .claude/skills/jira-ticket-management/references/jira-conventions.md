@@ -77,7 +77,14 @@ The full code → key map is in `docs/backlog/backlog.md`. New codes continue th
 
 ## Workflow
 
-Default team-managed workflow: To Do → In Progress → Done. Always list transitions with `getTransitionsForJiraIssue` before transitioning.
+Statuses (all transitions are global): To Do, In Progress, In Review, Human Review, Blocked, Done, Close. Always list transitions with `getTransitionsForJiraIssue` before transitioning.
+
+| Status | Use |
+|---|---|
+| In Review | Committed on the ticket branch, not merged yet |
+| Human Review | Merged, but an AC or the DoD still needs a person (owner review, human labellers); the comment lists the owner actions |
+| Blocked | Cannot move because of something the team cannot fix or decide; the comment gives reason, root cause, owner action, impact, resume command. Its status category is To Do, so selection JQL must exclude `status = Blocked` |
+| Done | Every AC has evidence, the DoD is met and the branch is merged |
 
 ## Sprints
 
