@@ -53,6 +53,8 @@ Used only by the `ship-ticket` skill (the owner started the pipeline, which is t
    - files > 5 MB, build output (`dist/`, `build/`, `node_modules/`, `__pycache__/`, `.venv/`);
    - files unrelated to the ticket (propose a separate commit).
 4. **Group** the changes into logical commits (one concern per commit). Stage each group by explicit path.
+   - A multi-path `git add` fails as a whole when one path no longer exists (e.g. a deleted directory): stage deletions with `git rm -r --cached <path>` or `git add -A -- <path>`, and stop if `git add` exits non-zero.
+   - Before committing, compare `git diff --cached --stat` and `git status --short` with the intended file list; nothing intended may remain unstaged.
 5. **Write the message** (format below) and show it for approval.
 6. **Commit** with a HEREDOC so the formatting is kept:
    ```bash
