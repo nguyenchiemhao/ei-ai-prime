@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools==84.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ei-ai"
+version = "0.0.0"
+description = "ei-ai backend: API, readiness and the demo seed CLI."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fastapi==0.143.0",
+  "uvicorn==0.54.0",
+  "pydantic==2.14.1",
+  "psycopg[binary]==3.3.6",
+  "redis==8.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==9.1.1",
+  "pytest-cov==7.1.0",
+  "httpx==0.28.1",
+  "ruff==0.17.0",
+  "mypy==2.4.0",
+]
+
+[project.scripts]
+ei-ai = "ei_ai.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"ei_ai.seed" = ["data/*.json"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+cache-dir = "/tmp/.ruff_cache"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+files = ["src", "tests"]
+cache_dir = "/tmp/.mypy_cache"
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: needs the Compose stack (db, valkey); run with -m integration"]
+addopts = "-ra --strict-markers -p no:cacheprovider"
+
+[tool.coverage.run]
+source = ["ei_ai"]
+
+[tool.coverage.report]
+fail_under = 70

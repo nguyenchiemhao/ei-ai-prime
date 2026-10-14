@@ -1,0 +1,42 @@
+// The single list of verification tasks. `npm run check`, `npm run backend -- <task>` and the CI
+// workflow all run these commands through scripts/task.mjs, so local and CI results cannot drift.
+//
+// A task is either
+//   { command: [...] }                     run on the host from the repository root, or
+//   { backend: [...], services?: true }    run in the backend dev image (or natively with --native)
+//                                          from backend/; `services` starts db and valkey first, or
+//   { run: () => exitCode }                a function (container based repository checks).
+
+import { actionlint, secretScan } from "./repo-tasks.mjs";
+
+const npm = (...args) => ({ command: ["npm", "run", ...args] });
+
+export const tasks = {
+  "frontend:lint": npm("lint"),
+  "frontend:typecheck": npm("typecheck"),
+  "frontend:test": npm("test:frontend"),
+  "frontend:build": npm("build"),
+  "frontend:api-types": npm("api-types:check"),
+
+  "backend:lint": { backend: ["ruff", "check", "."] },
+  "backend:format": { backend: ["ruff", "format", "--check", "."] },
+  "backend:typecheck": { backend: ["mypy"] },
+  "backend:test": {
+    backend: ["pytest", "-m", "not integration", "--cov=ei_ai", "--cov-report=term-missing"],
+  },
+  "backend:openapi": { backend: ["pytest", "tests/test_openapi_export.py"] },
+  "backend:openapi-export": {
+    backend: ["python", "-m", "ei_ai.openapi_export", "../packages/api-types/openapi.json"],
+  },
+  "backend:test-integration": {
+    backend: ["pytest", "-m", "integration", "--no-cov"],
+    services: true,
+  },
+
+  "repo:node-checks": { command: ["node", "scripts/run-node-checks.mjs"] },
+  "repo:actionlint": { run: actionlint },
+  "repo:secret-scan": { run: secretScan },
+};
+
+/** Task name for `npm run backend -- <short>` ("lint" -> "backend:lint"). */
+export const backendTaskName = (short) => `backend:${short}`;

@@ -1,0 +1,17 @@
+# Prettier checks only the code written for the skeleton; everything else keeps its own format.
+/*
+!/apps
+!/packages
+!/scripts
+!/e2e
+!/playwright.config.ts
+**/dist
+**/node_modules
+package-lock.json
+**/coverage
+scripts/test-fixtures
+packages/api-types/src/schema.d.ts
+packages/api-types/openapi.json
+packages/design-tokens/design-tokens.json
+packages/design-tokens/README.md
+packages/i18n/messages

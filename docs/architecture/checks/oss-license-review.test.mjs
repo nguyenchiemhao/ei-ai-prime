@@ -15,10 +15,9 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const REVIEW = path.join(ROOT, "docs/architecture/oss-license-review.md");
 const ADR = path.join(ROOT, "docs/architecture/adr-001-tech-stack.md");
-const POC_DIR = path.join(ROOT, "poc/stack-spike");
-const POC_REQ = path.join(POC_DIR, "requirements.txt");
-const POC_COMPOSE = path.join(POC_DIR, "compose.yaml");
-const POC_DOCKERFILE = path.join(POC_DIR, "Dockerfile");
+const PYPROJECT = path.join(ROOT, "backend/pyproject.toml");
+const COMPOSE = path.join(ROOT, "compose.yaml");
+const DOCKERFILES = ["backend/Dockerfile", "apps/admin/Dockerfile", "apps/widget/Dockerfile"].map((file) => path.join(ROOT, file));
 
 const HEADINGS = [
   "1. Scope, assumptions and method",
@@ -159,22 +158,39 @@ test("covers_every_component_in_the_ticket_scope", () => {
   assert.deepEqual(missing, [], `missing components: ${missing.map((m) => m.join("|")).join(", ")}`);
 });
 
-test("reviews_every_poc_pin", (t) => {
-  if (!fs.existsSync(POC_DIR)) return t.skip("PoC removed by SET-03");
+// The product's own pins (EA-13 retargeted this from the PoC): Python pins of backend/pyproject.toml,
+// every image in compose.yaml and in the Dockerfiles, and the model revision.
+function productPins() {
+  const project = read(PYPROJECT);
+  const section = project.slice(project.indexOf("[project]"), project.indexOf("[project.scripts]"));
+  return [...section.matchAll(/"([A-Za-z0-9_.-]+)(?:\[[^\]]*\])?==([^"\s]+)"/g)].map((m) => [m[1], m[2]]);
+}
+
+function productImages() {
+  const images = [...read(COMPOSE).matchAll(/^\s*image:\s*(\S+)/gm)].map((m) => m[1]);
+  for (const dockerfile of DOCKERFILES) {
+    const stages = new Set();
+    for (const [, image, stage] of read(dockerfile).matchAll(/^FROM\s+(\S+)(?:\s+AS\s+(\S+))?/gim)) {
+      if (!stages.has(image)) images.push(image);
+      if (stage) stages.add(stage);
+    }
+  }
+  return [...new Set(images)];
+}
+
+test("reviews_every_product_pin", () => {
   const rows = libraryRows();
   const md = read(REVIEW);
-  const pins = [...read(POC_REQ).matchAll(/^([A-Za-z0-9_.-]+)(?:\[[^\]]*\])?==(\S+)/gm)];
-  assert.ok(pins.length > 0, "no pins found in requirements.txt");
-  for (const [, name, version] of pins) {
+  const pins = productPins();
+  assert.ok(pins.length >= 10, `expected the pins of backend/pyproject.toml, found ${pins.length}`);
+  for (const [name, version] of pins) {
     const row = rows.find((r) => lower(r.Component).includes(lower(name)) && r["Version reviewed"].includes(version));
     assert.ok(row, `no row for pin ${name}==${version}`);
   }
-  const compose = read(POC_COMPOSE);
-  const images = [...compose.matchAll(/^\s*image:\s*(\S+)/gm)].map((m) => m[1]);
-  images.push(read(POC_DOCKERFILE).match(/^FROM\s+(\S+)/m)[1]);
-  assert.ok(images.length >= 4, "expected compose images and the Dockerfile base image");
+  const images = productImages();
+  assert.ok(images.length >= 6, "expected the compose images and the Dockerfile base images");
   for (const image of images) assert.ok(md.includes(image), `image ${image} is not reviewed`);
-  const revision = compose.match(/\/resolve\/([0-9a-f]{40})\//)[1];
+  const revision = read(COMPOSE).match(/\/resolve\/([0-9a-f]{40})\//)[1];
   assert.ok(reviewSection(3).body.includes(revision), `model revision ${revision} missing in section 3`);
 });
 

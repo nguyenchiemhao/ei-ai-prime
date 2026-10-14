@@ -40,7 +40,7 @@ Used by the Developer and Code Reviewer agents and by humans. The short, non-neg
 ### Backend
 - Language/version, formatter, linter, type checker: Python 3.12, FastAPI (Pydantic v2); ruff for lint and format; mypy in strict mode for new modules.
 - Test runner and layout: pytest (+ pytest-asyncio), tests under `tests/` mirroring the package layout; database tests run against a real PostgreSQL 16 + pgvector from Docker Compose, never a mock of the database.
-- DB access and migrations (RLS policy per table): SQLAlchemy 2 (async, psycopg 3) and Alembic. Every table has `org_id`, and its RLS policy (`ENABLE` + `FORCE ROW LEVEL SECURITY`) is created in the same migration as the table. The application role is never a table owner, superuser or BYPASSRLS role. Tenant context is set at the start of a top-level transaction with `set_config('app.current_org', <org id from the verified token>, true)`; the helper must refuse to run when a transaction is already open (a nested call only creates a SAVEPOINT and the setting would outlive it), and policies read it through `NULLIF(current_setting('app.current_org', true), '')::uuid` (the setting reads `''` after a transaction ends). Origin of the pattern, with tests: `poc/stack-spike/src/stack_spike/tenant.py` (to be replaced by the real helper in FND-01). Use composite foreign keys `(org_id, id)`; no grants on vector partitions; views use `security_invoker = true`.
+- DB access and migrations (RLS policy per table): SQLAlchemy 2 (async, psycopg 3) and Alembic. Every table has `org_id`, and its RLS policy (`ENABLE` + `FORCE ROW LEVEL SECURITY`) is created in the same migration as the table. The application role is never a table owner, superuser or BYPASSRLS role. Tenant context is set at the start of a top-level transaction with `set_config('app.current_org', <org id from the verified token>, true)`; the helper must refuse to run when a transaction is already open (a nested call only creates a SAVEPOINT and the setting would outlive it), and policies read it through `NULLIF(current_setting('app.current_org', true), '')::uuid` (the setting reads `''` after a transaction ends). Origin of the pattern, with tests (the EA-11 PoC was removed from the tree by SET-03; read it with `git show 2ce9f3e:<path>`): `poc/stack-spike/src/stack_spike/tenant.py`, `poc/stack-spike/db/init/001_schema.sql` and `poc/stack-spike/tests/isolation/`; FND-01 replaces it with the real helper. Use composite foreign keys `(org_id, id)`; no grants on vector partitions; views use `security_invoker = true`.
 - Models: call them only through the OpenAI-compatible gateway (official `openai` SDK with `base_url`); never import an engine-specific client.
 
 ### Frontend (admin + widget)
@@ -56,13 +56,14 @@ Used by the Developer and Code Reviewer agents and by humans. The short, non-neg
 
 ## 3. Commands
 
-Fill in once the stack exists; agents run exactly these. Filled by SET-03 (EA-13) when the skeleton exists; the EA-11 PoC commands are in `poc/stack-spike/README.md`.
+Agents run exactly these, from the repository root (details and prerequisites: `README.md`). "make up" in older tickets means `npm run up`.
 
 | Purpose | Command |
 |---|---|
-| Install | |
-| Lint + format check | |
-| Type check | |
-| Unit/integration tests | |
-| Start app locally | |
-| E2E tests | `npx playwright test` |
+| Install | `npm ci` (Node dependencies; the Docker images are built by `npm run up` and the backend tools image by `npm run backend -- <task>`) |
+| Lint + format check | `npm run lint` (frontend) and `npm run backend -- lint` + `npm run backend -- format` (backend) |
+| Type check | `npm run typecheck` (frontend) and `npm run backend -- typecheck` (backend) |
+| Unit/integration tests | `npm test` (frontend + Node checks + backend unit tests); `npm run backend -- test-integration` (needs db and valkey, started by the command) |
+| Start app locally | `npm run up` (add `-- --no-model` to skip the model); `npm run seed` for the demo data; `npm run down` to stop |
+| E2E tests | `npm run e2e` (one-time browser install: `npx playwright install chromium`; the stack must be running) |
+| All CI checks | `npm run check` (`-- --skip-stack` without Docker services) |

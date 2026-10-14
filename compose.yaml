@@ -1,0 +1,165 @@
+# ei-ai local integration environment (EA-13 / SET-03). One command: npm run up
+#
+#   npm run up                  core services + the ~4B model (profiles core + model)
+#   npm run up -- --no-model    without the model (no 2.5 GB download, ~1.5 GB less RAM)
+#   npm run up -- --demo        also the demo profile (host-demo, hr-api-mock) once those tickets exist
+#
+# Credentials come from .env (created by `npm run up`, git-ignored); there is no password in this file.
+# Written for Docker Compose >= 2.20.3 (scripts/lib/compose-version.mjs): profiles, healthcheck
+# conditions, mem_limit and named volumes only (no include:, develop: or healthcheck.start_interval).
+# Every long-running service has a healthcheck and a hard memory limit (16 GB dev machine, NFR).
+
+name: ei-ai
+
+# One default for the model alias, used by the server command. The healthcheck below repeats the same
+# default (a YAML anchor cannot be expanded inside a string); compose.test.mjs keeps the two equal.
+x-llm-alias: &llm_alias "${LLM_ALIAS:-qwen3-4b-instruct-2507}"
+
+services:
+  # PostgreSQL 16 + pgvector 0.8.x. The init script creates the application role (never a superuser,
+  # never BYPASSRLS). Tables and RLS policies arrive with FND-01.
+  db:
+    image: pgvector/pgvector:0.8.7-pg16
+    profiles: ["core"]
+    environment:
+      POSTGRES_DB: ei_ai
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run npm run up to create .env}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?run npm run up to create .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./infra/db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d ei_ai"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    mem_limit: 1g
+
+  # Valkey 8 (BSD-3-Clause, Redis wire-compatible): rate limits and short-lived counters.
+  # Internal network only, no authentication in the local environment.
+  valkey:
+    image: valkey/valkey:8.1.10-alpine
+    profiles: ["core"]
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 256m
+
+  # llama.cpp server: OpenAI-compatible endpoint, ~4B model on CPU. Multi-GB download on first start.
+  model:
+    image: ghcr.io/ggml-org/llama.cpp:server-b11580
+    profiles: ["model"]
+    command:
+      # Downloaded by Hugging Face revision (commit), not by branch, so the file cannot change under us.
+      # "-m" is required: with "-mu" alone, build b11580 starts in router mode with no model loaded
+      # (and /health still answers 200). "-m" gives the local path the URL is downloaded to.
+      - "-m"
+      - "/models/${LLM_MODEL_FILE:-Qwen3-4B-Instruct-2507-Q4_K_M.gguf}"
+      - "-mu"
+      - "${LLM_MODEL_URL:-https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF/resolve/a06e946bb6b655725eafa393f4a9745d460374c9/Qwen3-4B-Instruct-2507-Q4_K_M.gguf}"
+      - "--alias"
+      - *llm_alias
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "8080"
+      - "-c"
+      - "8192"
+      - "-t"
+      - "6"
+      - "--jinja"
+    environment:
+      LLAMA_CACHE: /models
+    volumes:
+      - model-cache:/models
+    healthcheck:
+      # Healthy only when /v1/models lists the configured alias, i.e. a model is loaded.
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/v1/models | grep -q '\"id\":\"${LLM_ALIAS:-qwen3-4b-instruct-2507}\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 600s
+    mem_limit: 6g
+
+  api:
+    build:
+      context: ./backend
+      target: runtime
+    profiles: ["core"]
+    environment:
+      EI_AI_ENV: local
+      DATABASE_URL: postgresql://ei_ai_app:${APP_DB_PASSWORD:?run npm run up to create .env}@db:5432/ei_ai
+      VALKEY_URL: redis://valkey:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 512m
+
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+    profiles: ["core"]
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3000:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 64m
+
+  widget:
+    build:
+      context: .
+      dockerfile: apps/widget/Dockerfile
+    profiles: ["core"]
+    ports:
+      - "127.0.0.1:3001:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 64m
+
+  # Lint, type check and test runner for the backend. Not started by "up"; used by
+  # `npm run backend -- <task>` through "run --rm". The repository is mounted so edits are tested at once.
+  backend-tools:
+    build:
+      context: ./backend
+      target: dev
+    profiles: ["tools"]
+    working_dir: /workspace/backend
+    volumes:
+      - ./:/workspace
+    environment:
+      EI_AI_ENV: test
+      EI_AI_REPO_ROOT: /workspace
+      DATABASE_URL: postgresql://ei_ai_app:${APP_DB_PASSWORD:?run npm run up to create .env}@db:5432/ei_ai
+      VALKEY_URL: redis://valkey:6379/0
+
+  # Profile "demo" (npm run up -- --demo) is reserved for later tickets; nothing runs there yet:
+  #   host-demo    WGT-10 (EA-49): two host sites on 127.0.0.1:4001 and 127.0.0.1:4002
+  #   hr-api-mock  SKL-04 (EA-63): HR API mock, internal network only
+
+volumes:
+  db-data:
+  # Shared across projects on purpose (the model is ~2.5 GB). Never delete it with `down -v`.
+  # Reuse a cached model: MODEL_CACHE_VOLUME=ei-ai-stack-spike_model-cache in .env.
+  model-cache:
+    name: ${MODEL_CACHE_VOLUME:-ei-ai-model-cache}

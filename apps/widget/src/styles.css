@@ -1,0 +1,36 @@
+body {
+  margin: 0;
+  background: var(--ei-color-surface-widget-canvas);
+  color: var(--ei-color-text-primary);
+  font-family: var(--ei-font-family-sans);
+  font-size: var(--ei-font-size-base);
+  line-height: var(--ei-font-line-height-base);
+}
+
+.widget {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  max-width: var(--ei-size-layout-widget);
+}
+
+.widget__header {
+  padding: var(--ei-space-3) var(--ei-space-4);
+  background: var(--ei-color-brand-default);
+  color: var(--ei-color-text-on-accent);
+}
+
+.widget__title {
+  margin: 0;
+  font-size: var(--ei-font-size-xl);
+  font-weight: var(--ei-font-weight-semibold);
+}
+
+.widget__greeting {
+  margin: var(--ei-space-4);
+}
+
+.widget__conversation {
+  flex: 1;
+  padding: var(--ei-space-4);
+}
