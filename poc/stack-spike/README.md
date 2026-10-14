@@ -9,7 +9,7 @@ SET-03 (EA-13) and FND-01 (EA-18) absorb the RLS pattern into the real backend m
 
 ## Prerequisites
 
-- Docker Desktop running (Compose v2.17 or newer works; the file only uses older features).
+- Docker Desktop running (verified with Engine 29.8.2 and Compose v5.6.0; the file is written to stay compatible with Compose v2.17, which is not tested).
 - No Python on the host is needed: everything runs in containers.
 - Run every command from the repository root. `$POC` below means:
 
@@ -40,11 +40,11 @@ The database keeps its data in `tmpfs`, so every `down` followed by `up` starts 
 
 ## Model
 
-Default: `unsloth/Qwen3-4B-Instruct-2507-GGUF`, file `Qwen3-4B-Instruct-2507-Q4_K_M.gguf` (Apache-2.0, non-thinking), downloaded by Hugging Face commit so the file cannot change. The model test hashes the cached file and compares it with `MODEL_SHA256`. To try another model, set `LLM_MODEL_URL` (a `resolve/<commit>/<file>` URL), `LLM_MODEL_SHA256` and `LLM_ALIAS`, and run `down -v` first so the cache holds a single GGUF. The server image tag, the model file and its sha256 are recorded in ADR-001 section 8.
+Default: `unsloth/Qwen3-4B-Instruct-2507-GGUF`, file `Qwen3-4B-Instruct-2507-Q4_K_M.gguf` (Apache-2.0, non-thinking), downloaded by Hugging Face commit so the file cannot change (`-m /models/<file>` gives the local path, `-mu` the URL; without `-m` this llama.cpp build starts without a model). The first start takes about 2.5 minutes including the download, later starts about 10 seconds. The model test hashes the cached file and compares it with `MODEL_SHA256`. To try another model, set `LLM_MODEL_URL` (a `resolve/<commit>/<file>` URL), `LLM_MODEL_FILE` (its file name), `LLM_MODEL_SHA256` and `LLM_ALIAS`, and run `down -v` first so the cache holds a single GGUF. The server image tag, the model file and its sha256 are recorded in ADR-001 section 8.
 
 ## RAM notes
 
-Docker Desktop with WSL2 gives its VM about 50% of the host RAM (about 8 GB here) by default. The services in this PoC have hard limits (db 1 GB, valkey 256 MB, model 6 GB) and fit in that cap. For the full application stack (SET-03), create `%UserProfile%\.wslconfig`:
+Docker Desktop with WSL2 gives its VM about 50% of the host RAM by default; here `docker info` reports a VM `MemTotal` of 7.2 GB. The hard limits of the PoC services (db 1 GB, valkey 256 MB, model 6 GB) add up to more than that, so they do not protect the VM by themselves; the PoC fits by measured use: about 5 GiB together on the first run (the model's page cache from the download is counted) and about 3 GiB after a restart with the model cached. For the full application stack (SET-03), create `%UserProfile%\.wslconfig`:
 
 ```ini
 [wsl2]
