@@ -1,6 +1,6 @@
 # ADR-001: Tech stack and overall architecture
 
-- Status: Proposed
+- Status: Accepted (approved by the owner on 2026-10-14)
 - Date: 2026-10-13
 - Deciders: Hao (Howie) C. NGUYEN (PO/Tech Lead), AI agent team
 - Ticket: EA-11 (SET-01)
@@ -540,7 +540,7 @@ Follow-ups:
 - FND-07 (EA-24): implement the gateway and the model catalog with checksums, verified when the model server starts (llama-server does not verify them); pick the exact embedding and reranker artefacts and their publishers.
 - SET-03 (EA-13) and FND-07 (EA-24): the model service healthcheck must prove that a model is loaded, for example by checking that the configured alias is listed in `/v1/models` (or by a 1-token completion). llama.cpp b11580 answers `/health` with 200 while it runs in router mode with no model (this happens if `-m` is dropped from the command), so `/health` alone lets `service_healthy` dependants start against an empty server. The PoC guards against this only with the opt-in `CHECK_MODEL=1` tests.
 - SET-02 (EA-12): done, the binding licence list is `docs/architecture/oss-license-review.md`; SET-03 adds the notices file and the licence scan to CI.
-- Status: this ADR stays Proposed until the owner approves it; SET-03 should not start before approval.
+- Status: accepted by the owner on 2026-10-14; SET-03 can start.
 
 ## 12. References
 
