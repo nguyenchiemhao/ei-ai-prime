@@ -194,38 +194,42 @@ test.describe("EA-13 repo skeleton", () => {
     await fr.close();
   });
 
-  test("AC3: lint, type-check and unit tests of frontend and backend pass and fail the task when broken", () => {
-    const tasks = [
-      "frontend:lint",
-      "frontend:typecheck",
-      "frontend:test",
-      "backend:lint",
-      "backend:format",
-      "backend:typecheck",
-      "backend:test",
-    ];
-    test.setTimeout(10 * 60_000);
-    for (const task of tasks) {
-      const result = run(process.execPath, ["scripts/task.mjs", task]);
-      expect(result.status, `${task}\n${result.stdout}\n${result.stderr}`.slice(-3000)).toBe(0);
-    }
-    // An unknown task fails (the runner does not silently succeed).
-    expect(run(process.execPath, ["scripts/task.mjs", "frontend:does-not-exist"]).status).not.toBe(
-      0,
-    );
+  test(
+    "AC3: lint, type-check and unit tests of frontend and backend pass and fail the task when broken",
+    { tag: "@slow" },
+    () => {
+      const tasks = [
+        "frontend:lint",
+        "frontend:typecheck",
+        "frontend:test",
+        "backend:lint",
+        "backend:format",
+        "backend:typecheck",
+        "backend:test",
+      ];
+      test.setTimeout(10 * 60_000);
+      for (const task of tasks) {
+        const result = run(process.execPath, ["scripts/task.mjs", task]);
+        expect(result.status, `${task}\n${result.stdout}\n${result.stderr}`.slice(-3000)).toBe(0);
+      }
+      // An unknown task fails (the runner does not silently succeed).
+      expect(
+        run(process.execPath, ["scripts/task.mjs", "frontend:does-not-exist"]).status,
+      ).not.toBe(0);
 
-    // The workflow calls only these tasks, on pull requests, with no continue-on-error.
-    const workflow = fs.readFileSync(path.join(ROOT, ".github/workflows/ci.yml"), "utf8");
-    expect(workflow).toMatch(/^on:\s*\n\s+push:/m); // every branch push since 7be5db6
-    expect(workflow).not.toContain("continue-on-error");
-    for (const task of tasks) {
-      const short = task.replace("backend:", "");
-      const present = task.startsWith("backend:")
-        ? workflow.includes(`npm run backend -- ${short} --native`)
-        : workflow.includes(`scripts/task.mjs ${task}`);
-      expect(present, `${task} is not called by ci.yml`).toBe(true);
-    }
-  });
+      // The workflow calls only these tasks, on pull requests, with no continue-on-error.
+      const workflow = fs.readFileSync(path.join(ROOT, ".github/workflows/ci.yml"), "utf8");
+      expect(workflow).toMatch(/^on:\s*\n\s+push:/m); // every branch push since 7be5db6
+      expect(workflow).not.toContain("continue-on-error");
+      for (const task of tasks) {
+        const short = task.replace("backend:", "");
+        const present = task.startsWith("backend:")
+          ? workflow.includes(`npm run backend -- ${short} --native`)
+          : workflow.includes(`scripts/task.mjs ${task}`);
+        expect(present, `${task} is not called by ci.yml`).toBe(true);
+      }
+    },
+  );
 
   test("AC4: every CI job is limited to 10 minutes and the jobs run in parallel", () => {
     const workflow = fs.readFileSync(path.join(ROOT, ".github/workflows/ci.yml"), "utf8");

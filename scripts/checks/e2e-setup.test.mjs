@@ -12,9 +12,26 @@ const packageJson = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), 
 const node = (args, input) =>
   spawnSync(process.execPath, args, { cwd: ROOT, input, encoding: "utf8" });
 
-test("e2e_command_runs_the_playwright_specs", () => {
-  assert.equal(packageJson.scripts.e2e, "playwright test");
+// Test tiers (docs/dev/coding-rules.md §3.1): `npm run e2e` is the fast tier used in every QA round;
+// specs that copy the repository, re-run whole task suites or measure performance are tagged and run
+// only at ticket completion or on demand.
+test("e2e_command_runs_the_fast_tier_only", () => {
+  assert.equal(packageJson.scripts.e2e, 'playwright test --grep-invert "@slow|@perf"');
   assert.ok(fs.existsSync(path.join(ROOT, "playwright.config.ts")));
+});
+
+test("full_and_perf_e2e_commands_exist", () => {
+  assert.equal(packageJson.scripts["e2e:full"], "playwright test");
+  assert.equal(packageJson.scripts["e2e:perf"], "playwright test --grep @perf");
+});
+
+test("slow_and_perf_specs_are_tagged", () => {
+  const spec = (name) => fs.readFileSync(path.join(ROOT, "e2e", "foundation", name), "utf8");
+  // Prettier may wrap the arguments, so whitespace between them is free.
+  const tagged = (title, tag) => new RegExp(`${title}[^"]*",\\s*\\{ tag: "${tag}" \\}`);
+  assert.match(spec("EA-19-tenant-isolation.spec.ts"), tagged('test\\.describe\\("EA-19', "@slow"));
+  assert.match(spec("EA-13-repo-skeleton.spec.ts"), tagged('test\\(\\s*"AC3: ', "@slow"));
+  assert.match(spec("EA-18-multi-tenant-rls.spec.ts"), tagged('test\\(\\s*"NFR: ', "@perf"));
 });
 
 test("typecheck_covers_the_e2e_specs_and_the_playwright_config", () => {

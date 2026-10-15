@@ -254,7 +254,7 @@ rollback;
     expect(ps.split("\n")).not.toContain("migrate");
   });
 
-  test("NFR: RLS overhead on a 100k-row table is within 1 ms or 10 %", () => {
+  test("NFR: RLS overhead on a 100k-row table is within 1 ms or 10 %", { tag: "@perf" }, () => {
     test.setTimeout(5 * 60_000);
     const bench = spawnSync(process.execPath, ["scripts/backend.mjs", "bench-rls"], {
       cwd: ROOT,

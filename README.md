@@ -99,8 +99,12 @@ Playwright end-to-end tests live in `e2e/` (specs `e2e/<area>/<ticket>-<slug>.sp
 ```
 npx playwright install chromium     # once per machine: downloads the test browser
 npm run up && npm run seed          # the stack the specs talk to
-npm run e2e                         # all specs; or: npm run e2e -- e2e/<area>/<ticket>-<slug>.spec.ts
+npm run e2e                         # fast tier (skips @slow and @perf); or: npm run e2e -- e2e/<area>/<ticket>-<slug>.spec.ts
+npm run e2e:full                    # every spec, including @slow (repository copies, task re-runs) and @perf
+npm run e2e:perf                    # only the @perf specs (benchmarks, timings)
 ```
+
+Tag a test `{ tag: "@slow" }` when it copies the repository, starts a second Compose project or re-runs whole task suites, and `{ tag: "@perf" }` when it measures time or overhead. The fast tier runs in every QA round; `@slow` and `@perf` run once when a ticket is finished, or when you change their area (test tiers: `docs/dev/coding-rules.md` §3.1).
 
 `ADMIN_URL` (default `http://localhost:3000`) is the base URL; the HTML report goes to `.work/playwright-report/` and traces of failed tests to `.work/playwright-results/` (git-ignored). `npm run lint` and `npm run typecheck` cover the specs and the config too.
 

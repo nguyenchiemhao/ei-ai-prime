@@ -71,5 +71,22 @@ Agents run exactly these, from the repository root (details and prerequisites: `
 | Start app locally | `npm run up` (add `-- --no-model` to skip the model; it applies the database migrations first); `npm run seed` for the demo data; `npm run down` to stop |
 | Database migrations | `npm run migrate` (starts the database if needed, applies the migrations and runs the schema guard; safe to repeat) |
 | RLS overhead benchmark | `npm run backend -- bench-rls` (FND-01 NFR; not part of `npm run check`) |
-| E2E tests | `npm run e2e` (one-time browser install: `npx playwright install chromium`; the stack must be running) |
+| E2E tests | `npm run e2e` = fast tier, skips `@slow`/`@perf` (one-time browser install: `npx playwright install chromium`; the stack must be running); `npm run e2e:full` = every spec; `npm run e2e:perf` = `@perf` only |
 | All CI checks | `npm run check` (`-- --skip-stack` without Docker services) |
+
+### 3.1 Test tiers
+
+Run the cheapest tier that gives the evidence you need. Owner decision 2026-10-15: keep the inner loop fast; browser exploration, slow and performance checks run once per ticket or on demand.
+
+| Tier | What | When | Who |
+|---|---|---|---|
+| T1 inner loop | Unit tests and lint/type checks of the area you changed (`npm run backend -- test`, `npm test`, `npm run lint`, `npm run typecheck`); the integration or isolation tests that cover the changed code | After every task and every fix | Developer; reviewer for the files of a fix |
+| T2 round gate | `npm run check` (local mirror of CI) once per round; CI on the pushed branch | End of a developer round; reviewer round 1; the Lead uses the branch CI run | Developer, reviewer, Lead |
+| T3 fast E2E | `npm run e2e -- e2e/<area>/<ticket>-*` (Playwright, fast tier; API specs use the `request` fixture) | Every QA round | QA |
+| T4 completion | Browser exploration with Playwright MCP / Chrome DevTools MCP (console, network, performance) for `ui` tickets; the ticket's own `@slow` and `@perf` specs (`npm run e2e:full -- e2e/<area>/<ticket>-*`) | Once, in the final QA pass after review and fast QA pass | QA |
+| On demand | `npm run e2e:full` (all tickets), `npm run e2e:perf`, benchmarks (`npm run backend -- bench-rls`), cold-start measurements | When a change touches that area, before a milestone, or when the owner asks | Lead decides |
+
+Rules:
+- Tag a Playwright test `{ tag: "@slow" }` when it copies the repository, starts a second Compose project or re-runs whole task suites; `{ tag: "@perf" }` when it measures time or overhead. `npm run e2e` skips both.
+- Keep `npm run e2e` under about 3 minutes; a spec that pushes it over is a `@slow` candidate.
+- Mutation proofs run on a scratch copy and only for the area under review; a later round re-checks only the earlier findings and the files changed since.

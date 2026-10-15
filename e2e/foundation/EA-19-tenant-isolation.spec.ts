@@ -31,7 +31,7 @@ function run(command: string, args: string[], cwd: string, env: NodeJS.ProcessEn
 
 const TIMING_FILE = path.join(ROOT, ".work", "EA-19", "isolation-seconds.txt");
 
-test.describe("EA-19 tenant-isolation suite in CI", () => {
+test.describe("EA-19 tenant-isolation suite in CI", { tag: "@slow" }, () => {
   let scratch = "";
   const scratchEnv = { ...process.env, COMPOSE_PROJECT_NAME: QA_PROJECT };
 
