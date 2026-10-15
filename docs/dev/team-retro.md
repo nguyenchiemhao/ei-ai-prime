@@ -64,3 +64,25 @@ Applied after owner approval: EA-11 (Docker engine preflight), EA-12 (reviewer m
 - What went well: the reviewer attacked the test suite itself with realistic leaks (org-less cache, header-trusting public route, read-B-write-A job, other-org Valkey writes) and each gap became a permanent leaky-probe self-test.
 - What slowed us down: a first-draft isolation suite that checked only the obvious path needed two extra review rounds; the new EA-19 e2e spec builds scratch copies and made `npm run e2e` take about 10 minutes.
 - Proposed change: `.claude/agents/ticket-planner.md` — for any test-infrastructure ticket ("suite X catches Y"), plan the leaky probes (one per leak kind) up front as acceptance evidence. `docs/dev/coding-rules.md` §3 — keep `npm run e2e` under ~3 minutes; slow scratch-copy specs go behind a separate tag.
+
+## 2026-10-15 — Flow cost review (owner request)
+- Trigger: the owner asked to cut cost and time; EA-19 was the reference run.
+- Measured on EA-19:
+  - `npm run e2e` ran every spec, 20 tests in 10.4 min; 6 copy the repository or re-run task suites and 1 is a benchmark.
+  - `npm run check` (about 2 min) ran roughly ten times per ticket: each developer round, each review round, QA, the Lead's final review and again on `main` after the merge. Reviewers repeated the whole mutation set in every round.
+  - Subagent tokens were about 1.1 M: planner ~0.19 M, developer ~0.44 M over 4 rounds, reviewer ~0.29 M over 3 rounds, QA ~0.16 M.
+  - QA used browser MCP tools on an `api` ticket and ran the slow specs while fixes were still coming.
+- Changes applied (owner decision 2026-10-15):
+  - **Test tiers.** New `docs/dev/coding-rules.md` §3.1 defines five levels: T1 inner loop, T2 round gate, T3 fast E2E, T4 completion, and on demand.
+  - **Tags and commands.** Playwright tags `@slow` and `@perf`. `npm run e2e` is now the fast tier: 13 tests in 23 s. `npm run e2e:full` runs everything and `npm run e2e:perf` only the `@perf` specs.
+  - **QA modes.** `fast` runs every round with Playwright specs only. `final` runs once, after a fast PASS, and only for `ui` tickets or tickets with their own `@slow`/`@perf` specs; browser MCP exploration happens only there.
+  - **Developer.** T1 per task and one `npm run check` per round.
+  - **Reviewer.** Round 1 runs T2 and mutations on the changed areas. Later rounds re-check findings and changed files only; the full check reruns only when shared infrastructure changed.
+  - **Lead.** Uses the CI run on the pushed ticket branch instead of a local full check and a fresh-checkout worktree. Locally it runs only `npm run e2e`. After a trivial merge it skips the local check on `main` and waits for CI on `main`.
+  - **Planner.** Tags every E2E scenario with its tier and prefers unit/integration evidence.
+- Expected effect per ticket:
+  - Local full checks drop from about ten to three or four.
+  - The Lead's E2E drops from about 10 min to about 0.5 min.
+  - Browser MCP sessions run once, and only for `ui` tickets.
+  - Review rounds after the first cost much less.
+- Watch next tickets: whether a defect slips past fast QA and is only found in the final pass or on CI. If that happens, move that check up a tier.

@@ -26,7 +26,24 @@ Design: `docs/superpowers/specs/2026-10-13-dev-agent-team-design.md`.
 | `ticket-planner` | key, work folder, branch | `STATUS: READY|BLOCKED <plan path> (comment <id>)` |
 | `developer` | key, work folder, branch | `STATUS: DONE|BLOCKED <dev-log path>` |
 | `code-reviewer` | key, work folder, round N, base branch | `STATUS: PASS|CHANGES_REQUESTED <review path>` |
-| `qa-e2e` | key, work folder, round k | `STATUS: PASS|FAIL|SKIPPED …` |
+| `qa-e2e` | key, work folder, round k, mode `fast` or `final` | `STATUS: PASS|FAIL|SKIPPED …` |
+
+## Test tiers (cost and time)
+
+Use the tiers in `docs/dev/coding-rules.md` §3.1 and say the tier in every dispatch message, so no agent runs more than the step needs:
+
+| Step | Tier | Never in this step |
+|---|---|---|
+| Developer, per task / per fix | T1: tests and lint/type of the changed area | full `npm run check`, any E2E |
+| Developer, end of a round | T2: one `npm run check` | `npm run e2e:full`, benchmarks |
+| Reviewer, round 1 | T2 once + mutation proofs for the changed area | E2E, benchmarks |
+| Reviewer, round ≥ 2 | re-check the earlier findings and the files changed since; T1 for those files | full `npm run check` again (unless the fix touched shared infrastructure: compose, CI, migrations, test harness) |
+| QA rounds (mode `fast`) | T3: the ticket's fast Playwright specs; API checks | browser MCP exploration, `@slow`, `@perf` |
+| QA final pass (mode `final`) | T4, once: browser MCP exploration (`ui` only) and the ticket's own `@slow`/`@perf` specs | other tickets' `@slow`/`@perf` |
+| Lead final review | the branch CI run on the pushed commit (T2) + `npm run e2e` (fast tier of all tickets) | re-running `npm run check` when CI on the same commit is green |
+| On demand | `npm run e2e:full`, `npm run e2e:perf`, benchmarks, cold starts | — |
+
+Run `@perf` specs and benchmarks only when the ticket has a performance NFR or touches the measured path; run other tickets' `@slow` specs only when the ticket changes what they exercise (say why in `final.md`).
 
 Keep each agent's id. To send the Developer back to fix findings, **resume the same developer** with `SendMessage` (it keeps its context); start a new reviewer per round only if the previous one cannot be resumed. Read the files the agents write — do not rely on their chat summary. If an agent stops on an API error (rate limit, timeout), check the working tree and the dev log, then resume the same agent with a short note of where it stopped. If the error names a reset time (e.g. "resets 12:40pm"), do not end the turn waiting for the owner: start a background Bash wait that exits about 2 minutes after the reset (`run_in_background`, a loop on `date` with short sleeps), and when it completes, resume the agent. Ask developers on large tickets to append a dev-log checkpoint after every task so a resume is exact.
 
@@ -69,25 +86,28 @@ Dispatch `ticket-planner` with the branch name, so it lands in `plan.md` and the
 - `BLOCKED` → ask the owner the blocking questions (AskUserQuestion, with the planner's options and recommendation), resume the planner with the answers (it updates the same comment), repeat.
 
 ### 5. Implement
-Dispatch `developer`. `BLOCKED` → ask the owner, resume the developer with the answer.
+Dispatch `developer` (T1 per task, T2 once at the end). `BLOCKED` → ask the owner, resume the developer with the answer.
 
 ### 6. Code review loop (max 3 rounds)
-Round N = 1, 2, 3: dispatch `code-reviewer` (round N, base branch).
+Round N = 1, 2, 3: dispatch `code-reviewer` (round N, base branch, tier per the table above).
 - `PASS` → step 7.
 - `CHANGES_REQUESTED` → resume the developer with `review-<N>.md`, then next round.
 - Still failing after round 3 → **escalate** (step 11).
+- Fix rounds stay small: ask the developer to fix only the findings and run T1 plus one T2 at the end; ask the reviewer to re-check only the findings and the changed files.
 
-### 7. QA loop (max 3 rounds)
-Round k = 1, 2, 3: dispatch `qa-e2e`.
-- `SKIPPED` (profile `docs` or `design`) or `PASS` → step 8. For these profiles you may skip dispatching `qa-e2e` and record QA as SKIPPED.
-- `FAIL` caused by the environment (Node, browser, app does not start) → escalate.
-- `FAIL` caused by the product → resume the developer with `qa-report.md`, then one code-review round on the fix (does not reset the review counter), then QA again.
-- Still failing after round 3 → escalate.
+### 7. QA (fast rounds, then one final pass)
+- Profile `docs` or `design`: record QA as SKIPPED (no dispatch).
+- **Fast rounds** (max 3): dispatch `qa-e2e` with mode `fast` (T3: the ticket's fast Playwright specs, API checks; no browser MCP, no `@slow`/`@perf`).
+  - `PASS` → final pass (or step 8 when no final pass is needed).
+  - `FAIL` caused by the environment (Node, browser, app does not start) → escalate.
+  - `FAIL` caused by the product → resume the developer with `qa-report.md`, then one code-review round on the fix (does not reset the review counter), then QA again.
+  - Still failing after round 3 → escalate.
+- **Final pass** (once, mode `final`, T4): only when the profile is `ui`, or the ticket has its own `@slow`/`@perf` specs. QA explores with the browser MCP tools and runs the ticket's `@slow`/`@perf` specs. A product bug found here goes back to the developer like a fast-round failure.
 
 ### 8. Final review (you)
 Write `.work/EA-<n>/final.md`:
 - **AC checklist:** each AC from Jira (verbatim) → evidence (test name + result, QA screenshot, review). Any AC without evidence = not done → back to step 5 with a precise request, or escalate.
-- Run the full check suite once more yourself (lint, types, unit/integration, E2E for this ticket) — commands from `docs/dev/coding-rules.md` §3.
+- Checks: do not re-run what the agents just ran. With `--push`, the evidence is the CI run on the pushed ticket branch (step 9b); locally run only `npm run e2e` (fast tier, all tickets) against a running stack. Without `--push`, run `npm run check` once plus `npm run e2e`.
 - `git status --short` + `git diff --stat`: only files that belong to the ticket; no secrets, build output, `.work/`, or large files.
 - Minor findings from reviews and QA that were not fixed → list them under "Improvements".
 
@@ -95,13 +115,14 @@ Write `.work/EA-<n>/final.md`:
 Follow `git-commit` mode `commit`:
 - Without `--auto-commit`: show the owner the summary (AC checklist, files, test results) and the commit message(s); wait for OK.
 - With `--auto-commit`: use `git-commit`'s **auto mode** (no approval prompt); all its safety checks still apply, and any safety-check hit stops the auto commit and asks the owner.
+- Commit the retro entry (step 10) on the ticket branch too, so CI checks one final commit.
 - Without `--push`, never push.
 
 ### 9b. Merge and push (only with `--merge` / `--push`)
-- Before merging, run the ticket's checks on a fresh checkout of the ticket branch (temporary `git worktree`, removed afterwards) to catch line-ending or untracked-file surprises.
+- With `--push`: push the ticket branch first (CI runs on every branch push) and wait for the CI run on that exact commit (public API `actions/runs?head_sha=<sha>`, watched with Monitor). Red → back to step 5. This run replaces a local fresh-checkout check.
 - `git fetch`, switch to the base, `git pull --ff-only`, then `git merge --no-ff <branch> -m "[EA-<n>] chore(<scope>): merge <short summary>" -m "Refs: EA-<n>"`. On a conflict, stop and ask the owner.
-- Re-run the ticket's checks on the base. Commit the retro entry (step 10) on the base before pushing, so one push carries both.
-- With `--push`: `git push origin <base>` (never force). Do not push the ticket branch unless asked.
+- Run `npm run check` on the base only when the merge was not trivial: a conflict was resolved, or the base moved since the branch was created. Otherwise push and rely on CI on the base.
+- `git push origin <base>` (never force), then wait for CI on the base before moving the ticket to Done.
 
 ### 10. Close
 - Jira (via `jira-ticket-management`, finish hand-off with the evidence from `final.md`): add a markdown comment — summary, branch, commit hash(es), merge commit and push (if done), AC → evidence table, test counts, known limitations. Then transition:
@@ -126,6 +147,6 @@ Stop the pipeline, keep the working tree as is, and tell the owner: where it sto
 ## Guardrails
 
 - One ticket per run. Never start a second ticket in the same run.
-- Push only with `--push` (the base branch, after merge). Never force, amend pushed commits, or skip hooks.
+- Push only with `--push` (the ticket branch for CI, then the base after merge). Never force, amend pushed commits, or skip hooks.
 - Never mark a ticket Done without evidence for every AC, and never before its branch is merged.
 - Do not edit agent outputs to make them pass; send work back instead.

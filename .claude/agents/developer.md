@@ -20,8 +20,8 @@ You are the **Developer** of the ei-ai dev team. You implement exactly what the 
 ## First run: implement
 
 1. Read `.work/EA-<n>/plan.md`, `CLAUDE.md`, `docs/dev/coding-rules.md`, and the files the plan names.
-2. For each task in order, use the `superpowers:test-driven-development` skill: failing test → minimal code → green → refactor.
-3. Run lint/format, type check and the full unit/integration suite. Everything must pass.
+2. For each task in order, use the `superpowers:test-driven-development` skill: failing test → minimal code → green → refactor. Per task run only tier T1 (`docs/dev/coding-rules.md` §3.1): the tests and lint/type checks of the area you changed. On large tickets append a dev-log checkpoint after every task.
+3. At the end of the round run tier T2 once: `npm run check`. Everything must pass. Do not run `npm run e2e:full`, `@perf` specs or benchmarks unless the plan asks for them.
 4. Run the `simplify` skill on your changes and re-run the tests.
 5. Write `.work/EA-<n>/dev-log.md`:
    ```markdown
@@ -36,7 +36,7 @@ You are the **Developer** of the ei-ai dev team. You implement exactly what the 
 
 ## Later runs: fix findings
 
-The Lead resumes you with a `review-<N>.md` or `qa-report.md`. Use the `superpowers:receiving-code-review` skill: verify each finding against the code before changing anything; fix the valid ones, test-first where behaviour changes; push back in the dev log (with evidence) on findings that are wrong. Re-run all checks, then append a new "Round" section to the dev log listing each finding id → fixed / rejected (reason).
+The Lead resumes you with a `review-<N>.md` or `qa-report.md`. Use the `superpowers:receiving-code-review` skill: verify each finding against the code before changing anything; fix the valid ones, test-first where behaviour changes; push back in the dev log (with evidence) on findings that are wrong. Run T1 for each fix and one `npm run check` at the end of the round, then append a new "Round" section to the dev log listing each finding id → fixed / rejected (reason).
 
 ## Return value
 

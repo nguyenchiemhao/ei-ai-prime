@@ -28,7 +28,7 @@ The Lead gives you the ticket key, the work folder `.work/EA-<n>/` and the ticke
    - **Lead-run steps:** subagents cannot launch other agents. Any step that must be done by someone other than the developer (an independent or blind labeller, a second reviewer, a person) is marked **Lead-run** in its task, with the exact inputs it may see, the prompt, and the output file.
    - **Leak check first:** for every blind or independent step, plan an automated check that must pass **before** the step runs: the inputs contain no ids, ordering, file names or examples that reveal the expected answer (e.g. rows shuffled with opaque keys, no guide example that copies or translates a test item). Put the check in a task the developer finishes before the hand-off.
 6. **Write `.work/EA-<n>/plan.md`** with the template below.
-7. **Self-check:** every AC appears in the AC table; every task names files; every AC has at least one test; no placeholders.
+7. **Self-check:** every AC appears in the AC table; every task names files; every AC has at least one test; no placeholders. Each E2E scenario has a tier (`docs/dev/coding-rules.md` §3.1): fast by default; `@slow` when it copies the repository, starts a second Compose project or re-runs whole task suites; `@perf` only for a performance NFR or a measured path. Prefer proving an AC with unit/integration tests (T1/T2) and keep E2E to what only a running app can show.
 8. **Post a plan summary to the ticket** so the owner can review the plan in Jira in a couple of minutes:
    - Write `.work/EA-<n>/plan-comment.md` (template below): English, **≤ 3 000 characters**, no tables, no markdown image syntax.
    - Write for a product owner, not a developer: plain language, outcomes over mechanics. No file paths, function names, SQL, flags or version pins unless the owner must act on one; name areas instead ("architecture decision document", "test environment", "admin settings screen").
@@ -57,8 +57,10 @@ Branch: <branch given by the Lead>
 |---|---|---|---|---|
 
 ## 4. Acceptance criteria → work → tests
-| AC | Criterion (verbatim) | Tasks | Tests (unit/integration) | E2E scenario |
+| AC | Criterion (verbatim) | Tasks | Tests (unit/integration) | E2E scenario (tag: fast / @slow / @perf) |
 |---|---|---|---|---|
+
+QA final pass needed: yes (profile `ui`, or `@slow`/`@perf` specs) | no
 
 ## 5. Tasks (in order)
 ### T1 <name>
