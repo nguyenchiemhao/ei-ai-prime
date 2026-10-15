@@ -71,7 +71,7 @@ async def test_rejects_nested_tenant_transaction(
 
         # The outer context is untouched: still Organization A only.
         names = (await conn.execute(text("SELECT name FROM organizations"))).scalars().all()
-        assert names == ["Org A"]
+        assert names == [two_orgs.a.names.organization]
 
 
 async def test_rejects_an_already_open_sqlalchemy_transaction(

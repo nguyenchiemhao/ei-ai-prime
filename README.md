@@ -83,12 +83,14 @@ Runs `ei-ai seed demo` inside the API container. It refuses to run unless the en
 | `npm run backend -- typecheck` | `mypy` (strict) |
 | `npm run backend -- test` | pytest unit tests with a 70 % coverage gate |
 | `npm run backend -- openapi` | The committed OpenAPI document matches the app (`npm run backend -- openapi-export` rewrites it) |
-| `npm run backend -- test-integration` | Starts the database and Valkey, applies the migrations, then runs the integration tests against them |
+| `npm run backend -- test-integration` | Starts the database and Valkey, applies the migrations, then runs the integration tests against them (the tenant-isolation suite is excluded, it has its own command) |
+| `npm run backend -- prepare` | Pulls the database and Valkey images and builds the backend tools and migrate images; runs no test (CI runs it before the isolation suite so that suite's time limit measures the suite) |
+| `npm run backend -- test-isolation` | The tenant-isolation suite (FND-02): every route, job and cache key, plus the FND-01 cross-Organization database tests; see [Writing isolation tests](#writing-isolation-tests) |
 | `npm run migrate` | Starts the database if needed and applies the database migrations as the owner role, then runs the schema guard; safe to repeat |
 | `npm run backend -- bench-rls` | The RLS overhead benchmark (100 000 rows, FND-01); not part of `npm run check` |
 | `node scripts/run-node-checks.mjs` | Document and repository checks (design tokens, licence review, ADR, EVL-01 data set, packages, scripts); fails when a pattern matches no file or a check runs 0 tests |
 | `npm test` | Frontend tests, Node checks and backend unit tests |
-| `npm run check` | **Everything CI runs**, in four jobs (frontend, backend, checks, stack), with PASS/FAIL and the duration of each step. `-- --skip-stack` skips the Docker stack job; the stack job starts the stack without the model and stops it at the end. |
+| `npm run check` | **Everything CI runs**, in five jobs (frontend, backend, checks, tenant-isolation, stack), with PASS/FAIL and the duration of each step. `-- --skip-stack` skips the two jobs that need Docker (tenant-isolation and stack); the stack job starts the stack without the model and stops it at the end. |
 
 Add `--native` after a backend task (`npm run backend -- lint --native`; not for `test-integration`, which needs the Compose services) to run it on the host with Python 3.12 (`pip install -e "backend[dev]"`), as CI does.
 
@@ -129,18 +131,57 @@ Staging does not exist yet, so a ticket's acceptance criteria are verified in th
 5. Keep evidence (command output, screenshots) in `.work/EA-<n>/` (git-ignored scratch space).
 6. `npm run down` when finished.
 
+## Writing isolation tests
+
+Tenant isolation (D46) is a gate, not a review item. The suite lives in `backend/tests/integration/isolation/` (plus the FND-01 database tests, which carry the same `isolation` marker) and runs with one command, locally and in the CI job `tenant-isolation` (5 minute limit):
+
+```
+npm run backend -- test-isolation     # starts db and valkey, applies the migrations, then pytest -m isolation
+```
+
+It proves four things. **Every route is covered:** the routes of the real app are discovered, and a route without a declaration fails the build with `route has no isolation test declared: <METHOD> <path>` (a declaration for a route that no longer exists fails too). **No route leaks:** each authenticated route is called as a user of Organization A with the ids of Organization B and the other way round; nothing of the other Organization may come back, appear in headers or logs, or change in the database. **Jobs run in their own tenant context.** **Every Valkey key carries the Organization.** The suite proves that it bites: `test_suite_catches_leaks.py` mounts deliberately leaky probe routes and jobs (test-only, never part of `create_app()`) and requires each leak to be reported.
+
+### Adding a route
+
+Add one line to `ROUTE_CASES` in `backend/tests/integration/isolation/cases.py`, choosing the kind:
+
+| Kind | Use it when | What the suite does |
+|---|---|---|
+| `ResourceRoute(method, path, resources, body=None, ok_status=200)` | a path parameter (or an id query parameter: typed `UUID`, or named `id`, `*_id`, `*Id` whatever its type) names a tenant resource; `resources` maps each one to a fixture table (`"workspaces"`, ...) | the other Organization uses the route first (so a cache or store without the Organization is filled), then calls it with the other Organization's ids: must answer 403 or 404, **the same status and body as for an unknown id**; then with its own ids: `ok_status` |
+| `OwnTenantRoute(method, path, query_resources={}, body=None, ok_status=200)` | no resource id in the path (the Organization comes from the token only) | calls it with the other Organization's id in every `X-Org-Id`-style header and `org_id`-style query parameter: `ok_status`, the caller's own data, nothing of the other Organization |
+| `PublicRoute(method, path, reason, resources={})` | no identity required (`/healthz`); `reason` is required; `resources` maps path and id query parameters to fixture tables, and each parameter must be called `<table singular>_id` (`workspace_id` for `workspaces`) so a wrong mapping cannot make the check vacuous | not an exemption: called once per Organization, claiming to be it (its id in every Organization header and query parameter, its ids in the path), and nothing of either Organization may come back; fails if the route actually needs an identity |
+
+Every case also checks that the other Organization's rows **and Valkey keys** (`org:<other>:*`, values included) are unchanged afterwards and that none of its data landed in the caller's own rows (a route that copies across Organizations), that logs, headers and body hold nothing of it, that a call without credentials answers 401, and that an authenticated route depends on `require_tenant`. `body` builds the JSON body from the fixture rows (`OrgRows`); `ok_status` is the success status of the route (for example 201 for a create). The body builder runs for every request of the check (warm-up, cross call, positive control, anonymous call), so a create route with a unique constraint needs a body that differs per call, for example `body=lambda rows: {"name": f"ws-{uuid4()}"}`. The suite fails when a request model declares `id` (the database generates ids) or any field that names an Organization (`org_id`, `orgId`, `X-Tenant-Id`, ...). Answer an id of another Organization exactly like an unknown id (404 `{"detail": "not_found"}` is recommended) and never put ids in error bodies.
+
+### Adding a table
+
+A new table needs `org_id`, the standard policy and grants (see `docs/architecture/data-model.md`). Also add it to the fixtures: `create_org_rows`, `OrgRows` and `DELETE_ORDER` in `backend/tests/support/tenants.py`, so the cross-Organization tests, the snapshots and the cleanup include it.
+
+### Adding a background job
+
+Register the handler with `@JOBS.register("kind")` (`ei_ai.jobs`), queue it with `envelope_for(tenant, kind, payload)` (the Organization comes from the verified tenant context, never from the payload) and run it only through `run_tenant_job(engine, envelope)`, which opens the tenant transaction and gives the handler a session and no engine. Import the handler module in `backend/src/ei_ai/jobs/__init__.py` (`import ei_ai.<area>.jobs  # noqa: F401`): handlers register when their module is imported, and the worker and the suite both import `ei_ai.jobs`, so a handler module that nothing imports is invisible to both. Add a `JobCase(kind, payload)` to `JOB_CASES` in `cases.py`; without it `job has no isolation test declared: <kind>` fails the build. The suite runs the job for one Organization with a payload that names the other Organization's rows, then with its own rows.
+
+### Caching
+
+Get the client with `create_valkey_client(settings.valkey_url)` from `ei_ai.cache` (create it once, close it with `await client.aclose()`), then use `TenantCache(client, tenant)` (`ei_ai.cache`). Any new public name that `ei_ai.cache` exports must be added to `CACHE_PUBLIC_API` in `backend/tests/test_valkey_access.py`, otherwise the import scan rejects code that uses it. Valkey is reached only through `TenantCache`, built from the verified `TenantContext` of the route (or the `JobContext` of the job), never from an id; a test fails when any other code constructs those contexts: keys are `org:<org_id>:<namespace>:<part>...`, no method accepts a raw key and every key needs a TTL. A unit test fails when any module under `backend/src` outside `ei_ai/cache/` imports `redis` or `valkey`, takes a client name (`aioredis`, `Redis`) from another module, imports anything but the public API from `ei_ai.cache`, or imports a client with `importlib` / `__import__`. In the isolation suite every test is followed by a scan of the whole Valkey database that fails on any key outside the `org:<uuid>:` prefix and deletes it, so one raw key is one failure (`assert_only_tenant_keys` in `tests/support/isolation/valkey.py`; the keys of a run must be written through `TenantCache`). The import scan is an accident-catcher, not a barrier against someone determined to get around it (for example a client reached through a helper that builds the import at run time); the runtime scan and the check that the other Organization's keys do not change are the backstop.
+
+### Reuse and limits
+
+Later stories reuse the helpers: `assert_route_isolated`, `assert_public_route_clean` and `assert_job_isolated` in `backend/tests/support/isolation/` (WGT-03 widget identity spoofing, SKL-02 Tools). Side paths that do not exist yet (files, export, webhooks, D46) add their own case kind to this suite when they are built. Known limitation: primary keys are global, so a cross-Organization INSERT with a known id hits the unique index; ids are database-generated and unguessable, and the suite requires equal answers for foreign and unknown ids (see `docs/architecture/data-model.md`).
+
 ## CI
 
-`.github/workflows/ci.yml` runs on every push to any branch (ticket branches and `main`) and manually, so a branch is checked without opening a pull request. Four jobs run in parallel on `ubuntu-24.04`, each with a 10 minute limit; a newer push to the same branch cancels the older run. Every step calls the same task runner as `npm run check`.
+`.github/workflows/ci.yml` runs on every push to any branch (ticket branches and `main`) and manually, so a branch is checked without opening a pull request. Five jobs run in parallel on `ubuntu-24.04`, each with a 10 minute limit (the suite step of `tenant-isolation` has 5); a newer push to the same branch cancels the older run. Every step calls the same task runner as `npm run check`.
 
 | Job | Steps |
 |---|---|
 | `frontend` | `npm ci`, lint, type check, unit tests, build, API types in sync |
 | `backend` | ruff, ruff format, mypy, pytest with coverage gate, OpenAPI in sync |
 | `checks` | all Node checks (design, licence review, ADR, EVL-01, compose structure, README, CI file), actionlint, gitleaks over the full history |
+| `tenant-isolation` | `npm run backend -- prepare` (pulls and builds the images), then `npm run backend -- test-isolation` (starts the database and Valkey, applies the migrations, runs the suite) with a 5 minute limit on that step, so a slower suite fails the check while a slow registry or image build cannot; the job itself is capped at 10 minutes; `npm run down`. Measured locally (Docker Desktop on Windows): about 13 seconds on a warm image including the stack start (3 seconds of that is `prepare`), about 45 seconds when the image is rebuilt; the GitHub duration is recorded after the first run |
 | `stack` | Compose 2.20.3 (the minimum), `npm run up -- --no-model` (applies the migrations and runs the schema guard), smoke test, `npm run seed` twice, integration tests, `npm run down` |
 
-Any failing step fails the job and the commit status (also shown on a pull request for that commit). **Owner step:** in the GitHub repository settings (Branch protection or a ruleset for `main`), require the four checks `frontend`, `backend`, `checks` and `stack` before merging; this cannot be set from the repository.
+Any failing step fails the job and the commit status (also shown on a pull request for that commit). **Owner step:** in the GitHub repository settings (Branch protection or a ruleset for `main`), require the five checks `frontend`, `backend`, `checks`, `stack` and `tenant-isolation` before merging (a check name appears in GitHub's picker only after its first run); this cannot be set from the repository.
 
 The model is not started in CI (download and RAM); it is verified locally with `npm run up`.
 

@@ -14,7 +14,7 @@ from ei_ai.readiness import Readiness
 from support.identity import StaticBearerVerifier
 from support.tenants import TwoOrgs
 
-pytestmark = pytest.mark.integration
+pytestmark = [pytest.mark.integration, pytest.mark.isolation]
 
 
 async def _ok() -> None:
@@ -51,8 +51,11 @@ async def test_forged_org_header_and_query_are_ignored_and_real_org_is_returned(
     )
 
     assert response.status_code == 200
-    assert response.json() == {"id": str(two_orgs.a.org_id), "name": "Org A"}
-    assert "Org B" not in response.text
+    assert response.json() == {
+        "id": str(two_orgs.a.org_id),
+        "name": two_orgs.a.names.organization,
+    }
+    assert two_orgs.b.names.organization not in response.text
     assert str(two_orgs.b.org_id) not in response.text
     warnings = [r for r in caplog.records if r.name == "ei_ai.tenancy" and r.levelno == 30]
     assert len(warnings) == 2
@@ -65,7 +68,10 @@ async def test_the_route_returns_the_organization_without_any_forged_field(
 ) -> None:
     response = await client_as_a.get("/organization", headers={"Authorization": "Bearer token-a"})
 
-    assert response.json() == {"id": str(two_orgs.a.org_id), "name": "Org A"}
+    assert response.json() == {
+        "id": str(two_orgs.a.org_id),
+        "name": two_orgs.a.names.organization,
+    }
 
 
 async def test_without_verifier_route_is_401_even_with_org_header(

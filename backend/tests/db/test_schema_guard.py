@@ -202,6 +202,49 @@ def test_g4_a_restrictive_policy_can_only_narrow_and_is_allowed() -> None:
     assert _codes(_with_table(_good(), "workspaces", policies=(_policy(), restrictive))) == []
 
 
+def test_g13_restrictive_policy_without_nullif() -> None:
+    # A restrictive policy cannot widen access, but without NULLIF it errors on '' instead of
+    # failing closed (EA-18 follow-up R2-2).
+    restrictive = _extra_policy(
+        "(org_id = (current_setting('app.current_org'::text, true))::uuid)", permissive=False
+    )
+
+    codes = _codes(_with_table(_good(), "workspaces", policies=(_policy(), restrictive)))
+
+    assert codes == [("G13", "workspaces")]
+
+
+def test_g13_restrictive_policy_with_the_standard_form_is_fine() -> None:
+    restrictive = _extra_policy(
+        f"((org_id = ({SETTING})::uuid) AND (name <> 'hidden'::text))", False
+    )
+
+    assert _codes(_with_table(_good(), "workspaces", policies=(_policy(), restrictive))) == []
+
+
+def test_g13_mixing_the_standard_form_with_a_bare_setting_is_reported() -> None:
+    bare = "(current_setting('app.current_org'::text, true) <> 'x'::text)"
+    restrictive = _extra_policy(f"((org_id = ({SETTING})::uuid) AND {bare})", permissive=False)
+
+    codes = _codes(_with_table(_good(), "workspaces", policies=(_policy(), restrictive)))
+
+    assert codes == [("G13", "workspaces")]
+
+
+def test_g13_the_message_names_the_policy_and_the_rule_only() -> None:
+    restrictive = _extra_policy(
+        "(org_id = (current_setting('app.current_org'::text, true))::uuid)", permissive=False
+    )
+
+    violations = find_violations(
+        _with_table(_good(), "workspaces", policies=(_policy(), restrictive))
+    )
+
+    assert [str(v) for v in violations] == [
+        "G13 workspaces: restrictive policy extra reads app.current_org without the NULLIF form"
+    ]
+
+
 def test_g5_the_canonical_policy_may_omit_with_check() -> None:
     policy = PolicyInfo("tenant_isolation", "ALL", _policy().using, None)
 

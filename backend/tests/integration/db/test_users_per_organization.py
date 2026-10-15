@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from ei_ai.db.tenant import tenant_transaction
 from support.tenants import TwoOrgs
 
-pytestmark = pytest.mark.integration
+pytestmark = [pytest.mark.integration, pytest.mark.isolation]
 
 
 class _Discard(Exception):
@@ -37,7 +37,7 @@ async def test_a_membership_cannot_reference_another_organizations_user(
             )
 
     assert getattr(error.value.orig, "sqlstate", None) == "23503"
-    assert f"User {b.label}" not in str(error.value)
+    assert b.names.user not in str(error.value)
     assert f"{b.user_id}@example.invalid" not in str(error.value)
 
 
@@ -64,7 +64,7 @@ async def test_users_of_another_organization_are_invisible(
         rows = (await conn.execute(text("SELECT id, email, display_name FROM users"))).all()
 
     assert [row.id for row in rows] == [two_orgs.a.user_id]
-    assert all("User B" not in row.display_name for row in rows)
+    assert all(two_orgs.b.names.user not in row.display_name for row in rows)
 
 
 async def test_an_email_that_exists_only_in_another_organization_can_be_used(

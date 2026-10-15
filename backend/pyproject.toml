@@ -59,6 +59,7 @@ plugins = ["pydantic.mypy"]
 testpaths = ["tests"]
 markers = [
   "integration: needs the Compose stack (db, valkey); run with -m integration",
+  "isolation: tenant-isolation suite (FND-02); run with npm run backend -- test-isolation",
   "benchmark: RLS overhead measurement (FND-01 NFR); run with npm run backend -- bench-rls",
 ]
 asyncio_mode = "auto"

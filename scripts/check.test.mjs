@@ -25,11 +25,22 @@ test("check_plan_runs_the_same_tasks_as_the_ci_workflow", () => {
 test("check_plan_groups_steps_by_the_ci_jobs_and_skips_the_stack_on_request", () => {
   assert.deepEqual(
     buildPlan().map(({ job }) => job),
-    ["frontend", "backend", "checks", "stack"],
+    ["frontend", "backend", "checks", "tenant-isolation", "stack"],
   );
   assert.deepEqual(
     buildPlan({ skipStack: true }).map(({ job }) => job),
     ["frontend", "backend", "checks"],
+  );
+});
+
+test("check_plan_tenant_isolation_job_prepares_the_images_then_runs_the_isolation_suite", () => {
+  const job = buildPlan().find(({ job: name }) => name === "tenant-isolation");
+  assert.deepEqual(
+    job.steps.map(([, argv]) => argv),
+    [
+      ["scripts/task.mjs", "backend:prepare"],
+      ["scripts/task.mjs", "backend:test-isolation"],
+    ],
   );
 });
 

@@ -15,7 +15,7 @@ from ei_ai.db.schema_guard import guarded_table_names
 from ei_ai.db.tenant import tenant_transaction
 from support.tenants import TwoOrgs
 
-pytestmark = pytest.mark.integration
+pytestmark = [pytest.mark.integration, pytest.mark.isolation]
 
 
 class _Boom(Exception):

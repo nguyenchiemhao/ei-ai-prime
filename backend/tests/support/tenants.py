@@ -16,6 +16,26 @@ from ei_ai.db.tenant import tenant_transaction
 DELETE_ORDER = ("workspace_memberships", "memberships", "workspaces", "users", "organizations")
 
 
+def tenant_key_column(table: str) -> str:
+    """The column that holds the Organization of a row (the Organization is its own tenant)."""
+    return "id" if table == "organizations" else "org_id"
+
+
+@dataclass(frozen=True)
+class FixtureNames:
+    """The visible names of the fixture rows of one Organization. They carry a random suffix, so
+    no ordinary text ("user agent", "org admin") can contain one by accident."""
+
+    organization: str
+    workspace: str
+    user: str
+
+
+def fixture_names(label: str, suffix: str) -> FixtureNames:
+    tag = f"{label} {suffix}"
+    return FixtureNames(organization=f"Org {tag}", workspace=f"Workspace {tag}", user=f"User {tag}")
+
+
 @dataclass(frozen=True)
 class OrgRows:
     """The ids of the fixture rows of one Organization (all random UUIDv4)."""
@@ -26,6 +46,11 @@ class OrgRows:
     membership_id: uuid.UUID
     workspace_membership_id: uuid.UUID
     label: str
+    suffix: str
+
+    @property
+    def names(self) -> FixtureNames:
+        return fixture_names(self.label, self.suffix)
 
     def row_id(self, table: str) -> uuid.UUID:
         return {
@@ -35,6 +60,17 @@ class OrgRows:
             "memberships": self.membership_id,
             "workspace_memberships": self.workspace_membership_id,
         }[table]
+
+    @property
+    def email(self) -> str:
+        return f"{self.user_id}@example.invalid"
+
+    def markers(self) -> frozenset[str]:
+        """Strings that identify this Organization's fixture data: every row id, the user's email
+        and the names. Any of them in a response for another Organization is a leak."""
+        names = self.names
+        ids = {str(self.row_id(table)) for table in DELETE_ORDER}
+        return frozenset({*ids, self.email, names.organization, names.workspace, names.user})
 
 
 @dataclass(frozen=True)
@@ -61,15 +97,17 @@ async def create_org_rows(engine: AsyncEngine, label: str) -> OrgRows:
         membership_id=uuid.uuid4(),
         workspace_membership_id=uuid.uuid4(),
         label=label,
+        suffix=uuid.uuid4().hex[:8],
     )
+    names = rows.names
     async with engine.connect() as conn, tenant_transaction(conn, rows.org_id):
         await conn.execute(
             text("INSERT INTO organizations (id, name) VALUES (:id, :name)"),
-            {"id": rows.org_id, "name": f"Org {label}"},
+            {"id": rows.org_id, "name": names.organization},
         )
         await conn.execute(
             text("INSERT INTO workspaces (id, org_id, name) VALUES (:id, :org, :name)"),
-            {"id": rows.workspace_id, "org": rows.org_id, "name": f"Workspace {label}"},
+            {"id": rows.workspace_id, "org": rows.org_id, "name": names.workspace},
         )
         await conn.execute(
             text(
@@ -79,8 +117,8 @@ async def create_org_rows(engine: AsyncEngine, label: str) -> OrgRows:
             {
                 "id": rows.user_id,
                 "org": rows.org_id,
-                "email": f"{rows.user_id}@example.invalid",
-                "name": f"User {label}",
+                "email": rows.email,
+                "name": names.user,
             },
         )
         await conn.execute(
@@ -103,14 +141,18 @@ async def create_org_rows(engine: AsyncEngine, label: str) -> OrgRows:
 
 
 async def purge_org_rows(engine: AsyncEngine, *orgs: OrgRows) -> None:
-    """Delete fixture rows through the application role, one tenant transaction per Organization.
+    """Delete everything an Organization owns through the application role, one tenant
+    transaction per Organization: the fixture rows and any row a test created for it (e.g. by a
+    positive-control POST).
 
     This is the product path: every table has a DELETE grant and the standard policy, so no owner
-    privilege is used and row-level security is never altered.
+    privilege is used and row-level security is never altered. The explicit ``org_id`` filter
+    and the policy both apply.
     """
     for org in orgs:
         async with engine.connect() as conn, tenant_transaction(conn, org.org_id):
             for table in DELETE_ORDER:
+                key = tenant_key_column(table)
                 await conn.execute(
-                    text(f"DELETE FROM {table} WHERE id = :id"), {"id": org.row_id(table)}
+                    text(f"DELETE FROM {table} WHERE {key} = :org"), {"org": org.org_id}
                 )

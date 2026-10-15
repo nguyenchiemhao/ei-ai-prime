@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from typing import Literal
 
 import psycopg
-from redis import asyncio as aioredis
 
+from ei_ai.cache.ping import check_valkey
 from ei_ai.settings import Settings
 
 logger = logging.getLogger("uvicorn.error")
@@ -33,22 +33,10 @@ async def check_database(database_url: str) -> None:
         await connection.execute("SELECT 1")
 
 
-async def check_valkey(valkey_url: str) -> None:
-    client = aioredis.from_url(
-        valkey_url,
-        socket_connect_timeout=CHECK_TIMEOUT_SECONDS,
-        socket_timeout=CHECK_TIMEOUT_SECONDS,
-    )
-    try:
-        await client.ping()
-    finally:
-        await client.aclose()
-
-
 def build_readiness(settings: Settings) -> Readiness:
     return Readiness(
         database=lambda: check_database(settings.database_url),
-        valkey=lambda: check_valkey(settings.valkey_url),
+        valkey=lambda: check_valkey(settings.valkey_url, CHECK_TIMEOUT_SECONDS),
     )
 
 

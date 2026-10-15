@@ -1,5 +1,5 @@
 # CI (EA-13 / SET-03). Every step calls the same task runner as `npm run check` (scripts/lib/tasks.mjs),
-# so a local run and a CI run execute the same commands. The four jobs run in parallel; the slowest one
+# so a local run and a CI run execute the same commands. The five jobs run in parallel; the slowest one
 # is the wall-clock time (target: 10 minutes or less).
 name: CI
 
@@ -69,6 +69,23 @@ jobs:
       - run: node scripts/task.mjs repo:node-checks
       - run: node scripts/task.mjs repo:actionlint
       - run: node scripts/task.mjs repo:secret-scan
+
+  # FND-02 (EA-19): the tenant-isolation suite. Required check; the 5-minute cap (AC5) is on the suite
+  # step. Image pulls and builds run in the step before it, so the cap measures the suite and a slow
+  # registry cannot fail the check. It uses the runner's Docker Compose (the stack job proves the minimum).
+  tenant-isolation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - run: npm run backend -- prepare
+      - run: npm run backend -- test-isolation
+        timeout-minutes: 5
+      - if: always()
+        run: npm run down
 
   stack:
     runs-on: ubuntu-24.04

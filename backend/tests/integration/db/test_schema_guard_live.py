@@ -153,6 +153,27 @@ def test_guard_reports_a_key_comparison_or_ed_with_its_negation(
     assert ("G4", "guard_probe") in _found(tx_conn)
 
 
+def test_guard_reports_restrictive_policy_without_nullif(tx_conn: psycopg.Connection) -> None:
+    _probe_table_with_standard_policy(tx_conn)
+    tx_conn.execute(
+        "CREATE POLICY probe_narrow ON guard_probe AS RESTRICTIVE"
+        " USING (org_id = current_setting('app.current_org', true)::uuid)"
+    )
+
+    assert _found(tx_conn) == [("G13", "guard_probe")]
+
+
+def test_guard_accepts_a_restrictive_policy_with_the_nullif_form(
+    tx_conn: psycopg.Connection,
+) -> None:
+    _probe_table_with_standard_policy(tx_conn)
+    tx_conn.execute(
+        f"CREATE POLICY probe_narrow ON guard_probe AS RESTRICTIVE USING (org_id = {_SETTING})"
+    )
+
+    assert _found(tx_conn) == []
+
+
 def test_guard_reports_a_tenant_foreign_key_that_crosses_the_columns(
     tx_conn: psycopg.Connection,
 ) -> None:

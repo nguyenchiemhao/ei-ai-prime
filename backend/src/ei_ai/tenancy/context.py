@@ -6,6 +6,7 @@ Request models must never declare ``org_id`` either (coding-rules, Backend).
 """
 
 import logging
+import re
 from dataclasses import dataclass
 from typing import Annotated
 from uuid import UUID
@@ -19,6 +20,23 @@ logger = logging.getLogger("ei_ai.tenancy")
 
 ORG_HEADERS = ("x-org-id", "x-organization-id", "x-tenant-id")
 ORG_QUERY_PARAMS = ("org_id", "orgId", "organization_id", "tenant_id")
+
+
+def _normalised(name: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", name.lower())
+
+
+_ORG_FIELDS = frozenset(_normalised(name) for name in (*ORG_HEADERS, *ORG_QUERY_PARAMS, "org_id"))
+
+
+def is_org_field(name: str) -> bool:
+    """True when a request field name (header, query, cookie, path or body property) spells an
+    Organization id in any case or separator style: ``org_id``, ``orgId``, ``X-Tenant-Id``.
+
+    The tenant isolation suite fails when a route declares such a field (D32), and a background
+    job payload may not carry one. Built from the lists above so they cannot drift.
+    """
+    return _normalised(name) in _ORG_FIELDS
 
 
 @dataclass(frozen=True)
