@@ -36,8 +36,14 @@ const taskCalls = (body) =>
   [...body.matchAll(/scripts\/task\.mjs ([a-z:-]+)/g)].map((match) => match[1]);
 const hasTask = (body, ...names) => names.every((name) => taskCalls(body).includes(name));
 
-test("the_workflow_defines_the_four_jobs", () => {
-  assert.deepEqual(Object.keys(allJobs).sort(), ["backend", "checks", "frontend", "stack"]);
+test("the_workflow_defines_the_five_jobs", () => {
+  assert.deepEqual(Object.keys(allJobs).sort(), [
+    "backend",
+    "checks",
+    "frontend",
+    "stack",
+    "tenant-isolation",
+  ]);
 });
 
 // Owner decision 2026-10-14: CI runs on every push to any branch (ticket branches and main), so a
@@ -184,6 +190,33 @@ test("stack_job_installs_the_minimum_compose_version_and_always_stops_the_stack"
   );
   assert.match(stack, /npm run backend -- test-integration/);
   assert.match(stack, /if: always\(\)\n\s+run: npm run down/);
+});
+
+// EA-19 (FND-02) AC5: the tenant-isolation suite is its own job so it can be a required check. The
+// 5-minute cap is on the suite step: image builds and pulls happen in an earlier step, so the cap
+// measures the suite and a slow registry cannot fail the required check by itself.
+test("tenant_isolation_job_runs_the_suite_within_5_minutes", () => {
+  const job = allJobs["tenant-isolation"];
+  const jobTimeout = job.match(/^ {4}timeout-minutes: (\d+)$/m);
+  assert.ok(jobTimeout && Number(jobTimeout[1]) <= 10, "job timeout-minutes must be 10 or less");
+  assert.deepEqual(
+    runLines(job),
+    ["npm run backend -- prepare", "npm run backend -- test-isolation", "npm run down"],
+    "the job prepares the images, runs the isolation suite and stops the stack",
+  );
+  assert.match(
+    job,
+    /- run: npm run backend -- test-isolation\n {8}timeout-minutes: 5\n/,
+    "the suite step itself is capped at 5 minutes",
+  );
+  assert.doesNotMatch(
+    job.split("npm run backend -- test-isolation")[0],
+    /timeout-minutes: 5/,
+    "the preparation is not under the suite cap",
+  );
+  assert.match(job, /if: always\(\)\n\s+run: npm run down/);
+  assert.match(job, /actions\/setup-node@[0-9a-f]{40} # v\d/);
+  assert.match(job, /node-version: 22/);
 });
 
 test("backend_job_pins_node_for_the_task_runner", () => {

@@ -216,7 +216,7 @@ test.describe("EA-13 repo skeleton", () => {
 
     // The workflow calls only these tasks, on pull requests, with no continue-on-error.
     const workflow = fs.readFileSync(path.join(ROOT, ".github/workflows/ci.yml"), "utf8");
-    expect(workflow).toMatch(/^on:\s*\n\s+pull_request:/m);
+    expect(workflow).toMatch(/^on:\s*\n\s+push:/m); // every branch push since 7be5db6
     expect(workflow).not.toContain("continue-on-error");
     for (const task of tasks) {
       const short = task.replace("backend:", "");
@@ -230,10 +230,11 @@ test.describe("EA-13 repo skeleton", () => {
   test("AC4: every CI job is limited to 10 minutes and the jobs run in parallel", () => {
     const workflow = fs.readFileSync(path.join(ROOT, ".github/workflows/ci.yml"), "utf8");
     const jobsSection = workflow.slice(workflow.indexOf("\njobs:"));
-    const jobs = [...jobsSection.matchAll(/^ {2}([a-z]+):\n/gm)].map((m) => m[1]);
-    expect(jobs).toEqual(["frontend", "backend", "checks", "stack"]);
+    const jobs = [...jobsSection.matchAll(/^ {2}([a-z-]+):\n/gm)].map((m) => m[1]);
+    expect(jobs).toEqual(["frontend", "backend", "checks", "tenant-isolation", "stack"]);
     const limits = [...workflow.matchAll(/timeout-minutes:\s*(\d+)/g)].map((m) => Number(m[1]));
-    expect(limits).toHaveLength(4);
+    // five jobs plus the 5-minute cap on the tenant-isolation suite step (EA-19)
+    expect(limits).toHaveLength(6);
     for (const limit of limits) expect(limit).toBeLessThanOrEqual(10);
     expect(workflow).not.toMatch(/^\s+needs:/m); // parallel
     expect(workflow).toMatch(/cancel-in-progress:\s*true/);

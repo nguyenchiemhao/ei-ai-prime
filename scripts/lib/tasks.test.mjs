@@ -17,7 +17,7 @@ test("tasks_pin_the_backend_commands", () => {
     backend: [
       "pytest",
       "-m",
-      "not integration and not benchmark",
+      "not integration and not benchmark and not isolation",
       "--cov=ei_ai",
       "--cov-report=term-missing",
     ],
@@ -30,9 +30,17 @@ test("tasks_pin_the_backend_commands", () => {
     backend: ["pytest", "tests/test_openapi_export.py"],
   });
   assert.deepEqual(tasks["backend:test-integration"], {
-    backend: ["pytest", "-m", "integration", "--no-cov"],
+    backend: ["pytest", "-m", "integration and not isolation", "--no-cov"],
     services: true,
   });
+  assert.deepEqual(tasks["backend:test-isolation"], {
+    backend: ["pytest", "-m", "isolation", "--no-cov"],
+    services: true,
+  });
+});
+
+test("backend_prepare_is_a_function_task_that_runs_no_tests", () => {
+  assert.equal(typeof tasks["backend:prepare"].run, "function");
 });
 
 test("tasks_pin_the_frontend_and_repository_commands", () => {

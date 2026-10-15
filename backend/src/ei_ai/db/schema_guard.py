@@ -19,6 +19,8 @@ Rules (stable codes):
   G10 functions are owned by the migration role and are not SECURITY DEFINER
   G11 a foreign key between tenant tables pairs the tenant key with the tenant key
   G12 a table without the tenant key must be a listed ignored table
+  G13 a restrictive policy may read app.current_org only through the standard NULLIF form
+      (it can only narrow access, but without NULLIF it errors on '' instead of failing closed)
 """
 
 import re
@@ -38,6 +40,7 @@ IGNORED_TABLES = {"alembic_version": "migration bookkeeping, no tenant data"}
 ALLOWED_PRIVILEGES = frozenset({"SELECT", "INSERT", "UPDATE", "DELETE"})
 _SETTING = "(nullif(current_setting('app.current_org'::text, true), ''::text))::uuid"
 _APP_GRANTEES = frozenset({APP_ROLE, "PUBLIC"})
+_ANY_SETTING_READ = "current_setting('app.current_org'"
 
 
 @dataclass(frozen=True)
@@ -61,6 +64,10 @@ def _standard_expression(key: str) -> str:
 
 def _is_standard(expression: str | None, key: str) -> bool:
     return _normalise(expression) == _standard_expression(key)
+
+
+def _reads_setting_outside_standard_form(expression: str | None) -> bool:
+    return _ANY_SETTING_READ in _normalise(expression).replace(_SETTING, "")
 
 
 def _app_privileges(table: TableInfo) -> list[str]:
@@ -118,7 +125,20 @@ def _check_policies(table: TableInfo, key: str) -> list[Violation]:
         return violations
     for policy in table.policies:
         if not policy.permissive:
-            continue  # restrictive policies are AND-ed: they can only narrow access
+            # Restrictive policies are AND-ed: they can only narrow access, but they must still
+            # fail closed when the setting is '' (G13).
+            if _reads_setting_outside_standard_form(policy.using) or (
+                _reads_setting_outside_standard_form(policy.with_check)
+            ):
+                violations.append(
+                    Violation(
+                        "G13",
+                        table.name,
+                        f"restrictive policy {policy.name} reads app.current_org"
+                        " without the NULLIF form",
+                    )
+                )
+            continue
         expressions = [e for e in (policy.using, policy.with_check) if e]
         if not expressions or not all(_is_standard(e, key) for e in expressions):
             violations.append(

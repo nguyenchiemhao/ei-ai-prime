@@ -15,9 +15,9 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from ei_ai.db.catalog import read_catalog
 from ei_ai.db.schema_guard import guarded_table_names
 from ei_ai.db.tenant import tenant_transaction
-from support.tenants import UPDATE_SETS, TwoOrgs
+from support.tenants import DELETE_ORDER, UPDATE_SETS, TwoOrgs
 
-pytestmark = pytest.mark.integration
+pytestmark = [pytest.mark.integration, pytest.mark.isolation]
 
 TABLES = list(UPDATE_SETS)
 
@@ -153,4 +153,15 @@ def test_fixture_tables_cover_every_tenant_table(migrator_conn: psycopg.Connecti
 
     assert live == set(TABLES), (
         "add the new table to the FND-01 cross-org fixtures (FND-02 extends this suite)"
+    )
+
+
+def test_isolation_suite_snapshots_and_cleanup_cover_every_tenant_table(
+    migrator_conn: psycopg.Connection,
+) -> None:
+    live = set(guarded_table_names(read_catalog(migrator_conn)))
+
+    assert live == set(DELETE_ORDER), (
+        "add the new table to DELETE_ORDER in tests/support/tenants.py: the snapshots and the"
+        " cleanup of the isolation suite use it"
     )

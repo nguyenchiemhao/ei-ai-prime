@@ -31,6 +31,11 @@ export function buildPlan({ skipStack = false, native = false } = {}) {
     },
   ];
   if (!skipStack) {
+    // Needs the Docker services (db, valkey), like the stack job, so --skip-stack leaves it out.
+    plan.push({
+      job: "tenant-isolation",
+      steps: [task("backend:prepare"), task("backend:test-isolation")],
+    });
     plan.push({
       job: "stack",
       steps: [

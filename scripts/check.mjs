@@ -1,6 +1,6 @@
-// npm run check: everything CI runs, in one command (jobs frontend, backend, checks, stack).
-//   npm run check                 all four jobs; the stack job starts the stack without the model and stops it
-//   npm run check -- --skip-stack fast loop without Docker services
+// npm run check: everything CI runs, in one command (jobs frontend, backend, checks, tenant-isolation, stack).
+//   npm run check                 all five jobs; the stack job starts the stack without the model and stops it
+//   npm run check -- --skip-stack fast loop without Docker services (skips tenant-isolation and stack)
 //   npm run check -- --native     run the backend tools on the host instead of the backend-tools container
 // Prints PASS/FAIL and the duration of every step and job; exit code 1 when anything failed.
 import { spawnSync } from "node:child_process";

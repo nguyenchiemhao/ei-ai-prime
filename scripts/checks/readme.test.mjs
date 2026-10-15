@@ -23,6 +23,7 @@ const REQUIRED_SECTIONS = [
   "Running tests and checks",
   "Folder structure",
   "Verify acceptance criteria locally",
+  "Writing isolation tests",
   "CI",
   "Memory budget",
   "Troubleshooting",
@@ -203,4 +204,29 @@ test("e2e_setup_is_documented", () => {
   assert.ok(text.includes("npx playwright install chromium"), "document the browser install");
   assert.ok(text.includes("npm run e2e"), "document the E2E command");
   assert.ok(text.includes("ADMIN_URL"), "document the base URL variable");
+});
+
+// EA-19 (FND-02) DoD: a developer who adds a route, a table, a job or a cache key learns here what the
+// tenant-isolation suite expects.
+test("writing_isolation_tests_section_documents_the_suite", () => {
+  const text = section("Writing isolation tests");
+  for (const required of [
+    "npm run backend -- test-isolation",
+    "tests/integration/isolation/cases.py",
+    "ResourceRoute",
+    "OwnTenantRoute",
+    "PublicRoute",
+    "JobCase",
+    "route has no isolation test declared",
+    "TenantCache",
+    "run_tenant_job",
+    "envelope_for",
+    "tenant-isolation",
+    "ei_ai/jobs/__init__.py",
+    "create_valkey_client",
+    "CACHE_PUBLIC_API",
+    "uuid4",
+  ]) {
+    assert.ok(text.includes(required), `the section does not mention ${required}`);
+  }
 });

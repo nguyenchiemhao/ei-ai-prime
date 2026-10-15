@@ -7,6 +7,7 @@
 //                                          from backend/; `services` starts db and valkey first, or
 //   { run: () => exitCode }                a function (container based repository checks).
 
+import { prepareBackendServices } from "./backend-prepare.mjs";
 import { actionlint, secretScan } from "./repo-tasks.mjs";
 
 const npm = (...args) => ({ command: ["npm", "run", ...args] });
@@ -25,7 +26,7 @@ export const tasks = {
     backend: [
       "pytest",
       "-m",
-      "not integration and not benchmark",
+      "not integration and not benchmark and not isolation",
       "--cov=ei_ai",
       "--cov-report=term-missing",
     ],
@@ -35,7 +36,14 @@ export const tasks = {
     backend: ["python", "-m", "ei_ai.openapi_export", "../packages/api-types/openapi.json"],
   },
   "backend:test-integration": {
-    backend: ["pytest", "-m", "integration", "--no-cov"],
+    backend: ["pytest", "-m", "integration and not isolation", "--no-cov"],
+    services: true,
+  },
+  // Pulls and builds what the isolation suite needs, without running tests (its own CI step).
+  "backend:prepare": { run: prepareBackendServices },
+  // Tenant-isolation suite (FND-02); CI job tenant-isolation, suite step capped at 5 minutes.
+  "backend:test-isolation": {
+    backend: ["pytest", "-m", "isolation", "--no-cov"],
     services: true,
   },
 

@@ -1,4 +1,4 @@
-// Backend tasks: npm run backend -- <lint|format|typecheck|test|openapi|openapi-export|test-integration> [--native]
+// Backend tasks: npm run backend -- <lint|format|typecheck|test|openapi|openapi-export|test-integration|test-isolation|prepare> [--native]
 // In the backend-tools container by default (no local Python needed); --native runs on the host
 // (CI, or a local Python 3.12 with `pip install -e "backend[dev]"`).
 import { runTask } from "./lib/run-task.mjs";
