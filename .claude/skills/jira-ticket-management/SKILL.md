@@ -115,7 +115,7 @@ After any change, update `docs/backlog/backlog.md` and suggest the git-commit sk
 |---|---|
 | A ticket branch was created (`git-commit start`) | Offer to transition the ticket to *In Progress* and assign it to the user |
 | A ticket is finished (`git-commit commit`) | Show the numbered AC and ask which pass in the local integration environment; if all pass and the user agrees, add a markdown comment (summary + commit hash/branch) and transition to *Done*; otherwise comment what remains |
-| `ship-ticket` start / finish | Start: transition to *In Progress* without asking. Finish: the AC evidence in `.work/EA-<n>/final.md` replaces the AC question — comment (summary, branch, commit hash, AC → evidence, test counts) and transition to *In Review* if every AC has passing evidence (to *Done* only after the ticket branch is merged, with a comment naming the merge commit); otherwise comment what remains and leave the status |
+| `ship-ticket` start / finish | The Lead does these steps directly with `references/jira-conventions.md`, without loading this skill; the rules stay the same. Start: transition to *In Progress* without asking. Finish: the AC evidence in `.work/EA-<n>/final.md` replaces the AC question — comment (summary, branch, commit hash, AC → evidence, test counts) and transition to *In Review* if every AC has passing evidence (to *Done* only after the ticket branch is merged, with a comment naming the merge commit); otherwise comment what remains and leave the status |
 
 ## Guardrails
 

@@ -7,6 +7,7 @@ Format:
 ```markdown
 ## YYYY-MM-DD — EA-<n>
 - Rounds: review <N>, QA <k>; escalations: <none | where>
+- Tokens: planner <n>k · developer <n>k · reviewer <n>k · QA <n>k · total <n>k
 - What went well:
 - What slowed us down:
 - Proposed change: <agent / skill / rule file> — <change>

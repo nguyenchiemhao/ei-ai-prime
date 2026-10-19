@@ -32,9 +32,9 @@ improvement proposals.
 |---|---|---|---|---|
 | Lead | `.claude/skills/ship-ticket/SKILL.md` (main session) | session model | `.work/EA-<n>/final.md`, git commit, Jira | final report |
 | Planner | `.claude/agents/ticket-planner.md` | opus | `.work/EA-<n>/plan.md`, `plan-comment.md`, Jira plan comment | `STATUS: READY` or `BLOCKED` |
-| Developer | `.claude/agents/developer.md` | sonnet | source code, unit tests, `dev-log.md` | `STATUS: DONE` or `BLOCKED` |
-| Code Reviewer | `.claude/agents/code-reviewer.md` | opus | `review-<N>.md` | `STATUS: PASS` or `CHANGES_REQUESTED` |
-| QA E2E | `.claude/agents/qa-e2e.md` | sonnet | `e2e/**`, `qa-report.md`, `screenshots/` | `STATUS: PASS`, `FAIL` or `SKIPPED` |
+| Developer | `.claude/agents/developer.md` | sonnet | source code, unit tests, the ticket's E2E specs (`e2e/**`), `dev-log.md` | `STATUS: DONE` or `BLOCKED` |
+| Code Reviewer | `.claude/agents/code-reviewer.md` | opus | `review-<N>.md` | `STATUS: PASS`, `PASS_STATIC` or `CHANGES_REQUESTED` |
+| QA E2E (final pass) | `.claude/agents/qa-e2e.md` | sonnet | `qa-report.md`, `screenshots/` | `STATUS: PASS`, `FAIL` or `SKIPPED` |
 
 ## Flow
 
@@ -43,8 +43,8 @@ Lead: preflight → pick ticket → Jira In Progress → branch (git-commit star
   → Planner ─BLOCKED→ ask owner → resume Planner
   → Developer
   → Code Reviewer ─CHANGES_REQUESTED→ Developer (resume) … max 3
-  → QA E2E ─FAIL→ Developer → Code Reviewer → QA … max 3   (SKIPPED for docs/spike tickets)
-  → Lead final review (every AC has evidence, full test run, clean diff)
+  → QA E2E final pass ─FAIL→ Developer → Code Reviewer → QA … max 3   (only ui tickets or own @slow/@perf specs)
+  → Lead final review (every AC has evidence, branch CI or `npm run check`, `npm run e2e`, clean diff)
   → commit (gate, or auto) → Jira comment + Done → improvements → report
 ```
 
@@ -64,6 +64,18 @@ The Planner sets one profile in `plan.md`; it decides what QA does.
 - Google Chrome installed (Chrome DevTools MCP).
 - Atlassian MCP connected (already configured at user level).
 - Trust the project folder so inline MCP servers in `.claude/agents/` load.
+
+## Amendment 2026-10-19 — cost review
+
+Owner request: lower token cost without lowering quality; developer and reviewer stay separate (T4).
+
+- The developer writes and runs the ticket's fast Playwright specs (former QA mode `fast`); the reviewer checks that each spec asserts its AC and runs them independently in round 1.
+- QA runs only the final pass: profile `ui` (browser MCP exploration) or a ticket with its own `@slow`/`@perf` specs. Other tickets record QA as SKIPPED; the Lead still runs `npm run e2e` in the final review.
+- The planner reads the workshop and backlog docs by section, adds an Attack list (plan §8) that the developer covers with tests and the reviewer uses as the minimum mutation set, and runs at effort `medium` on small tickets outside risky areas.
+- The developer self-checks against the reviewer's list before hand-off; the reviewer is resumed for later rounds; agents reply in at most 3 lines plus the STATUS line.
+- Reviewer verdict `PASS (static)` when checks cannot run; the Lead gets a runtime round before commit.
+- `ship-ticket` keeps recovery and special-ticket rules in `references/`; the Lead does Jira steps with `jira-conventions.md` instead of loading the whole Jira skill.
+- Unchanged: loop limits (T9), mutation proofs per AC area, every gate and the human approval before commit.
 
 ## Out of scope
 

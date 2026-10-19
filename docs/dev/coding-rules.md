@@ -82,11 +82,11 @@ Run the cheapest tier that gives the evidence you need. Owner decision 2026-10-1
 |---|---|---|---|
 | T1 inner loop | Unit tests and lint/type checks of the area you changed (`npm run backend -- test`, `npm test`, `npm run lint`, `npm run typecheck`); the integration or isolation tests that cover the changed code | After every task and every fix | Developer; reviewer for the files of a fix |
 | T2 round gate | `npm run check` (local mirror of CI) once per round; CI on the pushed branch | End of a developer round; reviewer round 1; the Lead uses the branch CI run | Developer, reviewer, Lead |
-| T3 fast E2E | `npm run e2e -- e2e/<area>/<ticket>-*` (Playwright, fast tier; API specs use the `request` fixture) | Every QA round | QA |
-| T4 completion | Browser exploration with Playwright MCP / Chrome DevTools MCP (console, network, performance) for `ui` tickets; the ticket's own `@slow` and `@perf` specs (`npm run e2e:full -- e2e/<area>/<ticket>-*`) | Once, in the final QA pass after review and fast QA pass | QA |
+| T3 fast E2E | `npm run e2e -- e2e/<area>/<ticket>-*` (Playwright, fast tier; API specs use the `request` fixture) | When writing the ticket's specs; review round 1, and later review rounds when a spec or the code under it changed (QA smoke-runs them in the final pass) | Developer writes and runs them; reviewer runs them independently |
+| T4 completion | Browser exploration with Playwright MCP / Chrome DevTools MCP (console, network, performance) for `ui` tickets; the ticket's own `@slow` and `@perf` specs (`npm run e2e:full -- e2e/<area>/<ticket>-*`); one smoke run of its fast specs | In the QA final pass after review passes, only for profile `ui` or a ticket with its own `@slow`/`@perf` specs (max 3 rounds) | QA |
 | On demand | `npm run e2e:full` (all tickets), `npm run e2e:perf`, benchmarks (`npm run backend -- bench-rls`), cold-start measurements | When a change touches that area, before a milestone, or when the owner asks | Lead decides |
 
 Rules:
 - Tag a Playwright test `{ tag: "@slow" }` when it copies the repository, starts a second Compose project or re-runs whole task suites; `{ tag: "@perf" }` when it measures time or overhead. `npm run e2e` skips both.
 - Keep `npm run e2e` under about 3 minutes; a spec that pushes it over is a `@slow` candidate.
-- Mutation proofs run on a scratch copy and only for the area under review; a later round re-checks only the earlier findings and the files changed since.
+- Mutation proofs run on a scratch copy and only for the area under review, starting from the plan's Attack list; a later round re-checks only the earlier findings and the files changed since.
