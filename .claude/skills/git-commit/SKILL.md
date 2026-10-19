@@ -52,7 +52,7 @@ Used only by the `ship-ticket` skill (the owner started the pipeline, which is t
    - secrets: `.env*`, `*.pem`, `*.key`, `id_rsa*`, credential JSON, strings that look like API keys or tokens;
    - files > 5 MB, build output (`dist/`, `build/`, `node_modules/`, `__pycache__/`, `.venv/`);
    - files unrelated to the ticket (propose a separate commit).
-4. **Group** the changes into logical commits (one concern per commit). Stage each group by explicit path.
+4. **Group** the changes into **one commit per task or fix, two at most** (e.g. the change with its tests, plus a separate docs/retro commit). Do not split one task into many small commits by file or layer; code and the tests that prove it go in the same commit. A merge commit does not count. Unrelated changes still get their own commit (step 3). Stage each group by explicit path.
    - A multi-path `git add` fails as a whole when one path no longer exists (e.g. a deleted directory): stage deletions with `git rm -r --cached <path>` or `git add -A -- <path>`, and stop if `git add` exits non-zero.
    - Before committing, compare `git diff --cached --stat` and `git status --short` with the intended file list; nothing intended may remain unstaged.
 5. **Write the message** (format below) and show it for approval.

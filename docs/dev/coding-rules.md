@@ -31,7 +31,7 @@ Used by the Developer and Code Reviewer agents and by humans. The short, non-neg
 - Name tests after behaviour: `rejects_request_without_org_claim`, `shows_streamed_answer_in_widget`.
 
 ### Git
-- Branches and commit messages follow the `git-commit` skill. One concern per commit.
+- Branches and commit messages follow the `git-commit` skill. One commit per task or fix, two at most; code and its tests go in the same commit.
 
 ## 2. Stack-specific
 
