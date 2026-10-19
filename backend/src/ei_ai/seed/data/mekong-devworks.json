@@ -1,37 +1,38 @@
 {
-  "version": 1,
+  "version": 2,
+  "organization_id": "0192a000-0000-7000-8000-00000000ea21",
   "organization": "Mekong Devworks",
   "workspace": "People Ops",
   "members": [
     {
       "name": "Linh Tran",
       "email": "linh.tran@mekongdevworks.example",
-      "roles": ["Org Admin", "Workspace Admin"]
+      "roles": ["org_admin", "workspace_admin"]
     },
     {
       "name": "Minh Pham",
       "email": "minh.pham@mekongdevworks.example",
-      "roles": ["Builder"]
+      "roles": ["builder"]
     },
     {
       "name": "Thao Nguyen",
       "email": "thao.nguyen@mekongdevworks.example",
-      "roles": ["Knowledge Editor"]
+      "roles": ["knowledge_editor"]
     },
     {
       "name": "Quang Le",
       "email": "quang.le@mekongdevworks.example",
-      "roles": ["Developer"]
+      "roles": ["developer"]
     },
     {
       "name": "Hà Vũ",
       "email": "ha.vu@mekongdevworks.example",
-      "roles": ["Reviewer"]
+      "roles": ["reviewer"]
     },
     {
       "name": "Son Hoang",
       "email": "son.hoang@mekongdevworks.example",
-      "roles": ["Viewer"]
+      "roles": ["viewer"]
     }
   ]
 }

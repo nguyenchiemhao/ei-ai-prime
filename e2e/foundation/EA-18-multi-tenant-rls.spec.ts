@@ -7,12 +7,24 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
+import { adminUrl } from "../../scripts/lib/admin-url.mjs";
 
 const API_URL = process.env.API_URL ?? "http://localhost:8000";
-const ADMIN_URL = process.env.ADMIN_URL ?? "http://localhost:3000";
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
+// ADMIN_URL, else ADMIN_PORT from the shell or .env (default 3000), like compose.yaml.
+const ADMIN_URL = adminUrl(ROOT, process.env);
 const FORGED = "0b9c1c3e-5f0a-4a52-9a53-2c0f1f6f7a11";
-const TABLES = ["memberships", "organizations", "users", "workspace_memberships", "workspaces"];
+// EA-21 (FND-04) added audit_events and set_password_tokens (migration 0002).
+const TABLES = [
+  "audit_events",
+  "memberships",
+  "organizations",
+  "set_password_tokens",
+  "users",
+  "workspace_memberships",
+  "workspaces",
+];
+const REVISION = "0002";
 
 /** Runs SQL through psql in the db container; returns stdout, stderr and the exit code. */
 function psql(role: string, sql: string, extra: string[] = []) {
@@ -38,7 +50,9 @@ test.describe("EA-18 multi-tenant data model with RLS", () => {
       `select string_agg(table_name, ',' order by table_name) from information_schema.columns
        where table_schema='public' and column_name='org_id' and is_nullable='NO' and data_type='uuid'`,
     );
-    expect(columns).toBe("memberships,users,workspace_memberships,workspaces");
+    expect(columns).toBe(
+      "audit_events,memberships,set_password_tokens,users,workspace_memberships,workspaces",
+    );
 
     const rls = scalar(
       "postgres",
@@ -85,7 +99,7 @@ test.describe("EA-18 multi-tenant data model with RLS", () => {
         encoding: "utf8",
       });
       expect(migrate.status, migrate.stdout + migrate.stderr).toBe(0);
-      expect(migrate.stdout + migrate.stderr).toContain("database revision: 0001");
+      expect(migrate.stdout + migrate.stderr).toContain(`database revision: ${REVISION}`);
       expect(migrate.stdout + migrate.stderr).toContain("schema guard: 0 violations");
     }
   });
@@ -139,8 +153,11 @@ rollback;
     expect(r.err).toContain('new row violates row-level security policy for table "workspaces"');
     expect(r.err).not.toContain("leak-probe-secret");
     expect(r.err).not.toContain(B);
-    // Nothing was committed.
-    expect(scalar("postgres", "select count(*) from organizations")).toBe("0");
+    // Nothing was committed. The database now also holds the demo and other Organizations (EA-21),
+    // so only the ids of this test are checked.
+    expect(
+      scalar("postgres", `select count(*) from organizations where id in ('${A}','${B}')`),
+    ).toBe("0");
   });
 
   test("AC3: with no tenant context every table returns 0 rows, also after a committed transaction", () => {

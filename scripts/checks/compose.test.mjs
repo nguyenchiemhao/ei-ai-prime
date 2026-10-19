@@ -34,7 +34,7 @@ function envFile(values) {
 /** `docker compose config` with only the given variables (no .env, no inherited overrides). */
 function config(values = DUMMY) {
   const env = { ...process.env };
-  for (const name of ["COMPOSE_PROJECT_NAME", "MODEL_CACHE_VOLUME"]) delete env[name];
+  for (const name of ["COMPOSE_PROJECT_NAME", "MODEL_CACHE_VOLUME", "ADMIN_PORT"]) delete env[name];
   return compose(["--env-file", envFile(values), ...PROFILES, "config", "--format", "json"], {
     capture: true,
     env,
@@ -173,6 +173,19 @@ test("api_has_no_migrator_or_superuser_credentials", () => {
   const environment = JSON.stringify(services.api.environment);
   for (const forbidden of ["MIGRATION_", "ei_ai_migrator", "POSTGRES_PASSWORD", "postgres:"])
     assert.ok(!environment.includes(forbidden), `api environment contains ${forbidden}`);
+});
+
+test("api_builds_set_password_links_for_the_local_admin", () => {
+  assert.equal(services.api.environment.ADMIN_BASE_URL, "http://localhost:3000");
+});
+
+test("admin_port_moves_the_admin_host_port_and_the_link_base_together", () => {
+  const moved = JSON.parse(config({ ...DUMMY, ADMIN_PORT: "3100" }).stdout).services;
+  assert.deepEqual(
+    moved.admin.ports.map((port) => `${port.host_ip}:${port.published}->${port.target}`),
+    ["127.0.0.1:3100->8080"],
+  );
+  assert.equal(moved.api.environment.ADMIN_BASE_URL, "http://localhost:3100");
 });
 
 test("migrate_runs_ei_ai_db_upgrade_from_the_runtime_image", () => {

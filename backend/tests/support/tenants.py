@@ -4,6 +4,7 @@ Never imported by ``src``. Rows are created through the application role in a te
 (exactly like the product), so the fixtures exercise the real policies and grants.
 """
 
+import secrets
 import uuid
 from dataclasses import dataclass
 
@@ -13,7 +14,15 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from ei_ai.db.tenant import tenant_transaction
 
 # Every table of the schema, children first (the order in which fixture rows can be deleted).
-DELETE_ORDER = ("workspace_memberships", "memberships", "workspaces", "users", "organizations")
+DELETE_ORDER = (
+    "audit_events",
+    "set_password_tokens",
+    "workspace_memberships",
+    "memberships",
+    "workspaces",
+    "users",
+    "organizations",
+)
 
 
 def tenant_key_column(table: str) -> str:
@@ -45,6 +54,8 @@ class OrgRows:
     user_id: uuid.UUID
     membership_id: uuid.UUID
     workspace_membership_id: uuid.UUID
+    audit_event_id: uuid.UUID
+    set_password_token_id: uuid.UUID
     label: str
     suffix: str
 
@@ -59,6 +70,8 @@ class OrgRows:
             "users": self.user_id,
             "memberships": self.membership_id,
             "workspace_memberships": self.workspace_membership_id,
+            "audit_events": self.audit_event_id,
+            "set_password_tokens": self.set_password_token_id,
         }[table]
 
     @property
@@ -86,6 +99,8 @@ UPDATE_SETS = {
     "users": ("display_name", "renamed-by-intruder"),
     "memberships": ("org_role", "org_admin"),
     "workspace_memberships": ("role", "viewer"),
+    "audit_events": ("actor", "renamed-by-intruder"),
+    "set_password_tokens": ("token_hash", "0" * 64),
 }
 
 
@@ -96,6 +111,8 @@ async def create_org_rows(engine: AsyncEngine, label: str) -> OrgRows:
         user_id=uuid.uuid4(),
         membership_id=uuid.uuid4(),
         workspace_membership_id=uuid.uuid4(),
+        audit_event_id=uuid.uuid4(),
+        set_password_token_id=uuid.uuid4(),
         label=label,
         suffix=uuid.uuid4().hex[:8],
     )
@@ -137,22 +154,55 @@ async def create_org_rows(engine: AsyncEngine, label: str) -> OrgRows:
                 "user": rows.user_id,
             },
         )
+        await conn.execute(
+            text(
+                "INSERT INTO audit_events (id, org_id, actor, action, target_type, target_id)"
+                " VALUES (:id, :org, 'platform-operator', 'organization.created',"
+                " 'organization', :org)"
+            ),
+            {"id": rows.audit_event_id, "org": rows.org_id},
+        )
+        await conn.execute(
+            text(
+                "INSERT INTO set_password_tokens (id, org_id, user_id, token_hash, expires_at)"
+                " VALUES (:id, :org, :user, :hash, now() + interval '24 hours')"
+            ),
+            {
+                "id": rows.set_password_token_id,
+                "org": rows.org_id,
+                "user": rows.user_id,
+                "hash": secrets.token_hex(32),
+            },
+        )
     return rows
 
 
+async def count_org_rows(engine: AsyncEngine, org_id: uuid.UUID) -> dict[str, int]:
+    """Row count per tenant table for one Organization, read in its own tenant transaction."""
+    counts = {}
+    async with engine.connect() as conn, tenant_transaction(conn, org_id):
+        for table in DELETE_ORDER:
+            sql = f"SELECT count(*) FROM {table} WHERE {tenant_key_column(table)} = :org"
+            counts[table] = (await conn.execute(text(sql), {"org": org_id})).scalar_one()
+    return counts
+
+
 async def purge_org_rows(engine: AsyncEngine, *orgs: OrgRows) -> None:
+    """Delete everything the fixture Organizations own (see ``purge_org_ids``)."""
+    await purge_org_ids(engine, *(org.org_id for org in orgs))
+
+
+async def purge_org_ids(engine: AsyncEngine, *org_ids: uuid.UUID) -> None:
     """Delete everything an Organization owns through the application role, one tenant
     transaction per Organization: the fixture rows and any row a test created for it (e.g. by a
-    positive-control POST).
+    positive-control POST, a CLI command or the provisioning service).
 
     This is the product path: every table has a DELETE grant and the standard policy, so no owner
     privilege is used and row-level security is never altered. The explicit ``org_id`` filter
     and the policy both apply.
     """
-    for org in orgs:
-        async with engine.connect() as conn, tenant_transaction(conn, org.org_id):
+    for org_id in org_ids:
+        async with engine.connect() as conn, tenant_transaction(conn, org_id):
             for table in DELETE_ORDER:
                 key = tenant_key_column(table)
-                await conn.execute(
-                    text(f"DELETE FROM {table} WHERE {key} = :org"), {"org": org.org_id}
-                )
+                await conn.execute(text(f"DELETE FROM {table} WHERE {key} = :org"), {"org": org_id})

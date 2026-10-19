@@ -95,6 +95,9 @@ services:
       EI_AI_ENV: local
       DATABASE_URL: postgresql://ei_ai_app:${APP_DB_PASSWORD:?run npm run up to create .env}@db:5432/ei_ai
       VALKEY_URL: redis://valkey:6379/0
+      # Base of the one-time set-password links printed by the Platform Operator CLI (FND-04);
+      # follows the admin host port (ADMIN_PORT in .env, default 3000).
+      ADMIN_BASE_URL: http://localhost:${ADMIN_PORT:-3000}
     depends_on:
       db:
         condition: service_healthy
@@ -118,7 +121,7 @@ services:
       api:
         condition: service_healthy
     ports:
-      - "127.0.0.1:3000:8080"
+      - "127.0.0.1:${ADMIN_PORT:-3000}:8080"
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/"]
       interval: 5s

@@ -7,6 +7,7 @@
 //   reset                      down + deletes the database volume only (never the model cache)
 //   seed                       loads the Mekong Devworks demo data (ei-ai seed demo in the api container)
 //   ps | logs [service]        status and recent logs
+import { adminUrl } from "./lib/admin-url.mjs";
 import { ensureEnv } from "./lib/ensure-env.mjs";
 import { MIN_COMPOSE_VERSION, isAtLeast, parseComposeVersion } from "./lib/compose-version.mjs";
 import {
@@ -22,11 +23,14 @@ import { memoryWarning } from "./lib/memory-preflight.mjs";
 import { runMigrations } from "./lib/migrate.mjs";
 import { resetDatabase } from "./lib/reset.mjs";
 
-const URLS = [
-  "Admin UI   http://localhost:3000",
-  "Widget     http://localhost:3001",
-  "API health http://localhost:8000/healthz",
-];
+/** The URLs printed after a successful start (the admin port follows ADMIN_PORT, as in compose.yaml). */
+function serviceUrls() {
+  return [
+    `Admin UI   ${adminUrl(ROOT, process.env)}`,
+    "Widget     http://localhost:3001",
+    "API health http://localhost:8000/healthz",
+  ];
+}
 
 function fail(message) {
   console.error(message);
@@ -142,7 +146,7 @@ async function up(argv) {
     );
   }
   console.log(
-    `\nAll services are healthy (${Math.round((Date.now() - started) / 1000)} s).\n${URLS.join("\n")}`,
+    `\nAll services are healthy (${Math.round((Date.now() - started) / 1000)} s).\n${serviceUrls().join("\n")}`,
   );
   console.log("Demo data: npm run seed    Stop: npm run down");
 }

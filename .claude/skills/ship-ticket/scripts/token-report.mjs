@@ -27,6 +27,8 @@ const AGENT_LABELS = {
 };
 const REPORTED_AGENTS = ["planner", "developer", "qa", "reviewer"];
 const INJECTED_PROMPT = /^\s*<(system-reminder|task-notification)[\s>]/;
+// A resume through SendMessage is written as a meta line with this prefix.
+const RESUME_PROMPT = /^\s*The coordinator sent a message/;
 const USAGE_FIELDS = ["input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"];
 
 // Reads the command-line options; --since must be a valid ISO time (a BOM or CR from a file is removed)
@@ -121,7 +123,9 @@ export const readJsonl = (file) => {
 export const isPrompt = (entry) => {
   const content = entry.message?.content;
 
-  if (entry.type !== "user" || entry.isMeta) return false;
+  if (entry.type !== "user") return false;
+  if (typeof content === "string" && RESUME_PROMPT.test(content)) return true;
+  if (entry.isMeta) return false;
   if (typeof content === "string") return !INJECTED_PROMPT.test(content);
   if (!Array.isArray(content) || content.some((block) => block.type === "tool_result")) return false;
   const text = content.find((block) => block.type === "text")?.text ?? "";

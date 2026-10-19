@@ -37,15 +37,16 @@ function section(title) {
   return match[1];
 }
 
-/** Published host ports by service from the raw compose file: { admin: 3000, ... }. */
+/** Published host ports by service from the raw compose file: { admin: 3000, ... }. A port set by a
+ * variable (`${ADMIN_PORT:-3000}`) counts with its default. */
 function composePorts() {
   const ports = {};
   let service = null;
   for (const line of compose.split("\n")) {
     const header = line.match(/^ {2}([a-z][a-z-]*):\s*$/);
     if (header) service = header[1];
-    const port = line.match(/^\s+- "127\.0\.0\.1:(\d+):\d+"/);
-    if (port && service) ports[service] = Number(port[1]);
+    const port = line.match(/^\s+- "127\.0\.0\.1:(?:(\d+)|\$\{[A-Z_]+:-(\d+)\}):\d+"/);
+    if (port && service) ports[service] = Number(port[1] ?? port[2]);
   }
   return ports;
 }
@@ -110,6 +111,8 @@ test("folder_table_lists_every_top_level_directory", () => {
 test("documented_urls_match_compose_ports", () => {
   const ports = Object.values(composePorts());
   assert.deepEqual([...ports].sort(), [3000, 3001, 8000]);
+  for (const [, name] of compose.matchAll(/"127\.0\.0\.1:\$\{([A-Z_]+):-\d+\}:\d+"/g))
+    assert.ok(readme.includes(`\`${name}\``), `document the port variable ${name}`);
   const vitePorts = ["admin", "widget"].map((app) =>
     Number(
       fs

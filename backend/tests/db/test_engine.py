@@ -1,6 +1,9 @@
+from typing import Any
+
 import pytest
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ei_ai.db import engine as engine_module
 from ei_ai.db.engine import create_app_engine, to_libpq_url, to_sqlalchemy_url
 from ei_ai.settings import Settings
 
@@ -42,3 +45,40 @@ def test_libpq_url_drops_the_driver_name_only() -> None:
         to_libpq_url("postgresql+psycopg://u:pw@db:5432/ei_ai") == "postgresql://u:pw@db:5432/ei_ai"
     )
     assert to_libpq_url("postgresql://u:pw@db:5432/ei_ai") == "postgresql://u:pw@db:5432/ei_ai"
+
+
+async def test_cli_engine_fails_fast_on_an_unreachable_host(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, Any] = {}
+
+    def fake_create(url: str, **kwargs: Any) -> str:
+        captured.update(kwargs, url=url)
+        return "engine"
+
+    monkeypatch.setattr(engine_module, "create_async_engine", fake_create)
+
+    assert engine_module.create_cli_engine("postgresql://u:pw@db:5432/ei_ai") == "engine"
+    assert captured == {
+        "url": "postgresql+psycopg://u:pw@db:5432/ei_ai",
+        "pool_pre_ping": True,
+        "connect_args": {"connect_timeout": engine_module.CLI_CONNECT_TIMEOUT_SECONDS},
+    }
+    assert 1 <= engine_module.CLI_CONNECT_TIMEOUT_SECONDS <= 10
+
+
+async def test_run_with_app_engine_disposes_the_engine(monkeypatch: pytest.MonkeyPatch) -> None:
+    events: list[str] = []
+
+    class _Engine:
+        async def dispose(self) -> None:
+            events.append("disposed")
+
+    async def work(engine: Any) -> str:
+        events.append("work")
+        return "done"
+
+    monkeypatch.setattr(engine_module, "create_cli_engine", lambda url: _Engine())
+
+    assert await engine_module.run_with_app_engine("postgresql://x", work) == "done"
+    assert events == ["work", "disposed"]

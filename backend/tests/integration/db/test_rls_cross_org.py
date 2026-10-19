@@ -34,6 +34,14 @@ FORGED_INSERTS = {
         "INSERT INTO workspace_memberships (org_id, workspace_id, user_id, role)"
         " VALUES (:other_org, :other_ws, :own_user, 'member')"
     ),
+    "audit_events": (
+        "INSERT INTO audit_events (org_id, actor, action, target_type, target_id)"
+        " VALUES (:other_org, 'forged', 'organization.created', 'organization', :other_org)"
+    ),
+    "set_password_tokens": (
+        "INSERT INTO set_password_tokens (org_id, user_id, token_hash, expires_at)"
+        f" VALUES (:other_org, :own_user, '{'f' * 64}', now() + interval '24 hours')"
+    ),
 }
 
 

@@ -1,8 +1,11 @@
 // Smoke test of the running stack (used by the CI `stack` job and handy locally):
-//   node scripts/smoke.mjs        API_URL / ADMIN_URL / WIDGET_URL override the defaults
+//   node scripts/smoke.mjs        API_URL / ADMIN_URL / WIDGET_URL override the defaults; the admin
+//                                 default follows ADMIN_PORT (shell, then .env) like compose.yaml
 // Exit code 0 when every probe answers as expected, 1 otherwise.
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { adminUrl } from "./lib/admin-url.mjs";
+import { ROOT } from "./lib/docker.mjs";
 
 const TIMEOUT_MS = 5000;
 
@@ -43,7 +46,7 @@ export async function runSmoke(urls, log = console.log) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const ok = await runSmoke({
     api: process.env.API_URL || "http://localhost:8000",
-    admin: process.env.ADMIN_URL || "http://localhost:3000",
+    admin: adminUrl(ROOT, process.env),
     widget: process.env.WIDGET_URL || "http://localhost:3001",
   });
   process.exit(ok ? 0 : 1);

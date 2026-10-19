@@ -40,10 +40,12 @@ def test_pgvector_extension_is_installed(real_settings: Settings) -> None:
     assert row == ("vector",)
 
 
-def test_seed_demo_reaches_database_as_app_role(
+def test_seed_demo_loads_the_manifest_as_app_role(
     real_settings: Settings, capsys: pytest.CaptureFixture[str]
 ) -> None:
     assert real_settings.environment in ("local", "test")
 
     assert cli.main(["seed", "demo"]) == 0
-    assert "Database: reachable as the application role" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Organization: Mekong Devworks (0192a000-0000-7000-8000-00000000ea21)" in out
+    assert "Members: 6" in out
