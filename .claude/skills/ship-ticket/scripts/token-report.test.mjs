@@ -126,6 +126,16 @@ test("token_report_reads_options_and_rejects_unknown_ones", () => {
   assert.throws(() => parseArgs(["--since"]), /--since/);
 });
 
+test("token_report_counts_a_send_message_resume_as_a_new_round", () => {
+  const resume = {
+    ...prompt("The coordinator sent a message while you were working:\nFix round 2"),
+    isMeta: true,
+  };
+
+  assert.equal(isPrompt(resume), true);
+  assert.equal(isPrompt({ ...prompt("Base directory for this skill: x"), isMeta: true }), false);
+});
+
 test("token_report_does_not_count_injected_reminders_as_new_rounds", () => {
   assert.equal(isPrompt(prompt("<system-reminder>context</system-reminder>")), false);
   assert.equal(isPrompt(prompt("<task-notification>\n<task-id>x</task-id>")), false);
