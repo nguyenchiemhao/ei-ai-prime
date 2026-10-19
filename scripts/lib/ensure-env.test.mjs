@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { ensureEnv } from "./ensure-env.mjs";
+import { ensureEnv, envFileValue } from "./ensure-env.mjs";
 
 const EXAMPLE = [
   "# comment with __GENERATED__ in it stays untouched on comment lines",
@@ -98,4 +98,36 @@ test("ensure_env_fails_when_the_example_is_missing", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "ei-ai-env-"));
 
   assert.throws(() => ensureEnv(root), /\.env\.example/);
+});
+
+test("env_file_value_reads_one_variable_of_dot_env", () => {
+  const root = project({ ".env": "# ADMIN_PORT=1\nADMIN_PORT=3100\r\nEMPTY=\nOTHER=x=y\n" });
+  assert.equal(envFileValue(root, "ADMIN_PORT"), "3100");
+  assert.equal(envFileValue(root, "OTHER"), "x=y");
+  assert.equal(envFileValue(root, "EMPTY"), undefined);
+  assert.equal(envFileValue(root, "MISSING"), undefined);
+  assert.equal(envFileValue(project(), "ADMIN_PORT"), undefined, "no .env at all");
+});
+
+test("env_file_value_parses_like_compose", () => {
+  const root = project({
+    ".env": [
+      'DOUBLE="3100"',
+      "SINGLE='3200'",
+      "COMMENTED=3300 # moved off 3000",
+      'HASH_IN_QUOTES="a # b"',
+      "HASH_NO_SPACE=a#b",
+      "DUP=first",
+      "DUP=last",
+      "SPACED = 3400",
+      "",
+    ].join("\n"),
+  });
+  assert.equal(envFileValue(root, "DOUBLE"), "3100");
+  assert.equal(envFileValue(root, "SINGLE"), "3200");
+  assert.equal(envFileValue(root, "COMMENTED"), "3300");
+  assert.equal(envFileValue(root, "HASH_IN_QUOTES"), "a # b");
+  assert.equal(envFileValue(root, "HASH_NO_SPACE"), "a#b");
+  assert.equal(envFileValue(root, "DUP"), "last");
+  assert.equal(envFileValue(root, "SPACED"), "3400");
 });

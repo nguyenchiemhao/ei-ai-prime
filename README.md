@@ -49,7 +49,7 @@ On the first run `npm run up` creates `.env` with generated passwords (git-ignor
 | Widget | http://localhost:3001 |
 | API health | http://localhost:8000/healthz (readiness: `/readyz`) |
 
-All ports are fixed and bound to `127.0.0.1` only. The database, Valkey and the model server have no published port.
+All ports are bound to `127.0.0.1` only. They are fixed, except the admin UI port: set `ADMIN_PORT` in `.env` (for example `ADMIN_PORT=3100`) when 3000 is taken by another program; `compose.yaml`, `npm run up`, the smoke test, Playwright and the set-password links all follow it. The database, Valkey and the model server have no published port.
 
 - **First run time:** measured once on the development machine with a fast connection, the Docker image cache holding the base images (python, node, nginx, pgvector, valkey, llama.cpp) and an empty model volume: about 2.5 minutes in total (26 s to build the images without cache, 119 s to start every service including the 2.5 GB model download). The target is 10 minutes. With no cached base images add the time to pull about 1.6 GB; on a slow link use `--no-model` and add the model later.
 - **Warm start** (images built, model file cached): about 20 seconds with the model; about 35 seconds on the very first core-only start (image build included).
@@ -65,7 +65,24 @@ All ports are fixed and bound to `127.0.0.1` only. The database, Valkey and the 
 npm run seed
 ```
 
-Runs `ei-ai seed demo` inside the API container. It refuses to run unless the environment is `local` or `test` (exit code 2), validates the versioned Mekong Devworks manifest (Organization "Mekong Devworks", Workspace "People Ops", six members), checks that the application database role can connect, and prints the same summary on every run. It writes no rows yet: the tables exist since FND-01 (`npm run migrate`), and ticket FND-04 (EA-21) loads this manifest into them and keeps the same command.
+Runs `ei-ai seed demo` inside the API container. It refuses to run unless the environment is `local` or `test` (exit code 2, before any other setting is read or the database is touched). It loads the versioned Mekong Devworks manifest (`backend/src/ei_ai/seed/data/mekong-devworks.json`: Organization "Mekong Devworks" with the fixed id `0192a000-0000-7000-8000-00000000ea21`, Workspace "People Ops", six members with their role codes) as the application role in one tenant transaction, and writes an audit event for every object it creates. It is idempotent: it creates only what is missing and never changes or deletes an existing row, so a second run writes nothing and prints the same output every time (`already present`, `Audit events written: 0`). It never repairs memberships: if "People Ops" was deleted or renamed by hand, a run recreates it without adding the existing members (`npm run reset` gives a clean demo). A run that creates members prints one set-password link per new member (valid 24 hours, shown once); for a fresh link later, use `ei-ai user link` (below). If another Organization already holds the name "Mekong Devworks", the seed stops with exit code 1.
+
+## Platform Operator CLI
+
+The Platform Operator onboards a customer from a shell in the API container (there is no platform admin UI yet). Run the commands with `docker compose exec -T api ei-ai <command>`:
+
+| Command | Example | Result |
+|---|---|---|
+| `org create --name NAME --owner EMAIL [--owner-name DISPLAY_NAME] [--workspace-name NAME]` | `ei-ai org create --name "Mekong Devworks" --owner linh.tran@mekongdevworks.example` | the Organization, its default Workspace (`Default`) and the Org Owner (also Workspace Admin), plus a set-password link |
+| `workspace create --org ORG_ID --name NAME` | `ei-ai workspace create --org 0192a000-0000-7000-8000-00000000ea21 --name "Finance"` | a Workspace in the Organization |
+| `user invite --org ORG_ID --email EMAIL --role ROLE [--role ROLE] [--workspace WORKSPACE_ID] [--name DISPLAY_NAME]` | `ei-ai user invite --org <org-id> --email minh.pham@example.com --role builder --workspace <workspace-id>` | a user with at most one Organization role (`org_owner`, `org_admin`) and one Workspace role (`workspace_admin`, `developer`, `builder`, `knowledge_editor`, `reviewer`, `viewer`, `member`; needs `--workspace`), plus a set-password link |
+| `user link --org ORG_ID --email EMAIL` | `ei-ai user link --org <org-id> --email minh.pham@example.com` | a new set-password link; the user's earlier unused links stop working |
+| `seed demo` | `ei-ai seed demo` | the demo data (see "Seed data") |
+
+- Names are trimmed; emails are trimmed and lowercased. Organization names are unique across the platform (case-insensitive); Workspace names per Organization; emails per Organization.
+- A set-password link looks like `http://localhost:3000/set-password#token=<org-id>.<secret>`. The token sits in the URL fragment, which the browser never sends to a server, so it cannot reach the admin access log, a proxy or a Referer header. It is valid for 24 hours, works once, is printed on stdout only and never logged; the database stores only its SHA-256 hash. The base URL comes from `ADMIN_BASE_URL` (Compose sets `http://localhost:${ADMIN_PORT:-3000}`; required in production). The set-password page itself comes with FND-05 (EA-22).
+- Every successful command writes audit events (actor `platform-operator`, action, target) in the same transaction as its rows; a failing command writes nothing.
+- Exit codes: `0` done; `1` validation error, conflict, not found, configuration or database error (one `error: ...` line on stderr, never SQL or connection details); `2` usage error (unknown command, missing required flag) or `seed demo` refused outside `local`/`test`.
 
 ## Running tests and checks
 
@@ -106,7 +123,7 @@ npm run e2e:perf                    # only the @perf specs (benchmarks, timings)
 
 Tag a test `{ tag: "@slow" }` when it copies the repository, starts a second Compose project or re-runs whole task suites, and `{ tag: "@perf" }` when it measures time or overhead. The fast tier runs in every QA round; `@slow` and `@perf` run once when a ticket is finished, or when you change their area (test tiers: `docs/dev/coding-rules.md` §3.1).
 
-`ADMIN_URL` (default `http://localhost:3000`) is the base URL; the HTML report goes to `.work/playwright-report/` and traces of failed tests to `.work/playwright-results/` (git-ignored). `npm run lint` and `npm run typecheck` cover the specs and the config too.
+`ADMIN_URL` is the base URL (default `http://localhost:3000`, or the `ADMIN_PORT` of the shell or `.env`); the HTML report goes to `.work/playwright-report/` and traces of failed tests to `.work/playwright-results/` (git-ignored). `npm run lint` and `npm run typecheck` cover the specs and the config too.
 
 ## Folder structure
 
@@ -209,7 +226,7 @@ The limits add up to about 7.9 GB, more than the 6.7-7.2 GB that Docker Desktop 
 
 - **Git Bash rewrites container paths** (`-w /repo` becomes `C:/Program Files/Git/repo`): prefix manual commands with `MSYS_NO_PATHCONV=1`. The npm commands are not affected (they start Docker without a shell).
 - **Line endings:** `.gitattributes` forces LF. If shell scripts fail in containers with `\r` errors, run `git add --renormalize .` and re-checkout the files.
-- **Port already in use** (3000, 3001, 8000): stop the other program, or stop another copy of the stack (`npm run down`). The ports are fixed on purpose.
+- **Port already in use** (3000, 3001, 8000): stop the other program, or stop another copy of the stack (`npm run down`). For the admin UI you can instead move it with `ADMIN_PORT=<free port>` in `.env`; the other ports are fixed on purpose.
 - **The migrate step fails with `password authentication failed for user "ei_ai_migrator"` (or the role does not exist):** the database volume was created before FND-01, so it has no migration role. Run `npm run reset` once (it deletes only the local database; nothing is lost yet) and then `npm run up`.
 - **Password errors after deleting `.env`:** the database volume keeps the passwords of its first start. Either restore the old `.env` or run `npm run reset` (this deletes the local database).
 - **The model never becomes healthy:** its check passes only when `/v1/models` lists the configured model alias. Look at `npm run logs -- model`: a first start downloads about 2.5 GB, a download error or too little memory (see `.wslconfig`) shows there. `npm run up -- --no-model` skips it.

@@ -3,6 +3,7 @@
 //  - an .env without some of those variables (for example one that only holds MODEL_CACHE_VOLUME):
 //    the missing generated variables are appended; existing lines and values are never changed
 //    (they may hold the passwords of an existing database).
+// envFileValue reads one variable back, for Node scripts that must agree with Compose (which reads .env).
 import { randomBytes } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -10,7 +11,28 @@ import path from "node:path";
 const PLACEHOLDER = /^([A-Z][A-Z0-9_]*)=__GENERATED__$/;
 const ASSIGNMENT = /^([A-Z][A-Z0-9_]*)=/;
 
+// A .env line as Compose reads it: optional spaces around `=`, a quoted value, or an unquoted value
+// whose ` # comment` is dropped.
+const DOTENV_LINE =
+  /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|(.*?))(?:\s+#.*)?\s*$/;
+
+/** Generates the value of one __GENERATED__ variable (32 random hex characters). */
 const generate = () => randomBytes(16).toString("hex");
+
+/**
+ * Value of `name` in `<root>/.env`, parsed like Compose (quotes, inline comments, the last duplicate
+ * wins), or undefined when the file, the line or the value is missing.
+ */
+export function envFileValue(root, name) {
+  const target = path.join(root, ".env");
+  if (!fs.existsSync(target)) return undefined;
+  let value;
+  for (const line of fs.readFileSync(target, "utf8").replace(/\r\n/g, "\n").split("\n")) {
+    const match = line.match(DOTENV_LINE);
+    if (match?.[1] === name) value = match[2] ?? match[3] ?? match[4];
+  }
+  return value || undefined;
+}
 
 /** "created" when .env was written, "updated" when missing variables were appended, else "kept". */
 export function ensureEnv(root) {

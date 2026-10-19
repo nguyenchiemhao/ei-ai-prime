@@ -1,6 +1,12 @@
 import pytest
 
-from ei_ai.settings import MigrationSettings, Settings, SettingsError
+from ei_ai.settings import (
+    CliSettings,
+    MigrationSettings,
+    Settings,
+    SettingsError,
+    admin_base_url,
+)
 
 VALID = {
     "EI_AI_ENV": "local",
@@ -77,3 +83,55 @@ def test_migration_settings_reject_unknown_environment() -> None:
         MigrationSettings.from_env(env)
 
     assert "EI_AI_ENV" in str(error.value)
+
+
+@pytest.mark.parametrize("environment", ["local", "test"])
+def test_admin_base_url_defaults_to_localhost_in_local_and_test(environment: str) -> None:
+    assert admin_base_url({}, environment) == "http://localhost:3000"
+    assert admin_base_url({"ADMIN_BASE_URL": ""}, environment) == "http://localhost:3000"
+
+
+@pytest.mark.parametrize("value", [None, ""])
+def test_admin_base_url_is_required_in_production(value: str | None) -> None:
+    env = {} if value is None else {"ADMIN_BASE_URL": value}
+
+    with pytest.raises(SettingsError) as error:
+        admin_base_url(env, "production")
+
+    assert str(error.value) == "ADMIN_BASE_URL is required"
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("https://admin.example.com/", "https://admin.example.com"),
+        ("http://localhost:3000", "http://localhost:3000"),
+        ("https://admin.example.com/ei//", "https://admin.example.com/ei"),
+    ],
+)
+def test_admin_base_url_strips_the_trailing_slash(value: str, expected: str) -> None:
+    assert admin_base_url({"ADMIN_BASE_URL": value}, "production") == expected
+
+
+@pytest.mark.parametrize("value", ["ftp://admin.example.com", "admin.example.com", "javascript:x"])
+def test_admin_base_url_must_be_http_or_https(value: str) -> None:
+    with pytest.raises(SettingsError) as error:
+        admin_base_url({"ADMIN_BASE_URL": value}, "local")
+
+    assert str(error.value) == "ADMIN_BASE_URL must be an http or https URL"
+
+
+def test_cli_settings_need_only_the_environment_and_the_database_url() -> None:
+    env = {"EI_AI_ENV": "local", "DATABASE_URL": VALID["DATABASE_URL"]}
+
+    settings = CliSettings.from_env(env)
+
+    assert (settings.environment, settings.database_url) == ("local", VALID["DATABASE_URL"])
+    assert "s3cret-pw" not in repr(settings)
+
+
+def test_cli_settings_require_the_database_url() -> None:
+    with pytest.raises(SettingsError) as error:
+        CliSettings.from_env({"EI_AI_ENV": "local", "VALKEY_URL": "redis://valkey:6379/0"})
+
+    assert str(error.value) == "DATABASE_URL is required"

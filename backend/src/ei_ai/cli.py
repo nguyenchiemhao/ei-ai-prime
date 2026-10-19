@@ -1,23 +1,24 @@
-"""Command line entry point: ``ei-ai seed demo``, ``ei-ai db upgrade``, ``ei-ai db current``.
+"""Command line entry point: ``ei-ai seed demo``, ``ei-ai db upgrade``, ``ei-ai db current`` and
+the Platform Operator commands ``org create``, ``workspace create``, ``user invite``, ``user link``.
 
 Exit codes: 0 done, 1 failed, 2 refused/usage.
 """
 
 import argparse
-import asyncio
 import os
 import sys
 from collections.abc import Sequence
 
 from ei_ai.db.migrate import current_revision, guard_violations, upgrade_head
 from ei_ai.db.migrations.roles import MigrationRoleError
-from ei_ai.readiness import check_database
-from ei_ai.seed.demo import SeedRefused, run_demo_seed
-from ei_ai.settings import MigrationSettings, Settings, SettingsError
-
-
-def check_database_sync(database_url: str) -> None:
-    asyncio.run(check_database(database_url))
+from ei_ai.provisioning.commands import (
+    COMMAND_GROUPS,
+    add_provisioning_parsers,
+    run_provisioning_command,
+)
+from ei_ai.provisioning.validation import ProvisioningError
+from ei_ai.seed.demo import SeedRefused, load_demo_data, run_demo_seed
+from ei_ai.settings import MigrationSettings, SettingsError
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -31,25 +32,28 @@ def _parser() -> argparse.ArgumentParser:
     actions = database.add_subparsers(dest="action", required=True)
     actions.add_parser("upgrade", help="apply migrations to head, then run the schema guard")
     actions.add_parser("current", help="print the current revision")
+    add_provisioning_parsers(commands)
     return parser
 
 
 def _seed() -> int:
+    # The guard needs only EI_AI_ENV (unset means production): it runs before any other setting
+    # is read, so a refused seed exits 2 whatever else is configured.
+    environment = os.environ.get("EI_AI_ENV", "production")
     try:
-        settings = Settings.from_env(os.environ)
-    except SettingsError as error:
-        print(f"configuration error: {error}", file=sys.stderr)
-        return 1
-    try:
-        summary = run_demo_seed(
-            settings.environment, lambda: check_database_sync(settings.database_url)
-        )
+        summary = run_demo_seed(environment, lambda manifest: load_demo_data(os.environ, manifest))
     except SeedRefused as error:
         print(f"refused: {error}", file=sys.stderr)
         return 2
+    except SettingsError as error:
+        print(f"configuration error: {error}", file=sys.stderr)
+        return 1
+    except ProvisioningError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 1
     except Exception as error:
         # Exception class only: messages can carry connection strings (D52).
-        print(f"seed failed ({type(error).__name__})", file=sys.stderr)
+        print(f"error: seed demo failed ({type(error).__name__})", file=sys.stderr)
         return 1
     print(summary)
     return 0
@@ -103,4 +107,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)  # argparse exits 2 on anything unknown
     if args.command == "seed":
         return _seed()
+    if args.command in COMMAND_GROUPS:
+        return run_provisioning_command(args)
     return _db_upgrade() if args.action == "upgrade" else _db_current()

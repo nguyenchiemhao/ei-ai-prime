@@ -3,6 +3,8 @@ import pytest
 from ei_ai import cli
 from ei_ai.db.migrations.roles import MigrationRoleError
 from ei_ai.db.schema_guard import Violation
+from ei_ai.provisioning.validation import ProvisioningError
+from ei_ai.seed.demo import DemoManifest
 
 ENV = {
     "DATABASE_URL": "postgresql://ei_ai_app:s3cret-pw@db:5432/ei_ai",
@@ -16,25 +18,56 @@ def _set_env(monkeypatch: pytest.MonkeyPatch, environment: str) -> None:
         monkeypatch.setenv(name, value)
 
 
+def _must_not_load(env: object, manifest: DemoManifest) -> str:
+    raise AssertionError("the environment guard must run before settings or the database")
+
+
 def test_seed_demo_prints_summary_and_exits_0(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     _set_env(monkeypatch, "local")
-    monkeypatch.setattr(cli, "check_database_sync", lambda url: None)
+    loaded: list[str] = []
+
+    def load(env: object, manifest: DemoManifest) -> str:
+        loaded.append(manifest.organization)
+        return "Demo seed: Mekong Devworks\n  Members: 6"
+
+    monkeypatch.setattr(cli, "load_demo_data", load)
 
     assert cli.main(["seed", "demo"]) == 0
     assert "Members: 6" in capsys.readouterr().out
+    assert loaded == ["Mekong Devworks"]
 
 
+@pytest.mark.parametrize("admin_url", [None, ""])
+@pytest.mark.parametrize("database_url", [None, ENV["DATABASE_URL"]])
 def test_seed_demo_exits_2_in_production(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    admin_url: str | None,
+    database_url: str | None,
 ) -> None:
     _set_env(monkeypatch, "production")
+    if database_url is None:
+        monkeypatch.delenv("DATABASE_URL")
+    monkeypatch.delenv("ADMIN_BASE_URL", raising=False)
+    if admin_url is not None:
+        monkeypatch.setenv("ADMIN_BASE_URL", admin_url)
+    monkeypatch.setattr(cli, "load_demo_data", _must_not_load)
 
     assert cli.main(["seed", "demo"]) == 2
     captured = capsys.readouterr()
-    assert "local or test" in captured.err
-    assert "s3cret-pw" not in captured.out + captured.err
+    assert captured.out == ""
+    assert captured.err == "refused: the demo seed runs only in local or test environments\n"
+
+
+def test_seed_demo_is_refused_when_the_environment_is_unset(
+    clean_env: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    clean_env.setattr(cli, "load_demo_data", _must_not_load)
+
+    assert cli.main(["seed", "demo"]) == 2
+    assert "local or test" in capsys.readouterr().err
 
 
 def test_seed_demo_exits_1_when_database_is_unreachable_without_leaking_details(
@@ -42,22 +75,51 @@ def test_seed_demo_exits_1_when_database_is_unreachable_without_leaking_details(
 ) -> None:
     _set_env(monkeypatch, "local")
 
-    def unreachable(url: str) -> None:
-        raise ConnectionError(f"cannot reach {url}")
+    def unreachable(env: object, manifest: DemoManifest) -> str:
+        raise ConnectionError(f"cannot reach {ENV['DATABASE_URL']}")
 
-    monkeypatch.setattr(cli, "check_database_sync", unreachable)
+    monkeypatch.setattr(cli, "load_demo_data", unreachable)
 
     assert cli.main(["seed", "demo"]) == 1
     captured = capsys.readouterr()
-    assert "ConnectionError" in captured.err
+    assert captured.err == "error: seed demo failed (ConnectionError)\n"
     assert "s3cret-pw" not in captured.out + captured.err
+
+
+def test_seed_demo_prints_a_provisioning_error(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _set_env(monkeypatch, "local")
+    message = 'an Organization named "Mekong Devworks" already exists with another id'
+
+    def taken(env: object, manifest: DemoManifest) -> str:
+        raise ProvisioningError(message)
+
+    monkeypatch.setattr(cli, "load_demo_data", taken)
+
+    assert cli.main(["seed", "demo"]) == 1
+    assert capsys.readouterr().err == f"error: {message}\n"
 
 
 def test_missing_settings_exit_1_and_name_the_variable(
     clean_env: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
+    clean_env.setenv("EI_AI_ENV", "local")
+
     assert cli.main(["seed", "demo"]) == 1
-    assert "DATABASE_URL" in capsys.readouterr().err
+    assert capsys.readouterr().err == "configuration error: DATABASE_URL is required\n"
+
+
+def test_invalid_admin_base_url_is_a_configuration_error_for_the_seed(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _set_env(monkeypatch, "local")
+    monkeypatch.setenv("ADMIN_BASE_URL", "admin.example.com")
+
+    assert cli.main(["seed", "demo"]) == 1
+    assert capsys.readouterr().err == (
+        "configuration error: ADMIN_BASE_URL must be an http or https URL\n"
+    )
 
 
 def test_unknown_command_exits_2() -> None:

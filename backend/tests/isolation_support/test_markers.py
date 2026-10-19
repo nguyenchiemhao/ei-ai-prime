@@ -13,6 +13,8 @@ def _rows(label: str) -> OrgRows:
         user_id=uuid.uuid4(),
         membership_id=uuid.uuid4(),
         workspace_membership_id=uuid.uuid4(),
+        audit_event_id=uuid.uuid4(),
+        set_password_token_id=uuid.uuid4(),
         label=label,
         suffix=uuid.uuid4().hex[:8],
     )

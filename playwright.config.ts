@@ -1,9 +1,11 @@
 // Playwright Test setup (added by QA for EA-13). The specs run against an already running stack:
 //   npm run up && npm run seed && npx playwright test
-// Base URLs come from the environment; the defaults are the fixed local URLs of the README.
+// Base URLs come from the environment: ADMIN_URL overrides the admin URL, else it follows ADMIN_PORT
+// (shell, then .env, default 3000) exactly like compose.yaml.
 import { defineConfig, devices } from "@playwright/test";
+import { adminUrl } from "./scripts/lib/admin-url.mjs";
 
-const ADMIN_URL = process.env.ADMIN_URL ?? "http://localhost:3000";
+const ADMIN_URL = adminUrl(import.meta.dirname, process.env);
 
 export default defineConfig({
   testDir: "e2e",

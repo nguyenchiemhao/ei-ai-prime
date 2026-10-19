@@ -47,6 +47,25 @@ class Settings:
 
 
 @dataclass(frozen=True)
+class CliSettings:
+    """Settings of the Platform Operator commands: they talk to the database only (no Valkey)."""
+
+    environment: str
+    database_url: str
+
+    @classmethod
+    def from_env(cls, env: Mapping[str, str]) -> "CliSettings":
+        """Read EI_AI_ENV and DATABASE_URL; raises SettingsError naming a missing variable."""
+        return cls(environment=_environment(env), database_url=_required(env, "DATABASE_URL"))
+
+    def __repr__(self) -> str:
+        return (
+            f"CliSettings(environment={self.environment!r}, "
+            f"database_url={mask_url(self.database_url)!r})"
+        )
+
+
+@dataclass(frozen=True)
 class MigrationSettings:
     """Settings of the migration step, apart from Settings: the API never reads the owner URL."""
 
@@ -65,6 +84,25 @@ class MigrationSettings:
             f"MigrationSettings(environment={self.environment!r}, "
             f"migration_database_url={mask_url(self.migration_database_url)!r})"
         )
+
+
+LOCAL_ADMIN_BASE_URL = "http://localhost:3000"
+
+
+def admin_base_url(env: Mapping[str, str], environment: str) -> str:
+    """Base URL of the admin app for set-password links, without a trailing slash.
+
+    ``ADMIN_BASE_URL`` when set; unset or empty means the local admin in local/test and an error in
+    production (a link must never point at a developer machine).
+    """
+    value = env.get("ADMIN_BASE_URL", "")
+    if not value:
+        if environment == "production":
+            raise SettingsError("ADMIN_BASE_URL is required")
+        return LOCAL_ADMIN_BASE_URL
+    if not value.startswith(("http://", "https://")):
+        raise SettingsError("ADMIN_BASE_URL must be an http or https URL")
+    return value.rstrip("/")
 
 
 def _environment(env: Mapping[str, str]) -> str:

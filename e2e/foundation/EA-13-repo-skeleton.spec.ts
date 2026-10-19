@@ -5,11 +5,13 @@ import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
+import { adminUrl } from "../../scripts/lib/admin-url.mjs";
 
-const ADMIN_URL = process.env.ADMIN_URL ?? "http://localhost:3000";
 const WIDGET_URL = process.env.WIDGET_URL ?? "http://localhost:3001";
 const API_URL = process.env.API_URL ?? "http://localhost:8000";
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
+// ADMIN_URL, else ADMIN_PORT from the shell or .env (default 3000), like compose.yaml.
+const ADMIN_URL = adminUrl(ROOT, process.env);
 const SCREENSHOTS = path.join(ROOT, ".work", "EA-13", "screenshots");
 
 const TEXT_PRIMARY = "rgb(22, 24, 29)"; // #16181D  color.text.primary
@@ -106,6 +108,10 @@ test.describe("EA-13 repo skeleton", () => {
   test("AC2: seed runs twice and the admin UI is reachable at http://localhost:3000", async ({
     page,
   }) => {
+    // EA-21: the seed now writes rows. A warm-up run makes sure the demo data exists, so the two
+    // measured runs below create nothing and print byte-identical output (no one-time links).
+    const warmUp = run(process.execPath, ["scripts/dev.mjs", "seed"]);
+    expect(warmUp.status, warmUp.stderr).toBe(0);
     const first = run(process.execPath, ["scripts/dev.mjs", "seed"]);
     const second = run(process.execPath, ["scripts/dev.mjs", "seed"]);
     expect(first.status).toBe(0);
@@ -114,7 +120,8 @@ test.describe("EA-13 repo skeleton", () => {
     expect(first.stdout).toContain("Mekong Devworks");
     expect(first.stdout).toContain("People Ops");
     expect(first.stdout).toContain("Members: 6");
-    expect(first.stdout).toContain("FND-04");
+    // The dry-run note of EA-13 is gone: the seed is real now.
+    expect(first.stdout).not.toContain("FND-04");
 
     // The seed refuses outside local/test environments.
     const production = run("docker", [

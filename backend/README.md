@@ -10,12 +10,15 @@ Python 3.12, FastAPI, Pydantic v2. Package `ei_ai` in `src/ei_ai` (src layout).
 | `src/ei_ai/readiness.py` | Dependency checks; failures report component names only |
 | `src/ei_ai/api/organization.py` | `GET /organization`: the Organization of the verified identity (tenant route example) |
 | `src/ei_ai/auth/` | `Principal`, the `IdentityVerifier` interface and the `current_principal` dependency (401 without a verified identity) |
+| `src/ei_ai/auth/set_password.py` | One-time set-password tokens `<org_id>.<secret>` (only the SHA-256 is stored, valid 24 h): `issue_token`, and `redeem_set_password_token` for FND-05 |
 | `src/ei_ai/tenancy/` | `require_tenant`: the tenant of a request comes only from the Principal; forged `org_id` fields are ignored and logged |
 | `src/ei_ai/jobs/` | Background jobs in their own tenant context: `envelope_for`, the `JOBS` registry, `run_tenant_job` (FND-02); no queue yet, KB-02 adds it |
 | `src/ei_ai/cache/` | `TenantCache`: the only way to use Valkey; keys always start with `org:<org_id>:`; the readiness ping (`ping.py`) lives here too (FND-02) |
 | `src/ei_ai/db/` | Engine, `tenant_transaction` / `tenant_session`, models, Alembic migrations (`db/migrations/`), catalog snapshot and schema guard; see `docs/architecture/data-model.md` |
-| `src/ei_ai/cli.py` | `ei-ai seed demo`, `ei-ai db upgrade` (migrations + schema guard), `ei-ai db current` (exit 0 done, 1 failed, 2 refused) |
-| `src/ei_ai/seed/` | Versioned Mekong Devworks demo manifest; FND-04 (EA-21) loads it into the database |
+| `src/ei_ai/cli.py` | `ei-ai seed demo`, `ei-ai db upgrade` (migrations + schema guard), `ei-ai db current`, and the Platform Operator commands `org create`, `workspace create`, `user invite`, `user link` (exit 0 done, 1 failed, 2 refused or usage error) |
+| `src/ei_ai/provisioning/` | Platform-plane provisioning (FND-04): input validation, row helpers, the service (Organization, Workspace, invitation, link) and the CLI commands; imported only by `cli.py` and `seed/` (a test enforces it) |
+| `src/ei_ai/audit/` | `record_platform_event`: audit events with the fixed actor `platform-operator` (append-only enforcement comes with FND-08) |
+| `src/ei_ai/seed/` | Versioned Mekong Devworks demo manifest and its idempotent load (`ei-ai seed demo`, local and test only) |
 | `src/ei_ai/openapi_export.py` | Writes the OpenAPI document that `packages/api-types` is generated from |
 | `tests/` | Unit tests (`tests/integration/` needs the Compose stack) |
 | `tests/support/isolation/` | Machinery of the tenant-isolation suite: case kinds, route discovery, request-field check, cross-tenant assertions, job and Valkey checks (test-only) |
