@@ -2,7 +2,7 @@
 
 Two channels:
 
-- **MCP** — `mcp__atlassian__*` tools (load them with ToolSearch `select:<name>` if deferred). Preferred: no setup, markdown descriptions.
+- **MCP** — `mcp__claude_ai_Atlassian__*` tools (the claude.ai Atlassian connector) (load them with ToolSearch `select:<name>` if deferred). Preferred: no setup, markdown descriptions.
 - **REST** — `scripts/jira-rest.sh` (curl + API token) for what MCP cannot do. Run it with the Bash tool from the repo root: `bash .claude/skills/jira-ticket-management/scripts/jira-rest.sh <cmd> ...`.
 
 cloudId for MCP: `71bb307d-8749-442a-86d4-969021d4b921`. Site for REST: `https://nguyenchiemhao2205.atlassian.net`.

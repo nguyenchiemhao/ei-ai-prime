@@ -66,7 +66,7 @@ Run `@perf` specs and benchmarks only when the ticket has a performance NFR or t
 
 ### 1. Preflight
 - `git status --short` must be clean, except for untracked files under `.work/`. Otherwise stop and offer: commit first (`git-commit`), stash, or abort.
-- Atlassian MCP responds (`mcp__atlassian__getJiraIssue` on any key).
+- Atlassian MCP responds (`mcp__claude_ai_Atlassian__getJiraIssue` on any key).
 - `node -v` ≥ 20 when the ticket may need E2E; if lower, warn that QA will fail and ask whether to continue without it.
 - When the ticket may need containers (stack, database, model server): check the Docker **engine**, not just the client — `docker version --format '{{.Server.Version}}'`. If it fails, stop before planning and give the owner the fix steps (or pick another ticket and say why).
 

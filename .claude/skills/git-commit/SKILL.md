@@ -34,7 +34,7 @@ Used only by the `ship-ticket` skill (the owner started the pipeline, which is t
 
 ## Mode `start <EA-key>`
 
-1. **Read the ticket** (read-only) with `mcp__atlassian__getJiraIssue` (fields `summary`, `status`, `issuetype`, `labels`) to name the branch. Warn if it is labelled `deferred` or already Done.
+1. **Read the ticket** (read-only) with `mcp__claude_ai_Atlassian__getJiraIssue` (fields `summary`, `status`, `issuetype`, `labels`) to name the branch. Warn if it is labelled `deferred` or already Done.
 2. **Check the working tree.** `git status --short`. If there are uncommitted changes, stop and offer: commit them first (mode `commit`), stash, or abort.
 3. **Pick the base branch.** Ask: `main` or `dev`? (suggest `dev` if `git branch -a` shows it). If `dev` is chosen but does not exist, offer to create it from `main`; push it only if the user agrees.
 4. **Update the base.** `git fetch origin` → `git switch <base>` → `git pull --ff-only`.

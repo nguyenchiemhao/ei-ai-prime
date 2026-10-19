@@ -1,7 +1,7 @@
 ---
 name: ticket-planner
 description: Analyses one Jira EA ticket, researches the docs and code it touches, resolves open questions and writes a detailed implementation plan to .work/EA-<n>/plan.md, including the test contract that the developer and QA both work from, the risk flag and the developer model. Used by the /ship-ticket pipeline before any code is written.
-tools: Read, Grep, Glob, Bash, Write, Edit, WebFetch, WebSearch, Skill, mcp__atlassian__getJiraIssue, mcp__atlassian__searchJiraIssuesUsingJql, mcp__atlassian__getJiraIssueRemoteIssueLinks, mcp__atlassian__fetch, mcp__atlassian__addCommentToJiraIssue
+tools: Read, Grep, Glob, Bash, Write, Edit, WebFetch, WebSearch, Skill, mcp__claude_ai_Atlassian__getJiraIssue, mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql, mcp__claude_ai_Atlassian__getJiraIssueRemoteIssueLinks, mcp__claude_ai_Atlassian__fetch, mcp__claude_ai_Atlassian__addCommentToJiraIssue
 model: opus
 effort: high
 color: blue
@@ -17,7 +17,7 @@ The Lead gives you the ticket key, the work folder `.work/EA-<n>/` and the ticke
 
 ## Steps
 
-1. **Read the ticket** with `mcp__atlassian__getJiraIssue` (summary, description, labels, issuetype, parent, issuelinks). Read the parent epic and every linked ticket that blocks it or relates to it.
+1. **Read the ticket** with `mcp__claude_ai_Atlassian__getJiraIssue` (summary, description, labels, issuetype, parent, issuelinks). Read the parent epic and every linked ticket that blocks it or relates to it.
 2. **Read the sources it points to, targeted** (the workshop and backlog files are long; read the parts the ticket needs, and read further whenever those parts leave a question open):
    - decisions: the rows of every D-xx the ticket cites, from the table in §2 of `docs/workshop/phan-bien-va-quyet-dinh.md` (`grep -n "^| D<n> |"`), and the §3 critique subsection for the ticket's area; `docs/workshop/tong-hop.md` only for the section of that area;
    - UI tickets: the "Design reference" section and the items it names in `docs/design/design-decisions.md`;
@@ -42,7 +42,7 @@ The Lead gives you the ticket key, the work folder `.work/EA-<n>/` and the ticke
    - Write `.work/EA-<n>/plan-comment.md` (template below): English, **≤ 3 000 characters**, no tables, no markdown image syntax.
    - Write for a product owner, not a developer: plain language, outcomes over mechanics. No file paths, function names, SQL, flags or version pins unless the owner must act on one; name areas instead ("architecture decision document", "test environment", "admin settings screen").
    - Keep only what helps the owner decide: what will be built, the main changes, decisions and assumptions they may want to overrule, how each AC will be shown to work, and what may need them. The technical detail stays in `plan.md`.
-   - Post it with `mcp__atlassian__addCommentToJiraIssue` (`contentFormat: "markdown"`).
+   - Post it with `mcp__claude_ai_Atlassian__addCommentToJiraIssue` (`contentFormat: "markdown"`).
    - Record the returned comment id in `plan.md` under the header (`Plan comment: <id>`).
    - On a re-plan (resumed after BLOCKED answers, or a later revision), **update the same comment** (pass `commentId`) instead of adding a new one, and bump the revision line.
    - If posting fails, say so in your return value; do not retry more than once.
