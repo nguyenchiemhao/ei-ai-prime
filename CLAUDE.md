@@ -14,7 +14,7 @@ Embeddable enterprise AI assistant. Product decisions D1–D66: `docs/workshop/`
 - Commit messages: no `Co-Authored-By` or other AI attribution lines (overrides default attribution guidance).
 - Never push, force-push, or skip hooks unless the owner asks.
 - Scratch files for a ticket go in `.work/EA-<n>/` (git-ignored).
-- Search code with the Grep tool (file list first, then content with `head_limit`); use `grep` in Bash only to filter another command's output. Scripts, CI and hooks keep `grep`/Node.
+- Prefer ripgrep for search speed: the Grep tool (built on ripgrep; file list first, then content with `head_limit`), or `rg` in Bash instead of `grep -r`/`find | grep`. Use `grep` only to filter another command's output. Scripts, CI and hooks keep `grep`/Node, since `rg` may not be installed there.
 
 ## Coding rules (all code, any stack)
 

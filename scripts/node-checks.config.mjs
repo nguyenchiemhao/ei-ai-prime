@@ -10,4 +10,5 @@ export default [
   },
   { name: "packages", pattern: "packages/*/test/*.test.mjs" },
   { name: "scripts and repo checks", pattern: "scripts/**/*.test.mjs" },
+  { name: "skill scripts", pattern: ".claude/skills/*/scripts/*.test.mjs" },
 ];

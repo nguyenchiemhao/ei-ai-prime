@@ -59,7 +59,7 @@ Used by the Developer and Code Reviewer agents and by humans. The short, non-neg
 
 ## 3. Commands
 
-Agents run exactly these, from the repository root (details and prerequisites: `README.md`). "make up" in older tickets means `npm run up`.
+Agents run exactly these, from the repository root (details and prerequisites: `README.md`). "make up" in older tickets means `npm run up`. Agents run long commands (`npm run up`, `npm run check`, `npm run e2e*`, backend test tasks) with their output written to a log file under `.work/<ticket>/logs/` and read only the summary and the failures, so the output does not fill their context.
 
 | Purpose | Command |
 |---|---|
@@ -82,8 +82,8 @@ Run the cheapest tier that gives the evidence you need. Owner decision 2026-10-1
 |---|---|---|---|
 | T1 inner loop | Unit tests and lint/type checks of the area you changed (`npm run backend -- test`, `npm test`, `npm run lint`, `npm run typecheck`); the integration or isolation tests that cover the changed code | After every task and every fix | Developer; reviewer for the files of a fix |
 | T2 round gate | `npm run check` (local mirror of CI) once per round; CI on the pushed branch | End of a developer round; reviewer round 1; the Lead uses the branch CI run | Developer, reviewer, Lead |
-| T3 fast E2E | `npm run e2e -- e2e/<area>/<ticket>-*` (Playwright, fast tier; API specs use the `request` fixture) | When writing the ticket's specs; review round 1, and later review rounds when a spec or the code under it changed (QA smoke-runs them in the final pass) | Developer writes and runs them; reviewer runs them independently |
-| T4 completion | Browser exploration with Playwright MCP / Chrome DevTools MCP (console, network, performance) for `ui` tickets; the ticket's own `@slow` and `@perf` specs (`npm run e2e:full -- e2e/<area>/<ticket>-*`); one smoke run of its fast specs | In the QA final pass after review passes, only for profile `ui` or a ticket with its own `@slow`/`@perf` specs (max 3 rounds) | QA |
+| T3 fast E2E | `npm run e2e -- e2e/<area>/<ticket>-*` (Playwright, fast tier; API specs use the `request` fixture) | QA `run` and `recheck` (QA writes them in mode `design` from the plan, before the code exists); the Lead runs the fast tier of all tickets in the final review | QA, Lead |
+| T4 completion | Browser exploration with Playwright MCP / Chrome DevTools MCP (console, network, performance) for `ui` tickets; the ticket's own `@slow` and `@perf` specs (`npm run e2e:full -- e2e/<area>/<ticket>-*`) | In QA `run` (and in `recheck` when the fix touched what they cover); browser exploration only for `ui` tickets | QA |
 | On demand | `npm run e2e:full` (all tickets), `npm run e2e:perf`, benchmarks (`npm run backend -- bench-rls`), cold-start measurements | When a change touches that area, before a milestone, or when the owner asks | Lead decides |
 
 Rules:
