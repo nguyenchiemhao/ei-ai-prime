@@ -24,7 +24,15 @@ const AGENT_LABELS = {
   developer: "developer",
   "qa-e2e": "qa",
   "code-reviewer": "reviewer",
+  designer: "designer",
+  "deliver-qa": "qa",
 };
+// General-purpose agents of /deliver-ticket are labelled by the start of their dispatch description.
+const DESCRIPTION_LABELS = [
+  [/^builder check/i, "builder"],
+  [/^(implement|fix)/i, "implementer"],
+  [/^(final review|review)/i, "reviewer"],
+];
 const REPORTED_AGENTS = ["planner", "developer", "qa", "reviewer"];
 const INJECTED_PROMPT = /^\s*<(system-reminder|task-notification)[\s>]/;
 // A resume through SendMessage is written as a meta line with this prefix.
@@ -183,6 +191,17 @@ export const priceFor = (model) => {
   return PRICES[family ?? "opus"];
 };
 
+// Returns the report label of a subagent from its meta file: its agent type, or for a
+// general-purpose agent the role its dispatch description starts with
+// Input: meta ({ agentType?: string, description?: string })
+// Output: string
+export const labelFor = (meta) => {
+  const byType = AGENT_LABELS[meta.agentType];
+  const byDescription = DESCRIPTION_LABELS.find(([pattern]) => pattern.test(meta.description ?? ""));
+
+  return byType ?? byDescription?.[1] ?? "other";
+};
+
 // Computes processed tokens and API-equivalent cost of a list of API messages
 // Input: messages (Array<{ model, usage }>)
 // Output: { tokens: number, usd: number }
@@ -225,7 +244,7 @@ export const collectReport = (projectDir, session, since) => {
   for (const name of files.sort()) {
     const metaFile = path.join(subagentDir, name.replace(/\.jsonl$/, ".meta.json"));
     const meta = fs.existsSync(metaFile) ? JSON.parse(fs.readFileSync(metaFile, "utf8")) : {};
-    const label = AGENT_LABELS[meta.agentType] ?? "other";
+    const label = labelFor(meta);
     const rounds = splitRounds(readJsonl(path.join(subagentDir, name)), since).map(sumUsage);
 
     if (rounds.length === 0) continue;

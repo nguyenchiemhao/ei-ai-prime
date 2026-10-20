@@ -10,6 +10,7 @@ import {
   formatReport,
   formatTokens,
   isPrompt,
+  labelFor,
   parseArgs,
   splitRounds,
   sumUsage,
@@ -124,6 +125,17 @@ test("token_report_reads_options_and_rejects_unknown_ones", () => {
   assert.throws(() => parseArgs(["--since", "garbage"]), /not a valid ISO time/);
   assert.throws(() => parseArgs(["--model", "opus"]), /--model/);
   assert.throws(() => parseArgs(["--since"]), /--since/);
+});
+
+test("token_report_labels_agents_by_type_or_dispatch_description", () => {
+  assert.equal(labelFor({ agentType: "designer" }), "designer");
+  assert.equal(labelFor({ agentType: "qa-e2e", description: "Implement x" }), "qa");
+  assert.equal(labelFor({ agentType: "general-purpose", description: "Implement task 3" }), "implementer");
+  assert.equal(labelFor({ agentType: "general-purpose", description: "Fix final review" }), "implementer");
+  assert.equal(labelFor({ agentType: "general-purpose", description: "Review task 3" }), "reviewer");
+  assert.equal(labelFor({ agentType: "general-purpose", description: "Final review EA-7" }), "reviewer");
+  assert.equal(labelFor({ agentType: "general-purpose", description: "Builder check spec" }), "builder");
+  assert.equal(labelFor({ agentType: "general-purpose", description: "Audit pipeline" }), "other");
 });
 
 test("token_report_counts_a_send_message_resume_as_a_new_round", () => {

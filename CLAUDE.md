@@ -9,7 +9,7 @@ Embeddable enterprise AI assistant. Product decisions D1–D66: `docs/workshop/`
 
 ## Workflow
 
-- One ticket at a time through `/ship-ticket` (agent team: `.claude/agents/`, design in `docs/superpowers/specs/2026-10-13-dev-agent-team-design.md`).
+- One ticket at a time through `/ship-ticket` (agent team: `.claude/agents/`, design in `docs/superpowers/specs/2026-10-13-dev-agent-team-design.md`). Trial: `/deliver-ticket`, the superpowers-based flow (design in `docs/superpowers/specs/2026-10-20-deliver-ticket-design.md`).
 - Git through the `git-commit` skill, Jira through the `jira-ticket-management` skill.
 - Commit messages: no `Co-Authored-By` or other AI attribution lines (overrides default attribution guidance).
 - Never push, force-push, or skip hooks unless the owner asks.

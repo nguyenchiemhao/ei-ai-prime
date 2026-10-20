@@ -26,10 +26,10 @@ If the mode is not given, infer it: clean working tree + a ticket key → `start
 
 ## Pipeline and auto mode
 
-Used only by the `ship-ticket` skill (the owner started the pipeline, which is the approval):
+Used only by the `ship-ticket` and `deliver-ticket` skills (the owner started the pipeline, which is the approval):
 
 - **`start` in pipeline mode:** no confirmation for base or branch name. Base = `dev` if it exists, otherwise `main`; never create `dev`. Skip step 7's suggestion (the Lead handles Jira).
-- **`commit` in auto mode** (only when the owner ran `/ship-ticket … --auto-commit`): skip the approval in step 5. Everything else still applies — explicit-path staging, the safety check in step 3, message format, hooks. **Any safety-check hit cancels auto mode** and asks the owner.
+- **`commit` in auto mode** (only when the owner ran `/ship-ticket … --auto-commit` or `/deliver-ticket … --auto-commit`): skip the approval in step 5. Everything else still applies — explicit-path staging, the safety check in step 3, message format, hooks. **Any safety-check hit cancels auto mode** and asks the owner.
 - Without `--auto-commit`, the pipeline's `commit` asks for approval exactly like the normal mode.
 
 ## Mode `start <EA-key>`
