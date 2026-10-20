@@ -9,8 +9,9 @@ Rules (stable codes):
   G1  the tenant key exists, is uuid and NOT NULL
   G2  row-level security is ENABLED and FORCED
   G3  at least one policy
-  G4  every permissive policy expression equals the standard tenant expression exactly
-      (permissive policies are OR-ed, so any other expression could widen access)
+  G4  every permissive policy expression equals the standard tenant expression exactly and has no
+      TO clause (permissive policies are OR-ed, so any other expression could widen access); the
+      one exception is SIGN_IN_LOOKUP_ALLOWANCE, matched exactly
   G5  a permissive policy FOR ALL with the standard expression exists
   G6  the migration role owns the object, never the application role
   G7  the application role gets SELECT/INSERT/UPDATE/DELETE only (TRUNCATE would bypass RLS)
@@ -21,13 +22,15 @@ Rules (stable codes):
   G12 a table without the tenant key must be a listed ignored table
   G13 a restrictive policy may read app.current_org only through the standard NULLIF form
       (it can only narrow access, but without NULLIF it errors on '' instead of failing closed)
+  G14 the sign-in lookup role holds exactly SELECT on users(email, id, org_id) as column
+      privileges, and no other table, column or privilege (PUBLIC grants count as its own)
 """
 
 import re
 from dataclasses import dataclass
 
 from ei_ai.db.catalog import CatalogSnapshot, FunctionInfo, PolicyInfo, TableInfo
-from ei_ai.db.migrations.roles import APP_ROLE, OWNER_ROLE
+from ei_ai.db.migrations.roles import APP_ROLE, OWNER_ROLE, SIGNIN_ROLE
 
 DEFAULT_TENANT_KEY = "org_id"
 
@@ -40,7 +43,53 @@ IGNORED_TABLES = {"alembic_version": "migration bookkeeping, no tenant data"}
 ALLOWED_PRIVILEGES = frozenset({"SELECT", "INSERT", "UPDATE", "DELETE"})
 _SETTING = "(nullif(current_setting('app.current_org'::text, true), ''::text))::uuid"
 _APP_GRANTEES = frozenset({APP_ROLE, "PUBLIC"})
+_SIGNIN_GRANTEES = frozenset({SIGNIN_ROLE, "PUBLIC"})
+_NO_TO_CLAUSE = ("PUBLIC",)
 _ANY_SETTING_READ = "current_setting('app.current_org'"
+
+
+@dataclass(frozen=True)
+class PolicyAllowance:
+    """One reviewed permissive policy outside the standard form, matched field by field."""
+
+    table: str
+    policy: str
+    roles: frozenset[str]
+    command: str
+    using: str  # normalised; the policy has no WITH CHECK
+    reason: str
+
+    def matches(self, table: TableInfo, policy: PolicyInfo) -> bool:
+        return (
+            table.name == self.table
+            and policy.name == self.policy
+            and policy.permissive
+            and frozenset(policy.roles) == self.roles
+            and policy.command == self.command
+            and policy.using is not None
+            and _normalise(policy.using) == self.using
+            and policy.with_check is None
+        )
+
+
+# The only cross-tenant read (EA-22, R42, owner decision 2026-10-20): sign-in must find the
+# Organizations of an email before any tenant is known. Bound to the sign-in role only, which G14
+# limits to SELECT on users(email, id, org_id); every other role still sees no users row without
+# app.current_org. Any change to this allowance is a review blocker.
+SIGN_IN_LOOKUP_ALLOWANCE = PolicyAllowance(
+    table="users",
+    policy="sign_in_lookup",
+    roles=frozenset({SIGNIN_ROLE}),
+    command="SELECT",
+    using="true",
+    reason="sign-in finds the Organizations of an email before the tenant is known (R42)",
+)
+
+# G14: the sign-in role's complete set of privileges in the schema: (table, column, privilege).
+SIGN_IN_COLUMN_PRIVILEGES = frozenset(
+    {("users", "email", "SELECT"), ("users", "id", "SELECT"), ("users", "org_id", "SELECT")}
+)
+_SIGN_IN_COLUMNS_TEXT = "only SELECT on email, id, org_id of users is allowed"
 
 
 @dataclass(frozen=True)
@@ -139,11 +188,22 @@ def _check_policies(table: TableInfo, key: str) -> list[Violation]:
                     )
                 )
             continue
+        if SIGN_IN_LOOKUP_ALLOWANCE.matches(table, policy):
+            continue
         expressions = [e for e in (policy.using, policy.with_check) if e]
         if not expressions or not all(_is_standard(e, key) for e in expressions):
             violations.append(
                 Violation(
                     "G4", table.name, f"policy {policy.name} is not the standard tenant expression"
+                )
+            )
+        elif policy.roles != _NO_TO_CLAUSE:
+            violations.append(
+                Violation(
+                    "G4",
+                    table.name,
+                    f"policy {policy.name} has a TO clause;"
+                    " only the reviewed sign-in lookup policy may",
                 )
             )
     if not any(_covers_all_commands(policy, key) for policy in table.policies):
@@ -194,6 +254,46 @@ def _check_function(function: FunctionInfo) -> list[Violation]:
     return violations
 
 
+def _check_sign_in_privileges(snapshot: CatalogSnapshot) -> list[Violation]:
+    """G14 over the whole schema: any privilege beyond the three lookup columns, or one missing."""
+    violations = []
+    held: set[tuple[str, str, str]] = set()
+    for table in snapshot.tables:
+        table_level = {p.privilege for p in table.privileges if p.grantee in _SIGNIN_GRANTEES}
+        for privilege in sorted(table_level):
+            violations.append(
+                Violation("G14", table.name, f"sign-in role has the table privilege {privilege}")
+            )
+        for granted in table.column_privileges:
+            if granted.grantee not in _SIGNIN_GRANTEES:
+                continue
+            entry = (table.name, granted.column, granted.privilege)
+            if entry not in SIGN_IN_COLUMN_PRIVILEGES:
+                violations.append(
+                    Violation(
+                        "G14",
+                        table.name,
+                        f"sign-in role has {granted.privilege} on column {granted.column};"
+                        f" {_SIGN_IN_COLUMNS_TEXT}",
+                    )
+                )
+                continue
+            held.add(entry)
+            if granted.grantable:
+                violations.append(
+                    Violation(
+                        "G14",
+                        table.name,
+                        f"sign-in role may grant {granted.privilege} on column {granted.column}",
+                    )
+                )
+    for table_name, column, privilege in sorted(SIGN_IN_COLUMN_PRIVILEGES - held):
+        violations.append(
+            Violation("G14", table_name, f"sign-in role lacks {privilege} on column {column}")
+        )
+    return violations
+
+
 def guarded_table_names(snapshot: CatalogSnapshot) -> list[str]:
     """Names of the tables the rules apply to (every table that is not ignored)."""
     return [t.name for t in snapshot.tables if t.kind == "table" and t.name not in IGNORED_TABLES]
@@ -216,4 +316,5 @@ def find_violations(snapshot: CatalogSnapshot) -> list[Violation]:
         violations += _check_foreign_keys(table, tenant_keys)
     for function in snapshot.functions:
         violations += _check_function(function)
+    violations += _check_sign_in_privileges(snapshot)
     return violations

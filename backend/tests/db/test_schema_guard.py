@@ -7,6 +7,7 @@ import pytest
 from ei_ai.db.catalog import (
     CatalogSnapshot,
     ColumnInfo,
+    ColumnPrivilege,
     ForeignKeyInfo,
     FunctionInfo,
     PolicyInfo,
@@ -17,6 +18,10 @@ from ei_ai.db.schema_guard import Violation, find_violations, guarded_table_name
 
 SETTING = "NULLIF(current_setting('app.current_org'::text, true), ''::text)"
 DML = tuple(Privilege("ei_ai_app", p) for p in ("DELETE", "INSERT", "SELECT", "UPDATE"))
+SIGNIN = "ei_ai_signin"
+# Revision 0004: the one reviewed policy with a TO clause and the sign-in role's column grants.
+LOOKUP = PolicyInfo("sign_in_lookup", "SELECT", "true", None, roles=(SIGNIN,))
+LOOKUP_COLUMNS = tuple(ColumnPrivilege(c, SIGNIN, "SELECT") for c in ("email", "id", "org_id"))
 
 
 def _policy(key: str = "org_id", name: str = "tenant_isolation") -> PolicyInfo:
@@ -43,7 +48,7 @@ def _tenant_table(name: str, key: str = "org_id", **changes: object) -> TableInf
 
 
 def _good() -> CatalogSnapshot:
-    """Mirrors revision 0001."""
+    """Mirrors the tenancy core of revision 0001 plus the sign-in lookup of revision 0004."""
     user_fk = ForeignKeyInfo("user_fk", ("org_id", "user_id"), "users", ("org_id", "id"))
     workspace_fk = ForeignKeyInfo(
         "ws_fk", ("org_id", "workspace_id"), "workspaces", ("org_id", "id")
@@ -52,7 +57,7 @@ def _good() -> CatalogSnapshot:
         tables=(
             _tenant_table("organizations", key="id"),
             _tenant_table("workspaces"),
-            _tenant_table("users"),
+            _tenant_table("users", policies=(_policy(), LOOKUP), column_privileges=LOOKUP_COLUMNS),
             _tenant_table("memberships", foreign_keys=(user_fk,)),
             _tenant_table("workspace_memberships", foreign_keys=(workspace_fk,)),
             TableInfo("alembic_version", "table", "ei_ai_migrator", False, False, False),
@@ -73,7 +78,7 @@ def _codes(snapshot: CatalogSnapshot) -> list[tuple[str, str]]:
     return [(v.code, v.subject) for v in find_violations(snapshot)]
 
 
-def test_the_schema_of_revision_0001_has_no_violations() -> None:
+def test_the_reference_schema_has_no_violations() -> None:
     assert find_violations(_good()) == []
 
 
@@ -243,6 +248,165 @@ def test_g13_the_message_names_the_policy_and_the_rule_only() -> None:
     assert [str(v) for v in violations] == [
         "G13 workspaces: restrictive policy extra reads app.current_org without the NULLIF form"
     ]
+
+
+def _with_users_policies(*policies: PolicyInfo) -> CatalogSnapshot:
+    return _with_table(_good(), "users", policies=(_policy(), *policies))
+
+
+def test_g4_allows_exact_sign_in_lookup_policy() -> None:
+    users = next(t for t in _good().tables if t.name == "users")
+
+    assert LOOKUP in users.policies
+    assert _codes(_good()) == []
+
+
+@pytest.mark.parametrize("roles", [("ei_ai_app",), ("PUBLIC",), (SIGNIN, "ei_ai_app")])
+def test_g4_rejects_lookup_policy_with_other_role(roles: tuple[str, ...]) -> None:
+    snapshot = _with_users_policies(replace(LOOKUP, roles=roles))
+
+    assert ("G4", "users") in _codes(snapshot)
+
+
+@pytest.mark.parametrize("command", ["ALL", "INSERT", "UPDATE", "DELETE"])
+def test_g4_rejects_lookup_policy_with_other_cmd(command: str) -> None:
+    snapshot = _with_users_policies(replace(LOOKUP, command=command))
+
+    assert ("G4", "users") in _codes(snapshot)
+
+
+@pytest.mark.parametrize(
+    ("using", "with_check"),
+    [
+        ("(org_id IS NOT NULL)", None),
+        ("(true OR false)", None),
+        ("false", None),
+        (None, None),
+        ("true", "true"),
+        (_policy().using, None),  # the standard expression still needs no TO clause
+    ],
+)
+def test_g4_rejects_lookup_policy_with_other_qual(
+    using: str | None, with_check: str | None
+) -> None:
+    snapshot = _with_users_policies(replace(LOOKUP, using=using, with_check=with_check))
+
+    assert ("G4", "users") in _codes(snapshot)
+
+
+@pytest.mark.parametrize("table", ["workspaces", "memberships", "organizations"])
+def test_g4_rejects_lookup_policy_with_other_table(table: str) -> None:
+    key = "id" if table == "organizations" else "org_id"
+    snapshot = _with_table(_good(), table, policies=(_policy(key), LOOKUP))
+
+    assert ("G4", table) in _codes(snapshot)
+
+
+def test_g4_rejects_lookup_policy_with_other_name() -> None:
+    snapshot = _with_users_policies(replace(LOOKUP, name="lookup"))
+
+    assert ("G4", "users") in _codes(snapshot)
+
+
+def test_g4_rejects_a_standard_policy_with_a_to_clause() -> None:
+    policy = replace(_policy(), roles=("ei_ai_app",))
+
+    violations = find_violations(_with_table(_good(), "workspaces", policies=(policy,)))
+
+    assert [str(v) for v in violations if v.code == "G4"] == [
+        "G4 workspaces: policy tenant_isolation has a TO clause;"
+        " only the reviewed sign-in lookup policy may"
+    ]
+
+
+def _with_signin_columns(*extra: ColumnPrivilege) -> CatalogSnapshot:
+    return _with_table(_good(), "users", column_privileges=(*LOOKUP_COLUMNS, *extra))
+
+
+def _g14(snapshot: CatalogSnapshot) -> list[str]:
+    return [str(v) for v in find_violations(snapshot) if v.code == "G14"]
+
+
+@pytest.mark.parametrize("column", ["display_name", "created_at"])
+def test_g14_rejects_extra_column(column: str) -> None:
+    snapshot = _with_signin_columns(ColumnPrivilege(column, SIGNIN, "SELECT"))
+
+    assert _g14(snapshot) == [
+        f"G14 users: sign-in role has SELECT on column {column};"
+        " only SELECT on email, id, org_id of users is allowed"
+    ]
+
+
+@pytest.mark.parametrize("table", ["users", "workspaces", "user_credentials", "alembic_version"])
+def test_g14_rejects_table_privilege(table: str) -> None:
+    extra = _tenant_table("user_credentials")
+    snapshot = replace(_good(), tables=(*_good().tables, extra))
+    snapshot = _with_table(snapshot, table, privileges=(Privilege(SIGNIN, "SELECT"),))
+
+    assert f"G14 {table}: sign-in role has the table privilege SELECT" in _g14(snapshot)
+
+
+@pytest.mark.parametrize("privilege", ["INSERT", "UPDATE", "REFERENCES"])
+def test_g14_rejects_write(privilege: str) -> None:
+    snapshot = _with_signin_columns(ColumnPrivilege("email", SIGNIN, privilege))
+
+    assert _g14(snapshot) == [
+        f"G14 users: sign-in role has {privilege} on column email;"
+        " only SELECT on email, id, org_id of users is allowed"
+    ]
+
+
+@pytest.mark.parametrize("privilege", ["INSERT", "UPDATE", "DELETE", "TRUNCATE"])
+def test_g14_rejects_write_on_the_table(privilege: str) -> None:
+    snapshot = _with_table(_good(), "users", privileges=(*DML, Privilege(SIGNIN, privilege)))
+
+    assert _g14(snapshot) == [f"G14 users: sign-in role has the table privilege {privilege}"]
+
+
+def test_g14_rejects_lookup_columns_on_another_table() -> None:
+    snapshot = _with_table(
+        _good(), "workspaces", column_privileges=(ColumnPrivilege("id", SIGNIN, "SELECT"),)
+    )
+
+    assert _g14(snapshot) == [
+        "G14 workspaces: sign-in role has SELECT on column id;"
+        " only SELECT on email, id, org_id of users is allowed"
+    ]
+
+
+def test_g14_rejects_a_grant_option() -> None:
+    columns = (
+        ColumnPrivilege("email", SIGNIN, "SELECT", grantable=True),
+        *LOOKUP_COLUMNS[1:],
+    )
+
+    assert _g14(_with_table(_good(), "users", column_privileges=columns)) == [
+        "G14 users: sign-in role may grant SELECT on column email"
+    ]
+
+
+def test_g14_rejects_a_missing_lookup_column() -> None:
+    snapshot = _with_table(_good(), "users", column_privileges=LOOKUP_COLUMNS[:2])
+
+    assert _g14(snapshot) == ["G14 users: sign-in role lacks SELECT on column org_id"]
+
+
+def test_g14_counts_public_privileges_as_sign_in_privileges() -> None:
+    # Every role holds what PUBLIC holds, NOINHERIT or not.
+    snapshot = _with_signin_columns(ColumnPrivilege("display_name", "PUBLIC", "SELECT"))
+    snapshot = _with_table(snapshot, "workspaces", privileges=(*DML, Privilege("PUBLIC", "SELECT")))
+
+    assert _g14(snapshot) == [
+        "G14 workspaces: sign-in role has the table privilege SELECT",
+        "G14 users: sign-in role has SELECT on column display_name;"
+        " only SELECT on email, id, org_id of users is allowed",
+    ]
+
+
+def test_g14_ignores_column_privileges_of_other_roles() -> None:
+    snapshot = _with_signin_columns(ColumnPrivilege("display_name", "ei_ai_app", "SELECT"))
+
+    assert _g14(snapshot) == []
 
 
 def test_g5_the_canonical_policy_may_omit_with_check() -> None:

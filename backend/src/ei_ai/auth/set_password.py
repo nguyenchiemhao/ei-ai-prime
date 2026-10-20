@@ -9,45 +9,32 @@ table needs an isolation exemption. Only the hash is stored; the secret is shown
 logged (D52).
 """
 
-import hashlib
-import re
-import secrets
 import uuid
 from datetime import timedelta
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
+from ei_ai.audit.events import USER_PASSWORD_SET, record_event, user_actor
+from ei_ai.auth.credentials import upsert_credential
+from ei_ai.auth.sessions import delete_user_sessions
+from ei_ai.auth.tokens import format_token, hash_secret, new_secret, parse_token
 from ei_ai.db.tenant import tenant_transaction
 
 LINK_TTL = timedelta(hours=24)
-_SECRET = re.compile(r"[A-Za-z0-9_-]{43}")
 
-
-def new_secret() -> str:
-    """32 random bytes from the OS CSPRNG, URL-safe base64 without padding (43 characters)."""
-    return secrets.token_urlsafe(32)
-
-
-def hash_secret(secret: str) -> str:
-    """Lower-case hex SHA-256 of the secret: the only form that is stored."""
-    return hashlib.sha256(secret.encode("utf-8")).hexdigest()
-
-
-def format_token(org_id: uuid.UUID, secret: str) -> str:
-    """The token ``<org_id>.<secret>`` that the link carries."""
-    return f"{org_id}.{secret}"
-
-
-def parse_token(token: str) -> tuple[uuid.UUID, str] | None:
-    """(Organization id, secret), or None when the token is malformed."""
-    raw_org, dot, secret = token.partition(".")
-    if not dot or not _SECRET.fullmatch(secret):
-        return None
-    try:
-        return uuid.UUID(raw_org), secret
-    except ValueError:
-        return None
+__all__ = [
+    "LINK_TTL",
+    "format_token",
+    "hash_secret",
+    "issue_token",
+    "new_secret",
+    "parse_token",
+    "redeem_in_transaction",
+    "redeem_set_password_token",
+    "set_password_link",
+    "set_password_with_token",
+]
 
 
 def set_password_link(base_url: str, org_id: uuid.UUID, secret: str) -> str:
@@ -79,6 +66,26 @@ async def issue_token(conn: AsyncConnection, org_id: uuid.UUID, user_id: uuid.UU
     return secret
 
 
+async def redeem_in_transaction(
+    conn: AsyncConnection, org_id: uuid.UUID, secret: str
+) -> uuid.UUID | None:
+    """Mark an unused, unexpired token of this Organization used; its user id, else None.
+
+    Runs inside the caller's tenant transaction, so the redeem commits with the caller's work.
+    """
+    result = await conn.execute(
+        text(
+            "UPDATE set_password_tokens SET used_at = now()"
+            " WHERE org_id = :org AND token_hash = :hash"
+            " AND used_at IS NULL AND expires_at > now()"
+            " RETURNING user_id"
+        ),
+        {"org": org_id, "hash": hash_secret(secret)},
+    )
+    user_id: uuid.UUID | None = result.scalar_one_or_none()
+    return user_id
+
+
 async def redeem_set_password_token(engine: AsyncEngine, token: str) -> uuid.UUID | None:
     """Mark an unused, unexpired token used and return its user id; otherwise None.
 
@@ -90,14 +97,23 @@ async def redeem_set_password_token(engine: AsyncEngine, token: str) -> uuid.UUI
         return None
     org_id, secret = parsed
     async with engine.connect() as conn, tenant_transaction(conn, org_id):
-        result = await conn.execute(
-            text(
-                "UPDATE set_password_tokens SET used_at = now()"
-                " WHERE org_id = :org AND token_hash = :hash"
-                " AND used_at IS NULL AND expires_at > now()"
-                " RETURNING user_id"
-            ),
-            {"org": org_id, "hash": hash_secret(secret)},
-        )
-        user_id: uuid.UUID | None = result.scalar_one_or_none()
+        return await redeem_in_transaction(conn, org_id, secret)
+
+
+async def set_password_with_token(
+    engine: AsyncEngine, token: str, password_hash: str
+) -> uuid.UUID | None:
+    """Redeem the token, store the new hash (clearing lockout), end the user's sessions and audit,
+    in one transaction. None (nothing changed) for any invalid token."""
+    parsed = parse_token(token)
+    if parsed is None:
+        return None
+    org_id, secret = parsed
+    async with engine.connect() as conn, tenant_transaction(conn, org_id):
+        user_id = await redeem_in_transaction(conn, org_id, secret)
+        if user_id is None:
+            return None
+        await upsert_credential(conn, org_id, user_id, password_hash)
+        await delete_user_sessions(conn, org_id, user_id)
+        await record_event(conn, org_id, user_actor(user_id), USER_PASSWORD_SET, "user", user_id)
     return user_id

@@ -102,6 +102,7 @@ Vocabulary used in the tables:
 | Base image ubuntu:24.04 | ubuntu:24.04 (under ghcr.io/ggml-org/llama.cpp:server-b11580) | GPL-2.0-or-later AND LGPL-2.1-or-later | llama.cpp image base | yes | Aggregated OS packages: Ubuntu packages with GPL and LGPL licences | approved with conditions | | Pin the image digest; keep package source pointers; checked in MVP-10 | https://github.com/ggml-org/llama.cpp/blob/b11580/.devops/cpu.Dockerfile |
 | PyJWT | 2.15.1 | MIT | Channel tokens (HS256), F4, WGT-01 | yes | Low: permissive | approved | | | https://pypi.org/project/PyJWT/2.15.1/ |
 | argon2-cffi | 25.1.0 | MIT | Admin password hashing, FND-05 | yes | Low: permissive | approved | | | https://pypi.org/project/argon2-cffi/25.1.0/ |
+| AnyIO | 4.15.1 | MIT | Worker threads and the capacity limiter for password hashing, FND-05 (already a FastAPI dependency, pinned since imported directly) | yes | Low: permissive | approved | | | https://pypi.org/project/anyio/4.15.1/ |
 | cryptography | 50.0.2 | Apache-2.0 OR BSD-3-Clause | Envelope encryption, F2, FND-03 | yes | Low: permissive | approved | | | https://pypi.org/project/cryptography/50.0.2/ |
 | Smokescreen | 0.1.0 | MIT | Egress proxy, F14, FND-10 | yes | Low: permissive | approved | | | https://github.com/stripe/smokescreen/blob/master/LICENSE.txt |
 | Squid | 7.7 | GPL-2.0-only | Egress proxy option | no | Strong copyleft: GPL program, large surface | not approved | Smokescreen | | https://github.com/squid-cache/squid/blob/master/COPYING |

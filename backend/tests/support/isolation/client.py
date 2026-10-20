@@ -11,6 +11,7 @@ import httpx
 from fastapi import APIRouter, FastAPI
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ei_ai.api.csrf import CSRF_COOKIE, CSRF_HEADER
 from ei_ai.auth.principal import Principal
 from ei_ai.main import create_app
 from ei_ai.readiness import Readiness
@@ -18,6 +19,11 @@ from support.identity import StaticBearerVerifier
 from support.tenants import TwoOrgs
 
 TOKENS = {"A": "token-a", "B": "token-b"}
+
+# Every call passes the CSRF check, so state-changing public routes (POST /auth/*) reach their
+# handler instead of stopping at the middleware's 403.
+_CSRF_TOKEN = "isolation-csrf-token"
+CSRF_HEADERS = {"Cookie": f"{CSRF_COOKIE}={_CSRF_TOKEN}", CSRF_HEADER: _CSRF_TOKEN}
 
 
 async def _ok() -> None:
@@ -48,6 +54,6 @@ async def isolation_client(
 ) -> AsyncIterator[httpx.AsyncClient]:
     app = build_app(engine, orgs, extra_routers)
     async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://test"
+        transport=httpx.ASGITransport(app=app), base_url="http://test", headers=CSRF_HEADERS
     ) as client:
         yield client

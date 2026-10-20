@@ -25,9 +25,10 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ei_ai.audit.events import (
     ORGANIZATION_CREATED,
+    PLATFORM_OPERATOR,
     USER_INVITED,
     WORKSPACE_CREATED,
-    record_platform_event,
+    record_event,
 )
 from ei_ai.auth.set_password import set_password_link
 from ei_ai.db.engine import run_with_app_engine
@@ -128,7 +129,14 @@ async def _ensure_organization(conn: AsyncConnection, manifest: DemoManifest) ->
     if await organization_exists(conn, org_id):
         return False
     await insert_organization(conn, org_id, manifest.organization)
-    await record_platform_event(conn, org_id, ORGANIZATION_CREATED, "organization", org_id)
+    await record_event(
+        conn,
+        org_id,
+        PLATFORM_OPERATOR,
+        ORGANIZATION_CREATED,
+        "organization",
+        org_id,
+    )
     return True
 
 
@@ -141,7 +149,7 @@ async def _ensure_workspace(
     if found is not None:
         return found, False
     ws_id = await insert_workspace(conn, org_id, manifest.workspace)
-    await record_platform_event(conn, org_id, WORKSPACE_CREATED, "workspace", ws_id)
+    await record_event(conn, org_id, PLATFORM_OPERATOR, WORKSPACE_CREATED, "workspace", ws_id)
     return ws_id, True
 
 
@@ -156,7 +164,7 @@ async def _ensure_member(
     user_id, secret = await insert_member(
         conn, org_id, member.email, member.name, org_role, workspace
     )
-    await record_platform_event(conn, org_id, USER_INVITED, "user", user_id)
+    await record_event(conn, org_id, PLATFORM_OPERATOR, USER_INVITED, "user", user_id)
     return secret
 
 

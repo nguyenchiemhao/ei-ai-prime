@@ -15,6 +15,7 @@ const DUMMY = {
   POSTGRES_PASSWORD: "dummy-postgres-pw",
   APP_DB_PASSWORD: "dummy-app-pw",
   MIGRATION_DB_PASSWORD: "dummy-migrator-pw",
+  SIGNIN_DB_PASSWORD: "dummy-signin-pw",
 };
 // One-shot tool services: not started by "up", so no healthcheck.
 const ONE_SHOT = ["backend-tools", "migrate"];
@@ -169,10 +170,40 @@ test("only_migrate_and_backend_tools_get_the_migrator_credentials", () => {
   );
 });
 
+test("only_api_and_backend_tools_get_the_sign_in_lookup_url", () => {
+  // EA-22 (R42): the sign-in lookup role is the only cross-tenant read; never the migrate service.
+  const holders = Object.entries(services)
+    .filter(([, service]) =>
+      Object.entries(service.environment ?? {}).some(
+        ([name, value]) => name.startsWith("SIGNIN_") || String(value).includes("ei_ai_signin"),
+      ),
+    )
+    .map(([name]) => name)
+    .sort();
+  assert.deepEqual(holders, ["api", "backend-tools", "db"]);
+  // db only receives the password, to create the role in its first-start init script.
+  assert.deepEqual(
+    Object.keys(services.db.environment).filter((name) => name.startsWith("SIGNIN_")),
+    ["SIGNIN_DB_PASSWORD"],
+  );
+  assert.equal(services.db.environment.SIGNIN_DB_PASSWORD, DUMMY.SIGNIN_DB_PASSWORD);
+  for (const name of ["api", "backend-tools"]) {
+    assert.equal(
+      services[name].environment.SIGNIN_DATABASE_URL,
+      `postgresql://ei_ai_signin:${DUMMY.SIGNIN_DB_PASSWORD}@db:5432/ei_ai`,
+    );
+  }
+});
+
 test("api_has_no_migrator_or_superuser_credentials", () => {
   const environment = JSON.stringify(services.api.environment);
   for (const forbidden of ["MIGRATION_", "ei_ai_migrator", "POSTGRES_PASSWORD", "postgres:"])
     assert.ok(!environment.includes(forbidden), `api environment contains ${forbidden}`);
+});
+
+test("api_restarts_after_it_is_killed", () => {
+  // An OOM kill under its mem_limit must not leave the API down (EA-22).
+  assert.equal(services.api.restart, "unless-stopped");
 });
 
 test("api_builds_set_password_links_for_the_local_admin", () => {

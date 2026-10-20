@@ -15,6 +15,8 @@ from ei_ai.db.tenant import tenant_transaction
 
 # Every table of the schema, children first (the order in which fixture rows can be deleted).
 DELETE_ORDER = (
+    "admin_sessions",
+    "user_credentials",
     "audit_events",
     "set_password_tokens",
     "workspace_memberships",
@@ -23,6 +25,10 @@ DELETE_ORDER = (
     "users",
     "organizations",
 )
+
+
+# Not a real hash: it only has to satisfy the argon2id prefix CHECK of ``user_credentials``.
+FIXTURE_PASSWORD_HASH = "$argon2id$v=19$m=19456,t=2,p=1$fixture"
 
 
 def tenant_key_column(table: str) -> str:
@@ -56,6 +62,8 @@ class OrgRows:
     workspace_membership_id: uuid.UUID
     audit_event_id: uuid.UUID
     set_password_token_id: uuid.UUID
+    user_credential_id: uuid.UUID
+    admin_session_id: uuid.UUID
     label: str
     suffix: str
 
@@ -72,6 +80,8 @@ class OrgRows:
             "workspace_memberships": self.workspace_membership_id,
             "audit_events": self.audit_event_id,
             "set_password_tokens": self.set_password_token_id,
+            "user_credentials": self.user_credential_id,
+            "admin_sessions": self.admin_session_id,
         }[table]
 
     @property
@@ -101,6 +111,8 @@ UPDATE_SETS = {
     "workspace_memberships": ("role", "viewer"),
     "audit_events": ("actor", "renamed-by-intruder"),
     "set_password_tokens": ("token_hash", "0" * 64),
+    "user_credentials": ("failed_attempts", 3),
+    "admin_sessions": ("token_hash", "0" * 64),
 }
 
 
@@ -113,6 +125,8 @@ async def create_org_rows(engine: AsyncEngine, label: str) -> OrgRows:
         workspace_membership_id=uuid.uuid4(),
         audit_event_id=uuid.uuid4(),
         set_password_token_id=uuid.uuid4(),
+        user_credential_id=uuid.uuid4(),
+        admin_session_id=uuid.uuid4(),
         label=label,
         suffix=uuid.uuid4().hex[:8],
     )
@@ -169,6 +183,30 @@ async def create_org_rows(engine: AsyncEngine, label: str) -> OrgRows:
             ),
             {
                 "id": rows.set_password_token_id,
+                "org": rows.org_id,
+                "user": rows.user_id,
+                "hash": secrets.token_hex(32),
+            },
+        )
+        await conn.execute(
+            text(
+                "INSERT INTO user_credentials (id, org_id, user_id, password_hash)"
+                " VALUES (:id, :org, :user, :hash)"
+            ),
+            {
+                "id": rows.user_credential_id,
+                "org": rows.org_id,
+                "user": rows.user_id,
+                "hash": FIXTURE_PASSWORD_HASH,
+            },
+        )
+        await conn.execute(
+            text(
+                "INSERT INTO admin_sessions (id, org_id, user_id, token_hash)"
+                " VALUES (:id, :org, :user, :hash)"
+            ),
+            {
+                "id": rows.admin_session_id,
                 "org": rows.org_id,
                 "user": rows.user_id,
                 "hash": secrets.token_hex(32),

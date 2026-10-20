@@ -1,0 +1,47 @@
+import { useId } from "react";
+import { useTranslation } from "react-i18next";
+import { useSignOut } from "../auth/useSignOut";
+import { initials } from "./initials";
+import { useMenu } from "./useMenu";
+
+/** The signed-in user with their role in the current Workspace; the menu holds "Sign out". */
+export function UserMenu({ name, role }: { name: string; role: string }) {
+  const { t } = useTranslation();
+  const signOut = useSignOut();
+  const { open, setOpen, rootRef, buttonRef, onKeyDown } = useMenu();
+  const menuId = useId();
+  return (
+    <div className="menu-root user-root" ref={rootRef} onKeyDown={onKeyDown}>
+      <button
+        type="button"
+        ref={buttonRef}
+        className="user-button"
+        data-testid="user-menu"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
+        onClick={() => setOpen(!open)}
+      >
+        <span className="user-avatar" aria-hidden="true">
+          {initials(name)}
+        </span>
+        <span className="switcher-text">
+          <span className="user-name">{name}</span>
+          <span className="user-role">{t(`admin.shell.role.${role}`, { defaultValue: role })}</span>
+        </span>
+      </button>
+      {open ? (
+        <div className="menu menu-up" role="menu" id={menuId}>
+          <button
+            type="button"
+            role="menuitem"
+            className="menu-item"
+            onClick={() => void signOut()}
+          >
+            {t("admin.shell.signOut")}
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}

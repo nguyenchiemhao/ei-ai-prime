@@ -1,6 +1,19 @@
 {
   "components": {
     "schemas": {
+      "CsrfToken": {
+        "properties": {
+          "csrf_token": {
+            "title": "Csrf Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "csrf_token"
+        ],
+        "title": "CsrfToken",
+        "type": "object"
+      },
       "CurrentOrganization": {
         "properties": {
           "id": {
@@ -31,6 +44,19 @@
           "detail"
         ],
         "title": "ErrorCode",
+        "type": "object"
+      },
+      "ForgotRequest": {
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "ForgotRequest",
         "type": "object"
       },
       "HealthStatus": {
@@ -93,6 +119,193 @@
         ],
         "title": "ReadinessStatus",
         "type": "object"
+      },
+      "SessionInfo": {
+        "properties": {
+          "default_workspace_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Workspace Id"
+          },
+          "organization": {
+            "$ref": "#/components/schemas/SessionOrganization"
+          },
+          "user": {
+            "$ref": "#/components/schemas/SessionUser"
+          },
+          "workspaces": {
+            "items": {
+              "$ref": "#/components/schemas/SessionWorkspace"
+            },
+            "title": "Workspaces",
+            "type": "array"
+          }
+        },
+        "required": [
+          "user",
+          "organization",
+          "workspaces",
+          "default_workspace_id"
+        ],
+        "title": "SessionInfo",
+        "type": "object"
+      },
+      "SessionOrganization": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "SessionOrganization",
+        "type": "object"
+      },
+      "SessionUser": {
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "email"
+        ],
+        "title": "SessionUser",
+        "type": "object"
+      },
+      "SessionWorkspace": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role"
+        ],
+        "title": "SessionWorkspace",
+        "type": "object"
+      },
+      "SetCredentialRequest": {
+        "description": "The one-time token and the new secret; the policy is checked in the route (R14).",
+        "properties": {
+          "password": {
+            "title": "Password",
+            "type": "string"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "password"
+        ],
+        "title": "SetCredentialRequest",
+        "type": "object"
+      },
+      "SignInRequest": {
+        "description": "No length or format rules (R36): a wrong pair is simply ``invalid_credentials``.",
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "SignInRequest",
+        "type": "object"
+      },
+      "SignInResponse": {
+        "properties": {
+          "default_workspace_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Workspace Id"
+          }
+        },
+        "required": [
+          "default_workspace_id"
+        ],
+        "title": "SignInResponse",
+        "type": "object"
+      },
+      "WorkspaceInfo": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role"
+        ],
+        "title": "WorkspaceInfo",
+        "type": "object"
       }
     }
   },
@@ -102,6 +315,259 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/auth/csrf": {
+      "get": {
+        "description": "Sets the ``ei_csrf`` cookie and returns the same token; carries no tenant data.",
+        "operationId": "issue_csrf_token_auth_csrf_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CsrfToken"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Issue an anonymous CSRF token"
+      }
+    },
+    "/auth/forgot-password": {
+      "post": {
+        "description": "Local/test: prints one link per account found. Elsewhere: nothing. Never reveals a match.",
+        "operationId": "post_forgot_auth_forgot_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "Missing or wrong CSRF token or Origin (csrf_failed)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "Missing or non-string field (invalid_request)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "Too many attempts from this address"
+          }
+        },
+        "summary": "Ask for a reset link (always 202, whatever the email)"
+      }
+    },
+    "/auth/session": {
+      "get": {
+        "description": "Only the caller's own rows: explicit ``org_id`` filters plus row-level security (D46).",
+        "operationId": "get_session_auth_session_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "No live session (unauthenticated)"
+          }
+        },
+        "summary": "The signed-in user, their Organization and their Workspaces"
+      }
+    },
+    "/auth/set-password": {
+      "post": {
+        "description": "The policy is checked before the token (a short value leaves the link usable); a malformed\ntoken is refused before any hashing; the hash is computed outside the transaction; redeem,\nstore, end sessions and audit are one transaction.",
+        "operationId": "post_set_password_auth_set_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCredentialRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "Unknown, used, expired or malformed link"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "Missing or wrong CSRF token or Origin (csrf_failed)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "Password policy or invalid_request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "Too many attempts from this address"
+          }
+        },
+        "summary": "Set a new password with a one-time link"
+      }
+    },
+    "/auth/sign-in": {
+      "post": {
+        "description": "Sets the ``ei_session`` cookie and a new ``ei_csrf``; every rejection answers alike.",
+        "operationId": "post_sign_in_auth_sign_in_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignInRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignInResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "Wrong email or password, or locked (identical)"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "Missing or wrong CSRF token or Origin (csrf_failed)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "Missing or non-string field (invalid_request)"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "Too many attempts from this address"
+          }
+        },
+        "summary": "Sign in with email and password"
+      }
+    },
+    "/auth/sign-out": {
+      "post": {
+        "description": "Always 204 (idempotent): deletes the session, clears ``ei_session``, rotates ``ei_csrf``.",
+        "operationId": "post_sign_out_auth_sign_out_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "Missing or wrong CSRF token or Origin (csrf_failed)"
+          }
+        },
+        "summary": "Sign out: end the session of this cookie"
+      }
+    },
     "/healthz": {
       "get": {
         "description": "The process is up. Never calls a dependency.",
@@ -187,6 +653,67 @@
           }
         },
         "summary": "Readiness probe"
+      }
+    },
+    "/workspaces/{workspace_id}": {
+      "get": {
+        "description": "Membership is checked by the dependency; the answer is the caller's own role.",
+        "operationId": "get_workspace_workspaces__workspace_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "No live session (unauthenticated)"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "Unknown, not a member or another Organization (not_found)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "Malformed Workspace id (invalid_request)"
+          }
+        },
+        "summary": "A Workspace the signed-in user belongs to"
       }
     }
   }

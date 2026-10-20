@@ -11,6 +11,7 @@ from ei_ai import cli
 from ei_ai.db import engine as engine_module
 from ei_ai.provisioning import commands
 from ei_ai.provisioning.service import (
+    AddedMember,
     CreatedOrganization,
     CreatedWorkspace,
     InvitedUser,
@@ -196,8 +197,54 @@ def test_user_link_prints_the_link_only(
     assert calls == [{"args": (ORG, "a@b.example")}]
 
 
+def test_workspace_add_member_prints_one_line(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    calls = _fake(monkeypatch, "add_workspace_member", AddedMember(USER, "a@b.example", "viewer"))
+    argv = ["workspace", "add-member", "--org", str(ORG), "--workspace", str(WS)]
+    argv += ["--email", " A@B.example ", "--role", "viewer"]
+
+    code, out, err = _run(argv, capsys)
+
+    assert (code, out, err) == (
+        0,
+        f"Workspace member added: {USER} (a@b.example) role: viewer\n",
+        "",
+    )
+    assert calls == [{"args": (ORG, WS, " A@B.example ", "viewer")}]
+
+
+def test_workspace_add_member_does_not_read_admin_base_url(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("EI_AI_ENV", "production")
+    _fake(monkeypatch, "add_workspace_member", AddedMember(USER, "a@b.example", "member"))
+    argv = ["workspace", "add-member", "--org", str(ORG), "--workspace", str(WS)]
+
+    code, _, err = _run([*argv, "--email", "a@b.example", "--role", "member"], capsys)
+
+    assert (code, err) == (0, "")
+
+
 ORG_ARG = str(ORG)
+ADD_MEMBER = ["workspace", "add-member", "--org", ORG_ARG, "--workspace", str(WS)]
 VALIDATION_CASES = [
+    (
+        ["workspace", "add-member", "--org", "nope", "--workspace", str(WS)]
+        + ["--email", "a@b.example", "--role", "viewer"],
+        "error: --org must be an Organization id (UUID)",
+    ),
+    (
+        ["workspace", "add-member", "--org", ORG_ARG, "--workspace", "nope"]
+        + ["--email", "a@b.example", "--role", "viewer"],
+        "error: --workspace must be a Workspace id (UUID)",
+    ),
+    (
+        [*ADD_MEMBER, "--email", "a@b.example", "--role", "org_admin"],
+        "error: --role must be a Workspace role",
+    ),
+    ([*ADD_MEMBER, "--email", "a@b.example", "--role", "boss"], E11),
+    ([*ADD_MEMBER, "--email", "a@b", "--role", "viewer"], "error: invalid email address"),
     (
         ["org", "create", "--name", "  ", "--owner", "o@example.com"],
         "error: Organization name must be 1-200 characters",
@@ -313,6 +360,15 @@ def test_malformed_email_exits_1_before_database(capsys: pytest.CaptureFixture[s
 
 
 SERVICE_ERRORS = [
+    *[
+        ("add_workspace_member", [*ADD_MEMBER, "--email", "a@b.example", "--role", "viewer"], m)
+        for m in (
+            "Organization not found",
+            "Workspace not found in this Organization",
+            "user not found in this Organization",
+            "the user is already a member of this Workspace",
+        )
+    ],
     ("create_organization", AC1_ARGV, "an Organization with this name already exists"),
     (
         "create_workspace",
@@ -374,6 +430,7 @@ def test_service_errors_print_error_line_and_exit_1(
         (["workspace", "create", "--name", "W"], "--org"),
         (["user", "invite", "--org", ORG_ARG, "--email", "a@b.example"], "--role"),
         (["user", "link", "--org", ORG_ARG], "--email"),
+        (["workspace", "add-member", "--org", ORG_ARG, "--workspace", str(WS)], "--email, --role"),
     ],
 )
 def test_missing_required_flag_is_a_usage_error(
@@ -411,6 +468,11 @@ def test_unknown_subcommand_is_a_usage_error(argv: list[str]) -> None:
             "user invite",
         ),
         ("issue_link", ["user", "link", "--org", ORG_ARG, "--email", "a@b.example"], "user link"),
+        (
+            "add_workspace_member",
+            [*ADD_MEMBER, "--email", "a@b.example", "--role", "viewer"],
+            "workspace add-member",
+        ),
     ],
 )
 def test_unexpected_error_prints_class_only(

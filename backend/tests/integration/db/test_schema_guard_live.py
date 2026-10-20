@@ -174,6 +174,29 @@ def test_guard_accepts_a_restrictive_policy_with_the_nullif_form(
     assert _found(tx_conn) == []
 
 
+def _sign_in_findings(conn: psycopg.Connection) -> list[str]:
+    return [str(v) for v in find_violations(read_catalog(conn)) if v.code in ("G4", "G14")]
+
+
+def test_guard_reports_a_wider_grant_to_the_sign_in_role(tx_conn: psycopg.Connection) -> None:
+    tx_conn.execute("GRANT UPDATE (display_name) ON users TO ei_ai_signin")
+    tx_conn.execute("GRANT SELECT ON workspaces TO PUBLIC")
+
+    assert _sign_in_findings(tx_conn) == [
+        "G14 users: sign-in role has UPDATE on column display_name;"
+        " only SELECT on email, id, org_id of users is allowed",
+        "G14 workspaces: sign-in role has the table privilege SELECT",
+    ]
+
+
+def test_guard_reports_a_changed_sign_in_lookup_policy(tx_conn: psycopg.Connection) -> None:
+    tx_conn.execute("ALTER POLICY sign_in_lookup ON users TO ei_ai_signin, ei_ai_app")
+
+    assert _sign_in_findings(tx_conn) == [
+        "G4 users: policy sign_in_lookup is not the standard tenant expression"
+    ]
+
+
 def test_guard_reports_a_tenant_foreign_key_that_crosses_the_columns(
     tx_conn: psycopg.Connection,
 ) -> None:

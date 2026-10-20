@@ -15,7 +15,6 @@ const ADMIN_URL = adminUrl(ROOT, process.env);
 const SCREENSHOTS = path.join(ROOT, ".work", "EA-13", "screenshots");
 
 const TEXT_PRIMARY = "rgb(22, 24, 29)"; // #16181D  color.text.primary
-const SURFACE_PAGE = "rgb(247, 247, 248)"; // #F7F7F8  color.surface.page
 const BRAND_DEFAULT = "rgb(14, 124, 107)"; // #0E7C6B  color.brand.default
 
 /** Console errors/warnings, page errors and failed or 4xx/5xx requests seen on a page. */
@@ -139,33 +138,35 @@ test.describe("EA-13 repo skeleton", () => {
 
     const seen = watch(page);
     const identityParams = /[?&](user_?id|org_?id|groups?|tenant)=/i;
+    // EA-22: the admin root no longer shows the skeleton page (h1 "ei-ai", "API: OK", Language select).
+    // In a fresh browser it redirects to the sign-in page; the admin is English only.
     await page.goto(ADMIN_URL);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("ei-ai");
-    await expect(page.getByRole("status")).toHaveText("API: OK");
+    await expect(page).toHaveURL(`${ADMIN_URL}/sign-in`);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Sign in");
+    await expect(page.getByText("Use and manage your organization's assistants.")).toBeVisible();
+    await expect(page.getByLabel("Language")).toHaveCount(0);
+    await expect(page.getByLabel("Ngôn ngữ")).toHaveCount(0);
+    await expect(page.getByText(/API:/)).toHaveCount(0);
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await page.screenshot({ path: path.join(SCREENSHOTS, "admin-en.png"), fullPage: true });
 
-    await page.getByLabel("Language").selectOption("vi");
-    await expect(page.getByRole("status")).toHaveText("API: hoạt động");
-    await expect(page.getByText("Quản trị")).toBeVisible();
-    await expect(page.getByLabel("Ngôn ngữ")).toHaveValue("vi");
-    await expect(page.locator("html")).toHaveAttribute("lang", "vi");
-    await page.screenshot({ path: path.join(SCREENSHOTS, "admin-vi.png"), fullPage: true });
+    // The admin nginx still proxies /api/ to the API (same origin): healthz answers 200.
+    const proxied = await page.request.get(`${ADMIN_URL}/api/healthz`);
+    expect(proxied.status()).toBe(200);
+    expect(await proxied.json()).toEqual({ status: "ok" });
 
-    await page.getByLabel("Ngôn ngữ").selectOption("en");
-    await expect(page.getByRole("status")).toHaveText("API: OK");
-
-    const proxied = seen.requests.find((r) => r.url.endsWith("/api/healthz"));
-    expect(proxied?.status).toBe(200);
     expect(seen.requests.filter((r) => identityParams.test(r.url))).toEqual([]);
-    expect(seen.problems).toEqual([]);
+    // A signed-out visitor is told "unauthenticated" by GET /api/auth/session (401): expected, not a defect.
+    expect(
+      seen.problems.filter(
+        (problem) =>
+          !/status of 401/.test(problem) && !/^http 401: .*\/api\/auth\/session$/.test(problem),
+      ),
+    ).toEqual([]);
   });
 
-  test("AC2: admin shows API unavailable when the API call fails", async ({ page }) => {
-    await page.route("**/api/healthz", (route) => route.fulfill({ status: 503, body: "down" }));
-    await page.goto(ADMIN_URL);
-    await expect(page.getByRole("status")).toHaveText("API: unavailable");
-    await page.screenshot({ path: path.join(SCREENSHOTS, "admin-api-unavailable.png") });
-  });
+  // EA-22: "admin shows API unavailable when the API call fails" is gone with the API status of the
+  // skeleton page; the sign-in page shows no API status and reports an unreachable service on sign-in.
 
   test("AC2: widget greets in Vietnamese or English by browser language", async ({ browser }) => {
     const vi = await browser.newContext({ locale: "vi-VN" });
@@ -309,17 +310,20 @@ test.describe("EA-13 repo skeleton", () => {
   test("AC7: admin and widget render with token colours", async ({ page, browser }) => {
     const adminSeen = watch(page);
     await page.goto(ADMIN_URL);
-    await expect(page.getByRole("status")).toHaveText("API: OK");
+    // EA-22: the root redirects a signed-out visitor to the sign-in page, which uses the same tokens.
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Sign in");
     const admin = await page.evaluate(() => ({
       color: getComputedStyle(document.body).color,
-      background: getComputedStyle(document.body).backgroundColor,
+      surface: getComputedStyle(document.documentElement)
+        .getPropertyValue("--ei-color-surface-page")
+        .trim(),
       token: getComputedStyle(document.documentElement)
         .getPropertyValue("--ei-color-text-primary")
         .trim(),
       font: getComputedStyle(document.body).fontFamily,
     }));
     expect(admin.color).toBe(TEXT_PRIMARY);
-    expect(admin.background).toBe(SURFACE_PAGE);
+    expect(admin.surface.toLowerCase()).toBe("#f7f7f8");
     expect(admin.token.toLowerCase()).toBe("#16181d");
     expect(admin.font).toContain("IBM Plex Sans");
     // IBM Plex Sans is self-hosted and actually loaded (Vietnamese glyphs included).
@@ -332,7 +336,13 @@ test.describe("EA-13 repo skeleton", () => {
     expect(
       adminSeen.requests.filter((r) => /\.(woff2?|css)(\?|$)/.test(r.url)).length,
     ).toBeGreaterThan(0);
-    expect(adminSeen.problems).toEqual([]);
+    // The signed-out session probe (401 on /api/auth/session) is expected on the sign-in page.
+    expect(
+      adminSeen.problems.filter(
+        (problem) =>
+          !/status of 401/.test(problem) && !/^http 401: .*\/api\/auth\/session$/.test(problem),
+      ),
+    ).toEqual([]);
 
     const widgetContext = await browser.newContext();
     const widgetPage = await widgetContext.newPage();
