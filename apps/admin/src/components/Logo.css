@@ -1,0 +1,25 @@
+/* The ei-ai mark and product name, shared by the auth pages and the Sidebar. Tokens only. */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--ei-space-2-5);
+}
+
+.logo-mark {
+  width: var(--ei-size-control-compact);
+  height: var(--ei-size-control-compact);
+  border-radius: var(--ei-radius-lg);
+  background: var(--ei-color-surface-code);
+  color: var(--ei-color-text-on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--ei-font-family-mono);
+  font-size: var(--ei-font-size-lg);
+  font-weight: var(--ei-font-weight-medium);
+}
+
+.logo-name {
+  font-weight: var(--ei-font-weight-semibold);
+  font-size: 20px;
+}

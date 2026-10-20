@@ -17,8 +17,9 @@ x-llm-alias: &llm_alias "${LLM_ALIAS:-qwen3-4b-instruct-2507}"
 
 services:
   # PostgreSQL 16 + pgvector 0.8.x. The init scripts create the application role ei_ai_app (never a
-  # superuser, never BYPASSRLS, never an owner) and the migration/owner role ei_ai_migrator. Tables and
-  # RLS policies come from the Alembic migrations (service "migrate").
+  # superuser, never BYPASSRLS, never an owner), the migration/owner role ei_ai_migrator and the sign-in
+  # lookup role ei_ai_signin. Tables, grants and RLS policies come from the Alembic migrations
+  # (service "migrate").
   db:
     image: pgvector/pgvector:0.8.7-pg16
     profiles: ["core"]
@@ -28,6 +29,8 @@ services:
       APP_DB_PASSWORD: ${APP_DB_PASSWORD:?run npm run up to create .env}
       # Only for the first-start init script that creates ei_ai_migrator.
       MIGRATION_DB_PASSWORD: ${MIGRATION_DB_PASSWORD:?run npm run up to create .env}
+      # Only for the first-start init script that creates the sign-in lookup role ei_ai_signin (EA-22).
+      SIGNIN_DB_PASSWORD: ${SIGNIN_DB_PASSWORD:?run npm run up to create .env}
     volumes:
       - db-data:/var/lib/postgresql/data
       - ./infra/db/init:/docker-entrypoint-initdb.d:ro
@@ -94,10 +97,15 @@ services:
     environment:
       EI_AI_ENV: local
       DATABASE_URL: postgresql://ei_ai_app:${APP_DB_PASSWORD:?run npm run up to create .env}@db:5432/ei_ai
+      # Sign-in lookup role (EA-22, R42): reads only users(id, org_id, email); used only by
+      # ei_ai.auth.directory to find the Organization of an email at sign-in.
+      SIGNIN_DATABASE_URL: postgresql://ei_ai_signin:${SIGNIN_DB_PASSWORD:?run npm run up to create .env}@db:5432/ei_ai
       VALKEY_URL: redis://valkey:6379/0
       # Base of the one-time set-password links printed by the Platform Operator CLI (FND-04);
       # follows the admin host port (ADMIN_PORT in .env, default 3000).
       ADMIN_BASE_URL: http://localhost:${ADMIN_PORT:-3000}
+      # The admin nginx is the only proxy in front of the API: trust its X-Forwarded-For (EA-22).
+      TRUST_PROXY_HEADERS: "true"
     depends_on:
       db:
         condition: service_healthy
@@ -111,6 +119,8 @@ services:
       timeout: 3s
       retries: 20
     mem_limit: 512m
+    # An OOM kill under the limit must not leave the API down.
+    restart: unless-stopped
 
   admin:
     build:
@@ -159,6 +169,8 @@ services:
       DATABASE_URL: postgresql://ei_ai_app:${APP_DB_PASSWORD:?run npm run up to create .env}@db:5432/ei_ai
       # Owner role: integration tests use it for fixture cleanup and for the schema guard negative tests.
       MIGRATION_DATABASE_URL: postgresql://ei_ai_migrator:${MIGRATION_DB_PASSWORD:?run npm run up to create .env}@db:5432/ei_ai
+      # Sign-in lookup role: the API settings need it; the proof tests connect with it.
+      SIGNIN_DATABASE_URL: postgresql://ei_ai_signin:${SIGNIN_DB_PASSWORD:?run npm run up to create .env}@db:5432/ei_ai
       VALKEY_URL: redis://valkey:6379/0
 
   # One-shot database migration: "ei-ai db upgrade" (Alembic to head, then the schema guard). Not started

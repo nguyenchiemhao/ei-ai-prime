@@ -4,12 +4,19 @@ import logging
 import os
 from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
+from datetime import timedelta
 
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ei_ai.api import health, organization
+from ei_ai.api import auth, csrf, health, organization, workspaces
+from ei_ai.api.csrf import CsrfMiddleware, origin_of
+from ei_ai.api.no_store import NoStoreAuthMiddleware
+from ei_ai.api.validation import install_validation_handler
+from ei_ai.auth.directory import SignInDirectory
 from ei_ai.auth.principal import IdentityVerifier
+from ei_ai.auth.rate_limit import RateLimiter
+from ei_ai.auth.session_verifier import SessionCookieVerifier
 from ei_ai.db.engine import create_app_engine
 from ei_ai.readiness import Readiness, build_readiness
 from ei_ai.settings import Settings
@@ -19,39 +26,102 @@ logger = logging.getLogger("uvicorn.error")
 
 def create_app(
     readiness: Readiness | None = None,
-    identity_verifiers: Sequence[IdentityVerifier] = (),
+    identity_verifiers: Sequence[IdentityVerifier] | None = None,
     engine: AsyncEngine | None = None,
+    admin_base_url: str | None = None,
+    sign_in_directory: SignInDirectory | None = None,
+    rate_limiter: RateLimiter | None = None,
+    environment: str | None = None,
 ) -> FastAPI:
     """Build the app. Without ``readiness`` the settings are read from the environment at startup
-    (fail fast, error names the variable only) and, unless given, the database engine is created
-    there and disposed at shutdown.
+    (fail fast, error names the variable only); they configure the CSRF origin, the sign-in rate
+    limit, the client address source and the session idle timeout, and, unless given, the
+    database engine and the sign-in directory are created there and disposed at shutdown.
 
-    ``identity_verifiers`` decide who is calling (D32). The production app has none yet, so every
-    tenant route answers 401; FND-05 (admin session) and WGT-03 (Channel JWT) add theirs.
+    ``identity_verifiers`` decide who is calling (D32). By default the admin session cookie
+    (``SessionCookieVerifier``) is the only one; tests pass their own. WGT-03 adds the Channel JWT.
+    The other arguments let tests supply the parts the settings would build.
     """
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         owned_engine: AsyncEngine | None = None
+        owned_directory: SignInDirectory | None = None
         if readiness is None:
             settings = Settings.from_env(os.environ)
             app.state.readiness = build_readiness(settings)
             if engine is None:
                 owned_engine = app.state.engine = create_app_engine(settings)
+            if sign_in_directory is None:
+                owned_directory = SignInDirectory(settings.signin_database_url)
+                app.state.sign_in_directory = owned_directory
+            _apply_settings(
+                app, settings, admin_base_url, rate_limiter, identity_verifiers, environment
+            )
             logger.info("ei-ai api starting: environment=%s", settings.environment)
         try:
             yield
         finally:
+            if owned_directory is not None:
+                await owned_directory.dispose()
             if owned_engine is not None:
                 await owned_engine.dispose()
 
     app = FastAPI(title="ei-ai", version="0.0.0", lifespan=lifespan)
     app.state.readiness = readiness
     app.state.engine = engine
-    app.state.identity_verifiers = tuple(identity_verifiers)
+    app.state.sign_in_directory = sign_in_directory
+    app.state.identity_verifiers = (
+        tuple(identity_verifiers)
+        if identity_verifiers is not None
+        else _session_verifiers(app, timedelta(seconds=Settings.session_idle_timeout_seconds))
+    )
+    # Settings defaults until the settings are read (tests passing readiness never read them).
+    app.state.rate_limiter = rate_limiter or RateLimiter(Settings.auth_rate_limit_per_minute)
+    app.state.trust_proxy_headers = Settings.trust_proxy_headers
+    # Until the settings are read the CSRF check accepts no Origin (fail closed); if they cannot
+    # be read (e.g. ADMIN_BASE_URL invalid in production) startup aborts and nothing is served.
+    app.state.admin_origin = origin_of(admin_base_url) if admin_base_url else ""
+    # Fail closed: only an explicit local/test environment lets forgot-password print a link.
+    app.state.environment = environment or "production"
+    app.state.admin_base_url = (admin_base_url or "").rstrip("/")
+    install_validation_handler(app)
+    auth.install_failure_handler(app)
+    app.add_middleware(CsrfMiddleware, allowed_origin=lambda: app.state.admin_origin)
+    # Outermost: it also marks the CSRF 403 and the validation 422 of /auth/* as no-store.
+    app.add_middleware(NoStoreAuthMiddleware)
+    app.include_router(auth.router)
+    app.include_router(csrf.router)
     app.include_router(health.router)
     app.include_router(organization.router)
+    app.include_router(workspaces.router)
     return app
+
+
+def _session_verifiers(app: FastAPI, idle: timedelta) -> tuple[IdentityVerifier, ...]:
+    return (SessionCookieVerifier(lambda: app.state.engine, idle),)
+
+
+def _apply_settings(
+    app: FastAPI,
+    settings: Settings,
+    admin_base_url: str | None,
+    rate_limiter: RateLimiter | None,
+    identity_verifiers: Sequence[IdentityVerifier] | None,
+    environment: str | None,
+) -> None:
+    """The auth configuration from the settings: the single source of each value, except the
+    parts the caller passed to ``create_app``."""
+    base_url = (admin_base_url or settings.admin_base_url).rstrip("/")
+    app.state.admin_origin = origin_of(base_url)
+    app.state.admin_base_url = base_url
+    app.state.environment = environment or settings.environment
+    app.state.trust_proxy_headers = settings.trust_proxy_headers
+    if rate_limiter is None:
+        app.state.rate_limiter = RateLimiter(settings.auth_rate_limit_per_minute)
+    if identity_verifiers is None:
+        idle = timedelta(seconds=settings.session_idle_timeout_seconds)
+        app.state.identity_verifiers = _session_verifiers(app, idle)
 
 
 app = create_app()

@@ -14,17 +14,21 @@ const ROOT = path.resolve(import.meta.dirname, "..", "..");
 // ADMIN_URL, else ADMIN_PORT from the shell or .env (default 3000), like compose.yaml.
 const ADMIN_URL = adminUrl(ROOT, process.env);
 const FORGED = "0b9c1c3e-5f0a-4a52-9a53-2c0f1f6f7a11";
-// EA-21 (FND-04) added audit_events and set_password_tokens (migration 0002).
+// EA-21 (FND-04) added audit_events and set_password_tokens (migration 0002); EA-22 (FND-05) added
+// admin_sessions and user_credentials, the ei_ai_signin role and the sign_in_lookup policy (head 0004).
 const TABLES = [
+  "admin_sessions",
   "audit_events",
   "memberships",
   "organizations",
   "set_password_tokens",
+  "user_credentials",
   "users",
   "workspace_memberships",
   "workspaces",
 ];
-const REVISION = "0002";
+const REVISION = "0004";
+const STANDARD_EXPRESSION = "NULLIF(current_setting('app.current_org'::text, true), ''::text)";
 
 /** Runs SQL through psql in the db container; returns stdout, stderr and the exit code. */
 function psql(role: string, sql: string, extra: string[] = []) {
@@ -51,7 +55,7 @@ test.describe("EA-18 multi-tenant data model with RLS", () => {
        where table_schema='public' and column_name='org_id' and is_nullable='NO' and data_type='uuid'`,
     );
     expect(columns).toBe(
-      "audit_events,memberships,set_password_tokens,users,workspace_memberships,workspaces",
+      "admin_sessions,audit_events,memberships,set_password_tokens,user_credentials,users,workspace_memberships,workspaces",
     );
 
     const rls = scalar(
@@ -70,16 +74,22 @@ test.describe("EA-18 multi-tenant data model with RLS", () => {
     );
     expect(others).toBe("alembic_version");
 
+    // 10 policies: one standard FOR ALL policy per table for every role, plus the one exception
+    // `sign_in_lookup` (EA-22): FOR SELECT, only for ei_ai_signin, USING (true), no WITH CHECK.
     const policies = psql(
       "postgres",
-      `select tablename, cmd, qual, with_check from pg_policies order by 1`,
+      `select policyname, tablename, cmd, roles, qual, with_check from pg_policies order by tablename, policyname`,
     )
       .out.trim()
       .split("\n");
-    expect(policies).toHaveLength(TABLES.length);
-    for (const line of policies) {
-      expect(line).toContain("NULLIF(current_setting('app.current_org'::text, true), ''::text)");
-      expect(line).toContain("|ALL|");
+    expect(policies).toHaveLength(TABLES.length + 1);
+    const signInLookup = policies.filter((line) => line.startsWith("sign_in_lookup|"));
+    expect(signInLookup).toEqual(["sign_in_lookup|users|SELECT|{ei_ai_signin}|true|"]);
+    const standard = policies.filter((line) => !line.startsWith("sign_in_lookup|"));
+    expect(standard.map((line) => line.split("|")[1])).toEqual(TABLES);
+    for (const line of standard) {
+      expect(line).toContain(STANDARD_EXPRESSION);
+      expect(line).toContain("|ALL|{public}|");
     }
 
     // Owner decision 2026-10-14: a user belongs to one Organization.
@@ -233,7 +243,7 @@ rollback;
       `select string_agg(rolname||':'||rolsuper::int||rolbypassrls::int||rolcreatedb::int||rolcreaterole::int, ',' order by rolname)
        from pg_roles where rolname like 'ei_ai%'`,
     );
-    expect(roles).toBe("ei_ai_app:0000,ei_ai_migrator:0000");
+    expect(roles).toBe("ei_ai_app:0000,ei_ai_migrator:0000,ei_ai_signin:0000");
 
     const owners = scalar(
       "postgres",
@@ -248,7 +258,57 @@ rollback;
        where grantee='ei_ai_app' and table_schema='public'`,
     );
     expect(privileges).toBe("DELETE,INSERT,SELECT,UPDATE");
+    // ... on each of the 9 tables, and on nothing else.
+    const perTable = psql(
+      "postgres",
+      `select table_name || ':' || string_agg(privilege_type, ',' order by privilege_type)
+       from information_schema.role_table_grants where grantee='ei_ai_app' and table_schema='public'
+       group by table_name order by table_name`,
+    )
+      .out.trim()
+      .split("\n");
+    expect(perTable).toEqual(TABLES.map((table) => `${table}:DELETE,INSERT,SELECT,UPDATE`));
     expect(psql("ei_ai_app", "select * from alembic_version").err).toContain("permission denied");
+
+    // EA-22: the sign-in role reads exactly three columns of users (the lookup before the tenant is known).
+    expect(
+      scalar(
+        "postgres",
+        `select count(*) from information_schema.role_table_grants where grantee='ei_ai_signin'`,
+      ),
+    ).toBe("0");
+    expect(
+      scalar(
+        "postgres",
+        `select string_agg(table_name || '.' || column_name || ':' || privilege_type, ',' order by table_name, column_name)
+         from information_schema.column_privileges where grantee='ei_ai_signin' and table_schema='public'`,
+      ),
+    ).toBe("users.email:SELECT,users.id:SELECT,users.org_id:SELECT");
+    expect(
+      scalar(
+        "postgres",
+        `select count(*) from pg_auth_members m join pg_roles r on r.oid = m.member where r.rolname = 'ei_ai_signin'`,
+      ),
+    ).toBe("0");
+    expect(
+      scalar("postgres", `select count(*) from pg_class where relowner = 'ei_ai_signin'::regrole`),
+    ).toBe("0");
+    const lookup = psql(
+      "ei_ai_signin",
+      "select count(*) from (select id, email, org_id from users) t",
+    );
+    expect(lookup.status, lookup.err).toBe(0);
+    expect(Number(lookup.out.trim())).toBeGreaterThan(0); // sees every Organization's rows, no tenant context
+    for (const forbidden of [
+      "select display_name from users",
+      "select * from users",
+      "select count(*) from user_credentials",
+      "select count(*) from admin_sessions",
+      "select count(*) from organizations",
+      "update users set email = email",
+    ]) {
+      expect(psql("ei_ai_signin", forbidden).err, forbidden).toContain("permission denied");
+    }
 
     // No DDL for the application role.
     expect(psql("ei_ai_app", "create table probe (id int)").err).toContain(

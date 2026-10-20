@@ -42,6 +42,14 @@ FORGED_INSERTS = {
         "INSERT INTO set_password_tokens (org_id, user_id, token_hash, expires_at)"
         f" VALUES (:other_org, :own_user, '{'f' * 64}', now() + interval '24 hours')"
     ),
+    "user_credentials": (
+        "INSERT INTO user_credentials (org_id, user_id, password_hash)"
+        " VALUES (:other_org, :own_user, '$argon2id$v=19$m=19456,t=2,p=1$forged')"
+    ),
+    "admin_sessions": (
+        "INSERT INTO admin_sessions (org_id, user_id, token_hash)"
+        f" VALUES (:other_org, :own_user, '{'e' * 64}')"
+    ),
 }
 
 

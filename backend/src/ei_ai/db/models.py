@@ -1,10 +1,18 @@
-"""SQLAlchemy 2 models of the tenancy core (revision 0001) and provisioning (revision 0002). The
-schema itself is created by the migrations, never by ``metadata.create_all``."""
+"""SQLAlchemy 2 models of the tenancy core (0001), provisioning (0002) and admin sign-in (0003).
+The schema itself is created by the migrations, never by ``metadata.create_all``."""
 
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, ForeignKeyConstraint, Text, UniqueConstraint, text
+from sqlalchemy import (
+    DateTime,
+    ForeignKey,
+    ForeignKeyConstraint,
+    Index,
+    Text,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -119,3 +127,43 @@ class SetPasswordToken(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = _created_at()
+
+
+class UserCredential(Base):
+    """The Argon2id hash and lockout counters of one user. No row: no password set yet."""
+
+    __tablename__ = "user_credentials"
+    __table_args__ = (
+        UniqueConstraint("org_id", "id"),
+        UniqueConstraint("org_id", "user_id"),
+        ForeignKeyConstraint(["org_id", "user_id"], ["users.org_id", "users.id"]),
+    )
+
+    id: Mapped[uuid.UUID] = _id()
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"))
+    user_id: Mapped[uuid.UUID]
+    password_hash: Mapped[str] = mapped_column(Text)
+    password_set_at: Mapped[datetime] = _created_at()
+    failed_attempts: Mapped[int] = mapped_column(server_default=text("0"))
+    failure_window_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = _created_at()
+
+
+class AdminSession(Base):
+    """A server-side admin session; only the sha256 of the cookie secret is stored."""
+
+    __tablename__ = "admin_sessions"
+    __table_args__ = (
+        UniqueConstraint("org_id", "id"),
+        UniqueConstraint("org_id", "token_hash"),
+        ForeignKeyConstraint(["org_id", "user_id"], ["users.org_id", "users.id"]),
+        Index("admin_sessions_org_user_idx", "org_id", "user_id"),
+    )
+
+    id: Mapped[uuid.UUID] = _id()
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"))
+    user_id: Mapped[uuid.UUID]
+    token_hash: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = _created_at()
+    last_seen_at: Mapped[datetime] = _created_at()

@@ -25,6 +25,7 @@ class PolicyInfo:
     using: str | None
     with_check: str | None
     permissive: bool = True  # restrictive policies are AND-ed and can only narrow access
+    roles: tuple[str, ...] = ("PUBLIC",)  # the TO clause, sorted; ("PUBLIC",) when there is none
 
 
 @dataclass(frozen=True)
@@ -42,6 +43,16 @@ class Privilege:
 
 
 @dataclass(frozen=True)
+class ColumnPrivilege:
+    """A privilege granted on one column only (``GRANT SELECT (email) ON users TO ...``)."""
+
+    column: str
+    grantee: str  # a role name or "PUBLIC"
+    privilege: str  # SELECT, INSERT, UPDATE, REFERENCES
+    grantable: bool = False  # WITH GRANT OPTION
+
+
+@dataclass(frozen=True)
 class TableInfo:
     name: str
     kind: Kind
@@ -53,6 +64,7 @@ class TableInfo:
     policies: tuple[PolicyInfo, ...] = ()
     foreign_keys: tuple[ForeignKeyInfo, ...] = ()
     privileges: tuple[Privilege, ...] = ()
+    column_privileges: tuple[ColumnPrivilege, ...] = ()
 
     def column(self, name: str) -> ColumnInfo | None:
         return next((column for column in self.columns if column.name == name), None)
@@ -102,7 +114,9 @@ _POLICIES = """
 SELECT c.oid, p.polname,
        CASE p.polcmd WHEN 'r' THEN 'SELECT' WHEN 'a' THEN 'INSERT' WHEN 'w' THEN 'UPDATE'
                      WHEN 'd' THEN 'DELETE' ELSE 'ALL' END,
-       pg_get_expr(p.polqual, p.polrelid), pg_get_expr(p.polwithcheck, p.polrelid), p.polpermissive
+       pg_get_expr(p.polqual, p.polrelid), pg_get_expr(p.polwithcheck, p.polrelid), p.polpermissive,
+       ARRAY(SELECT CASE WHEN r = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(r) END
+             FROM unnest(p.polroles) r ORDER BY 1)
 FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid WHERE c.oid = ANY (%s)
 ORDER BY c.oid, p.polname
 """
@@ -127,6 +141,17 @@ WHERE c.oid = ANY (%s) AND a.grantee <> c.relowner
 ORDER BY c.oid, 2, a.privilege_type
 """
 
+# Column ACLs are separate from the table ACL: a column grant never shows up in relacl.
+_COLUMN_PRIVILEGES = """
+SELECT a.attrelid, a.attname,
+       CASE WHEN x.grantee = 0 THEN 'PUBLIC' ELSE pg_get_userbyid(x.grantee) END,
+       x.privilege_type, x.is_grantable
+FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid
+CROSS JOIN LATERAL aclexplode(a.attacl) x
+WHERE a.attrelid = ANY (%s) AND a.attnum > 0 AND NOT a.attisdropped AND x.grantee <> c.relowner
+ORDER BY a.attrelid, a.attname, 3, x.privilege_type
+"""
+
 _FUNCTIONS = f"""
 SELECT p.proname, pg_get_userbyid(p.proowner), p.prosecdef
 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
@@ -143,9 +168,11 @@ def read_catalog(conn: psycopg.Connection, schema: str = "public") -> CatalogSna
     for oid, name, type_name, not_null in conn.execute(_COLUMNS, (oids,)):
         columns.setdefault(oid, []).append(ColumnInfo(name, type_name, not_null))
     policies: dict[int, list[PolicyInfo]] = {}
-    for oid, name, command, using, with_check, permissive in conn.execute(_POLICIES, (oids,)):
+    for oid, name, command, using, with_check, permissive, roles in conn.execute(
+        _POLICIES, (oids,)
+    ):
         policies.setdefault(oid, []).append(
-            PolicyInfo(name, command, using, with_check, permissive)
+            PolicyInfo(name, command, using, with_check, permissive, tuple(roles))
         )
     foreign_keys: dict[int, list[ForeignKeyInfo]] = {}
     for oid, name, cols, ref_table, ref_cols in conn.execute(_FOREIGN_KEYS, (oids,)):
@@ -155,6 +182,11 @@ def read_catalog(conn: psycopg.Connection, schema: str = "public") -> CatalogSna
     privileges: dict[int, list[Privilege]] = {}
     for oid, grantee, privilege in conn.execute(_PRIVILEGES, (oids,)):
         privileges.setdefault(oid, []).append(Privilege(grantee, privilege))
+    column_privileges: dict[int, list[ColumnPrivilege]] = {}
+    for oid, column, grantee, privilege, grantable in conn.execute(_COLUMN_PRIVILEGES, (oids,)):
+        column_privileges.setdefault(oid, []).append(
+            ColumnPrivilege(column, grantee, privilege, grantable)
+        )
     tables = tuple(
         TableInfo(
             name=name,
@@ -167,6 +199,7 @@ def read_catalog(conn: psycopg.Connection, schema: str = "public") -> CatalogSna
             policies=tuple(policies.get(oid, ())),
             foreign_keys=tuple(foreign_keys.get(oid, ())),
             privileges=tuple(privileges.get(oid, ())),
+            column_privileges=tuple(column_privileges.get(oid, ())),
         )
         for oid, name, kind, owner, enabled, forced, invoker in relations
     )

@@ -8,11 +8,87 @@
     }
   },
   "admin": {
-    "title": "Administration",
-    "api": {
-      "checking": "API: checking…",
-      "ok": "API: OK",
-      "unavailable": "API: unavailable"
+    "documentTitle": "{{title}} · ei-ai",
+    "shell": {
+      "navLabel": "Main",
+      "prototype": "Prototype",
+      "organization": "Organization",
+      "workspace": "Workspace",
+      "empty": "Nothing here yet.",
+      "signOut": "Sign out",
+      "unavailable": "The service is unavailable. Try again later.",
+      "group": {
+        "overview": "Overview",
+        "build": "Build",
+        "deploy": "Deploy",
+        "review": "Review",
+        "settings": "Settings"
+      },
+      "area": {
+        "dashboard": "Dashboard",
+        "assistants": "Assistants",
+        "knowledge": "Knowledge",
+        "answer-scripts": "Answer Scripts",
+        "glossary": "Glossary",
+        "skills": "Skills & Connectors",
+        "channels": "Channels",
+        "conversations": "Conversations",
+        "unanswered": "Unanswered",
+        "members": "Members & roles",
+        "organization": "Organization"
+      },
+      "role": {
+        "workspace_admin": "Workspace Admin",
+        "developer": "Developer",
+        "builder": "Builder",
+        "knowledge_editor": "Knowledge Editor",
+        "reviewer": "Reviewer",
+        "viewer": "Viewer",
+        "member": "Member"
+      }
+    },
+    "notFound": {
+      "title": "Page not found",
+      "text": "This page does not exist or you do not have access to it.",
+      "link": "Go to your dashboard"
+    },
+    "noWorkspace": {
+      "title": "No Workspace yet",
+      "text": "You are not a member of any Workspace yet. Ask your organization admin."
+    },
+    "signIn": {
+      "title": "Sign in",
+      "subtitle": "Use and manage your organization's assistants.",
+      "email": "Work email",
+      "password": "Password",
+      "forgotLink": "Forgot password?",
+      "submit": "Sign in",
+      "footer": "Accounts are created by your organization admin.",
+      "emailRequired": "Enter your email",
+      "passwordRequired": "Enter your password",
+      "invalidCredentials": "Invalid email or password",
+      "rateLimited": "Too many attempts. Wait a minute and try again.",
+      "unavailable": "The service is unavailable. Try again later.",
+      "passwordSetNotice": "Your password is set. Sign in to continue."
+    },
+    "forgot": {
+      "title": "Forgot password",
+      "text": "Enter your work email. We will send you a link to set a new password.",
+      "submit": "Send reset link",
+      "back": "Back to sign in",
+      "confirmation": "If an account exists for this email, a reset link has been sent."
+    },
+    "setPassword": {
+      "titleSet": "Set your password",
+      "titleReset": "Reset your password",
+      "newPassword": "New password",
+      "hint": "At least 12 characters.",
+      "confirm": "Confirm password",
+      "submit": "Set password",
+      "tooShort": "Use at least 12 characters.",
+      "tooLong": "Use at most 128 characters.",
+      "mismatch": "The passwords do not match.",
+      "invalidLink": "This link is invalid or has expired. Ask your organization admin for a new link."
     }
   },
   "widget": {

@@ -10,6 +10,7 @@ pytestmark = pytest.mark.integration
 
 APP = "ei_ai_app"
 MIGRATOR = "ei_ai_migrator"
+SIGNIN = "ei_ai_signin"
 
 
 def test_app_role_has_no_elevated_attributes(app_conn: psycopg.Connection) -> None:
@@ -21,16 +22,64 @@ def test_app_role_has_no_elevated_attributes(app_conn: psycopg.Connection) -> No
     assert row == (APP, False, False, False, False)
 
 
-def test_app_role_owns_no_object(app_conn: psycopg.Connection) -> None:
+@pytest.mark.parametrize("role", [APP, SIGNIN])
+def test_app_and_signin_roles_own_no_object(app_conn: psycopg.Connection, role: str) -> None:
     # pg_shdepend 'o' rows are owner dependencies of every object in the cluster.
     owned = app_conn.execute(
         "SELECT count(*) FROM pg_shdepend"
         " WHERE deptype = 'o' AND refclassid = 'pg_authid'::regclass"
         " AND refobjid = (SELECT oid FROM pg_roles WHERE rolname = %s)",
-        (APP,),
+        (role,),
     ).fetchone()
 
     assert owned == (0,)
+
+
+def test_the_project_roles_have_no_elevated_attributes(app_conn: psycopg.Connection) -> None:
+    rows = app_conn.execute(
+        "SELECT rolname, rolsuper, rolbypassrls, rolcreatedb, rolcreaterole FROM pg_roles"
+        " WHERE rolname LIKE 'ei\\_ai%' ORDER BY rolname"
+    ).fetchall()
+
+    assert rows == [(role, False, False, False, False) for role in (APP, MIGRATOR, SIGNIN)]
+
+
+def test_signin_role_is_member_of_no_role_and_has_no_member(app_conn: psycopg.Connection) -> None:
+    rows = app_conn.execute(
+        "SELECT count(*) FROM pg_auth_members WHERE member = (SELECT oid FROM pg_roles"
+        " WHERE rolname = %s) OR roleid = (SELECT oid FROM pg_roles WHERE rolname = %s)",
+        (SIGNIN, SIGNIN),
+    ).fetchone()
+
+    assert rows == (0,)
+
+
+def test_signin_role_privileges_are_the_three_lookup_columns(
+    app_conn: psycopg.Connection,
+) -> None:
+    # Live counterpart of guard rule G14: every column of every table, every privilege type.
+    granted = app_conn.execute(
+        "SELECT c.relname, a.attname, p.privilege FROM pg_class c"
+        " JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = 'public'"
+        " JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped"
+        " CROSS JOIN (VALUES ('SELECT'), ('INSERT'), ('UPDATE'), ('REFERENCES')) p (privilege)"
+        " WHERE c.relkind IN ('r', 'p', 'v', 'm')"
+        " AND has_column_privilege(%s, c.oid, a.attnum, p.privilege)"
+        " ORDER BY 1, 2, 3",
+        (SIGNIN,),
+    ).fetchall()
+    table_level = app_conn.execute(
+        "SELECT c.relname, p.privilege FROM pg_class c"
+        " JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = 'public'"
+        " CROSS JOIN (VALUES ('SELECT'), ('INSERT'), ('UPDATE'), ('DELETE'), ('TRUNCATE'),"
+        " ('REFERENCES'), ('TRIGGER')) p (privilege)"
+        " WHERE c.relkind IN ('r', 'p', 'v', 'm', 'S')"
+        " AND has_table_privilege(%s, c.oid, p.privilege)",
+        (SIGNIN,),
+    ).fetchall()
+
+    assert granted == [("users", column, "SELECT") for column in ("email", "id", "org_id")]
+    assert table_level == []
 
 
 def test_app_role_cannot_create_tables(app_tx_conn: psycopg.Connection) -> None:

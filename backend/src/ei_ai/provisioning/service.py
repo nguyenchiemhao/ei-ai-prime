@@ -16,10 +16,12 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ei_ai.audit.events import (
     ORGANIZATION_CREATED,
+    PLATFORM_OPERATOR,
     USER_INVITED,
     USER_SET_PASSWORD_LINK_ISSUED,
     WORKSPACE_CREATED,
-    record_platform_event,
+    WORKSPACE_MEMBER_ADDED,
+    record_event,
 )
 from ei_ai.auth.set_password import issue_token
 from ei_ai.db.tenant import tenant_transaction
@@ -28,8 +30,10 @@ from ei_ai.provisioning.rows import (
     insert_member,
     insert_organization,
     insert_workspace,
+    insert_workspace_member,
     organization_exists,
     workspace_exists,
+    workspace_member_exists,
 )
 from ei_ai.provisioning.validation import (
     ProvisioningError,
@@ -43,6 +47,7 @@ from ei_ai.provisioning.validation import (
 DEFAULT_WORKSPACE_NAME = "Default"
 ORGANIZATION_NAME_TAKEN = "an Organization with this name already exists"
 _ORG_NOT_FOUND = "Organization not found"
+_NOT_A_WORKSPACE_ROLE = "--role must be a Workspace role"
 
 
 @dataclass(frozen=True)
@@ -74,6 +79,13 @@ class InvitedUser:
 class IssuedLink:
     user_id: uuid.UUID
     secret: str
+
+
+@dataclass(frozen=True)
+class AddedMember:
+    user_id: uuid.UUID
+    email: str
+    role: str
 
 
 def _violated_constraint(error: IntegrityError) -> str | None:
@@ -123,9 +135,23 @@ async def create_organization(
             owner_id, secret = await insert_member(
                 conn, org_id, email, display_name, "org_owner", (ws_id, "workspace_admin")
             )
-            await record_platform_event(conn, org_id, ORGANIZATION_CREATED, "organization", org_id)
-            await record_platform_event(conn, org_id, WORKSPACE_CREATED, "workspace", ws_id)
-            await record_platform_event(conn, org_id, USER_INVITED, "user", owner_id)
+            await record_event(
+                conn,
+                org_id,
+                PLATFORM_OPERATOR,
+                ORGANIZATION_CREATED,
+                "organization",
+                org_id,
+            )
+            await record_event(
+                conn,
+                org_id,
+                PLATFORM_OPERATOR,
+                WORKSPACE_CREATED,
+                "workspace",
+                ws_id,
+            )
+            await record_event(conn, org_id, PLATFORM_OPERATOR, USER_INVITED, "user", owner_id)
     except IntegrityError as error:
         raise_if_violated(error, "organizations_name_lower_key", ORGANIZATION_NAME_TAKEN)
         raise
@@ -140,7 +166,14 @@ async def create_workspace(engine: AsyncEngine, org_id: uuid.UUID, name: str) ->
             if not await organization_exists(conn, org_id):
                 raise ProvisioningError(_ORG_NOT_FOUND)
             ws_id = await insert_workspace(conn, org_id, ws_name)
-            await record_platform_event(conn, org_id, WORKSPACE_CREATED, "workspace", ws_id)
+            await record_event(
+                conn,
+                org_id,
+                PLATFORM_OPERATOR,
+                WORKSPACE_CREATED,
+                "workspace",
+                ws_id,
+            )
     except IntegrityError as error:
         raise_if_violated(
             error,
@@ -183,7 +216,7 @@ async def invite_user(
             if workspace_id is not None and not await workspace_exists(conn, org_id, workspace_id):
                 raise ProvisioningError("Workspace not found in this Organization")
             user_id, secret = await insert_member(conn, org_id, address, name, org_role, workspace)
-            await record_platform_event(conn, org_id, USER_INVITED, "user", user_id)
+            await record_event(conn, org_id, PLATFORM_OPERATOR, USER_INVITED, "user", user_id)
     except IntegrityError as error:
         raise_if_violated(
             error,
@@ -205,5 +238,42 @@ async def issue_link(engine: AsyncEngine, org_id: uuid.UUID, email: str) -> Issu
         if user_id is None:
             raise ProvisioningError("user not found in this Organization")
         secret = await issue_token(conn, org_id, user_id)
-        await record_platform_event(conn, org_id, USER_SET_PASSWORD_LINK_ISSUED, "user", user_id)
+        await record_event(
+            conn,
+            org_id,
+            PLATFORM_OPERATOR,
+            USER_SET_PASSWORD_LINK_ISSUED,
+            "user",
+            user_id,
+        )
     return IssuedLink(user_id, secret)
+
+
+def _workspace_role(role: str) -> str:
+    """The role when it is a Workspace role; an Organization role is refused."""
+    workspace_role = split_roles([role])[1]
+    if workspace_role is None:
+        raise ProvisioningError(_NOT_A_WORKSPACE_ROLE)
+    return workspace_role
+
+
+async def add_workspace_member(
+    engine: AsyncEngine, org_id: uuid.UUID, workspace_id: uuid.UUID, email: str, role: str
+) -> AddedMember:
+    """Put an existing user of the Organization into one of its Workspaces, with one audit
+    event. The user's Organization role and set-password state are not touched."""
+    address = normalise_email(email)
+    workspace_role = _workspace_role(role)
+    async with engine.connect() as conn, tenant_transaction(conn, org_id):
+        if not await organization_exists(conn, org_id):
+            raise ProvisioningError(_ORG_NOT_FOUND)
+        if not await workspace_exists(conn, org_id, workspace_id):
+            raise ProvisioningError("Workspace not found in this Organization")
+        user_id = await find_user_id(conn, org_id, address)
+        if user_id is None:
+            raise ProvisioningError("user not found in this Organization")
+        if await workspace_member_exists(conn, org_id, workspace_id, user_id):
+            raise ProvisioningError("the user is already a member of this Workspace")
+        await insert_workspace_member(conn, org_id, workspace_id, user_id, workspace_role)
+        await record_event(conn, org_id, PLATFORM_OPERATOR, WORKSPACE_MEMBER_ADDED, "user", user_id)
+    return AddedMember(user_id, address, workspace_role)

@@ -22,7 +22,12 @@ test("env_example_has_no_secret_values", () => {
       `${name} must be __GENERATED__ or empty in .env.example`,
     );
   }
-  for (const name of ["POSTGRES_PASSWORD", "APP_DB_PASSWORD"]) {
+  for (const name of [
+    "POSTGRES_PASSWORD",
+    "APP_DB_PASSWORD",
+    "MIGRATION_DB_PASSWORD",
+    "SIGNIN_DB_PASSWORD",
+  ]) {
     assert.ok(
       assignments.some(([n, v]) => n === name && v === "__GENERATED__"),
       `${name}=__GENERATED__ is missing`,

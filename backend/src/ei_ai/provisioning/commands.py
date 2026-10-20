@@ -1,5 +1,6 @@
 """The Platform Operator commands of the CLI: ``org create``, ``workspace create``,
-``user invite``, ``user link``. Argument parsing, the service call and the exact output.
+``workspace add-member``, ``user invite``, ``user link``. Argument parsing, the service call and
+the exact output.
 
 Output is English only (an operator tool, like ``ei-ai db``). Set-password links go to stdout
 once and never through ``logging`` (D52). Unexpected errors print the exception class only: their
@@ -19,6 +20,7 @@ from ei_ai.auth.set_password import set_password_link
 from ei_ai.db.engine import run_with_app_engine
 from ei_ai.provisioning.service import (
     DEFAULT_WORKSPACE_NAME,
+    add_workspace_member,
     create_organization,
     create_workspace,
     invite_user,
@@ -55,11 +57,15 @@ def add_provisioning_parsers(
     org_create.add_argument("--workspace-name", default=DEFAULT_WORKSPACE_NAME, metavar="NAME")
 
     workspace = commands.add_parser("workspace", help="Workspaces (Platform Operator)")
-    ws_create = workspace.add_subparsers(dest="action", required=True).add_parser(
-        "create", help="a Workspace in an Organization"
-    )
+    ws_actions = workspace.add_subparsers(dest="action", required=True)
+    ws_create = ws_actions.add_parser("create", help="a Workspace in an Organization")
     ws_create.add_argument("--org", required=True, metavar="ORG_ID")
     ws_create.add_argument("--name", required=True)
+    add_member = ws_actions.add_parser("add-member", help="put an existing user into a Workspace")
+    add_member.add_argument("--org", required=True, metavar="ORG_ID")
+    add_member.add_argument("--workspace", required=True, metavar="WORKSPACE_ID")
+    add_member.add_argument("--email", required=True)
+    add_member.add_argument("--role", required=True, metavar="ROLE")
 
     user = commands.add_parser("user", help="users (Platform Operator)")
     user_actions = user.add_subparsers(dest="action", required=True)
@@ -108,6 +114,19 @@ def _workspace_create(args: argparse.Namespace) -> Work:
     return work
 
 
+def _workspace_add_member(args: argparse.Namespace) -> Work:
+    """The work of ``workspace add-member`` (--org and --workspace are checked first)."""
+    org_id = parse_uuid(args.org, _ORG_ID)
+    workspace_id = parse_uuid(args.workspace, _WORKSPACE_ID)
+
+    async def work(engine: AsyncEngine, base_url: str) -> list[str]:
+        """Run the service call and return the stdout lines."""
+        result = await add_workspace_member(engine, org_id, workspace_id, args.email, args.role)
+        return [f"Workspace member added: {result.user_id} ({result.email}) role: {result.role}"]
+
+    return work
+
+
 def _user_invite(args: argparse.Namespace) -> Work:
     """The work of ``user invite`` (the --org and --workspace values are checked first)."""
     org_id = parse_uuid(args.org, _ORG_ID)
@@ -142,6 +161,7 @@ def _user_link(args: argparse.Namespace) -> Work:
 _HANDLERS: dict[tuple[str, str], tuple[bool, Callable[[argparse.Namespace], Work]]] = {
     ("org", "create"): (True, _org_create),
     ("workspace", "create"): (False, _workspace_create),
+    ("workspace", "add-member"): (False, _workspace_add_member),
     ("user", "invite"): (True, _user_invite),
     ("user", "link"): (True, _user_link),
 }

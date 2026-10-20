@@ -1,7 +1,9 @@
-"""Which database roles may run migrations."""
+"""The database roles, and which of them may run migrations."""
 
 APP_ROLE = "ei_ai_app"
 OWNER_ROLE = "ei_ai_migrator"
+# Sign-in lookup (EA-22, R42): reads only users(id, org_id, email); see migration 0004.
+SIGNIN_ROLE = "ei_ai_signin"
 
 
 class MigrationRoleError(RuntimeError):

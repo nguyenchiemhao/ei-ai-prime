@@ -13,6 +13,7 @@ def test_accepts_the_owner_role() -> None:
         ("postgres", True),
         ("ei_ai_migrator", True),
         ("ei_ai_app", False),
+        ("ei_ai_signin", False),
         ("someone_else", False),
     ],
 )

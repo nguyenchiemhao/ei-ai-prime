@@ -71,6 +71,37 @@ async def find_user_id(conn: AsyncConnection, org_id: uuid.UUID, email: str) -> 
     return found
 
 
+async def workspace_member_exists(
+    conn: AsyncConnection, org_id: uuid.UUID, workspace_id: uuid.UUID, user_id: uuid.UUID
+) -> bool:
+    """True when the user is already a member of the Workspace."""
+    result = await conn.execute(
+        text(
+            "SELECT 1 FROM workspace_memberships"
+            " WHERE org_id = :org AND workspace_id = :ws AND user_id = :user"
+        ),
+        {"org": org_id, "ws": workspace_id, "user": user_id},
+    )
+    return result.first() is not None
+
+
+async def insert_workspace_member(
+    conn: AsyncConnection,
+    org_id: uuid.UUID,
+    workspace_id: uuid.UUID,
+    user_id: uuid.UUID,
+    role: str,
+) -> None:
+    """Insert a Workspace membership of an existing user."""
+    await conn.execute(
+        text(
+            "INSERT INTO workspace_memberships (org_id, workspace_id, user_id, role)"
+            " VALUES (:org, :ws, :user, :role)"
+        ),
+        {"org": org_id, "ws": workspace_id, "user": user_id, "role": role},
+    )
+
+
 async def insert_member(
     conn: AsyncConnection,
     org_id: uuid.UUID,
@@ -94,11 +125,5 @@ async def insert_member(
         {"org": org_id, "user": user_id, "role": org_role},
     )
     if workspace is not None:
-        await conn.execute(
-            text(
-                "INSERT INTO workspace_memberships (org_id, workspace_id, user_id, role)"
-                " VALUES (:org, :ws, :user, :role)"
-            ),
-            {"org": org_id, "ws": workspace[0], "user": user_id, "role": workspace[1]},
-        )
+        await insert_workspace_member(conn, org_id, workspace[0], user_id, workspace[1])
     return user_id, await issue_token(conn, org_id, user_id)

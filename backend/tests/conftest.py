@@ -27,11 +27,19 @@ def settings() -> Settings:
         environment="test",
         database_url="postgresql://ei_ai_app:s3cret-pw@db:5432/ei_ai",
         valkey_url="redis://valkey:6379/0",
+        signin_database_url="postgresql://ei_ai_signin:s1gnin-pw@db:5432/ei_ai",
+        admin_base_url="http://localhost:3000",
     )
 
 
 @pytest.fixture
 def clean_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[pytest.MonkeyPatch]:
-    for name in ("EI_AI_ENV", "DATABASE_URL", "VALKEY_URL", "MIGRATION_DATABASE_URL"):
+    for name in (
+        "EI_AI_ENV",
+        "DATABASE_URL",
+        "VALKEY_URL",
+        "MIGRATION_DATABASE_URL",
+        "SIGNIN_DATABASE_URL",
+    ):
         monkeypatch.delenv(name, raising=False)
     yield monkeypatch

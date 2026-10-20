@@ -1,0 +1,287 @@
+/* Admin shell: Sidebar and area pages (Sidebar artboard). Tokens only. */
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  box-sizing: border-box;
+  position: sticky;
+  top: 0;
+  flex: none;
+  width: var(--ei-size-layout-sidebar);
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ei-space-5);
+  padding: var(--ei-space-5) var(--ei-space-3-5);
+  background: var(--ei-color-surface-card);
+  border-right: 1px solid var(--ei-color-border-default);
+  color: var(--ei-color-text-primary);
+}
+
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  gap: var(--ei-space-2-5);
+  padding: 0 var(--ei-space-1-5);
+}
+
+.sidebar-top .logo-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--ei-radius-md);
+  font-size: var(--ei-font-size-md);
+}
+
+.sidebar-top .logo-name {
+  font-size: var(--ei-font-size-xl);
+}
+
+.sidebar-tag {
+  margin-left: auto;
+  padding: var(--ei-space-0-5) var(--ei-space-2);
+  border-radius: 10px;
+  background: var(--ei-color-status-warning-bg);
+  color: var(--ei-color-status-warning-text);
+  font-size: var(--ei-font-size-xs);
+  font-weight: var(--ei-font-weight-medium);
+}
+
+.switchers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ei-space-1-5);
+}
+
+.menu-root {
+  position: relative;
+}
+
+.switcher {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--ei-size-control-touch);
+  display: flex;
+  align-items: center;
+  gap: var(--ei-space-2-5);
+  padding: var(--ei-space-1-5) var(--ei-space-2-5);
+  border: 1px solid var(--ei-color-border-default);
+  border-radius: var(--ei-radius-lg);
+  background: var(--ei-color-surface-card);
+  color: var(--ei-color-text-primary);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.switcher-workspace {
+  background: var(--ei-color-surface-page);
+}
+
+.switcher-avatar {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: var(--ei-radius-sm);
+  background: var(--ei-color-brand-default);
+  color: var(--ei-color-text-on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--ei-font-size-xs);
+  font-weight: var(--ei-font-weight-semibold);
+}
+
+.switcher-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.switcher-label,
+.switcher-value {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.switcher-label {
+  font-size: var(--ei-font-size-xs);
+  color: var(--ei-color-text-muted);
+}
+
+.switcher-value {
+  font-size: var(--ei-font-size-md);
+  font-weight: var(--ei-font-weight-semibold);
+}
+
+.switcher-chevron {
+  flex: none;
+  color: var(--ei-color-text-muted);
+}
+
+.menu {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + var(--ei-space-1));
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--ei-space-1);
+  background: var(--ei-color-surface-card);
+  border: 1px solid var(--ei-color-border-strong);
+  border-radius: var(--ei-radius-lg);
+}
+
+.menu-up {
+  top: auto;
+  bottom: calc(100% + var(--ei-space-1));
+}
+
+.menu-item {
+  min-height: var(--ei-size-control-touch);
+  padding: 0 var(--ei-space-2-5);
+  border: 0;
+  border-radius: var(--ei-radius-md);
+  background: none;
+  color: var(--ei-color-text-nav);
+  font-family: inherit;
+  font-size: var(--ei-font-size-base);
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item:hover {
+  background: var(--ei-color-surface-page);
+}
+
+.menu-item[aria-checked="true"] {
+  background: var(--ei-color-accent-tint);
+  color: var(--ei-color-accent-hover);
+  font-weight: var(--ei-font-weight-semibold);
+}
+
+.nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ei-space-0-5);
+}
+
+.nav-heading {
+  padding: 0 var(--ei-space-2-5) var(--ei-space-1);
+  font-size: var(--ei-font-size-xs);
+  font-weight: var(--ei-font-weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ei-color-text-subtle);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  min-height: var(--ei-size-control-compact);
+  padding: 0 var(--ei-space-2-5);
+  border-radius: var(--ei-radius-md);
+  font-size: var(--ei-font-size-base);
+  color: var(--ei-color-text-nav);
+  text-decoration: none;
+}
+
+.nav-item:hover {
+  background: var(--ei-color-surface-page);
+}
+
+.nav-item[aria-current="page"] {
+  background: var(--ei-color-accent-tint);
+  color: var(--ei-color-accent-hover);
+  font-weight: var(--ei-font-weight-semibold);
+}
+
+.user-root {
+  margin-top: auto;
+  border-top: 1px solid var(--ei-color-border-divider);
+  padding-top: var(--ei-space-2);
+}
+
+.user-button {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--ei-size-control-touch);
+  display: flex;
+  align-items: center;
+  gap: var(--ei-space-2-5);
+  padding: var(--ei-space-2-5);
+  border: 0;
+  border-radius: var(--ei-radius-lg);
+  background: none;
+  color: var(--ei-color-text-primary);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: var(--ei-radius-pill);
+  background: var(--ei-color-accent-tint);
+  color: var(--ei-color-accent-default);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--ei-font-size-sm);
+  font-weight: var(--ei-font-weight-semibold);
+}
+
+.user-name,
+.user-role {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-name {
+  font-size: var(--ei-font-size-md);
+  font-weight: var(--ei-font-weight-semibold);
+}
+
+.user-role {
+  font-size: var(--ei-font-size-sm);
+  color: var(--ei-color-text-muted);
+}
+
+.switcher:focus-visible,
+.menu-item:focus-visible,
+.nav-item:focus-visible,
+.user-button:focus-visible {
+  outline: 2px solid var(--ei-color-accent-default);
+  outline-offset: 2px;
+}
+
+.area-page {
+  flex: 1;
+  min-width: 0;
+  padding: var(--ei-space-8);
+  background: var(--ei-color-surface-page);
+}
+
+.area-title {
+  margin: 0 0 var(--ei-space-2);
+  font-size: var(--ei-font-size-page-title);
+  font-weight: var(--ei-font-weight-semibold);
+}
+
+.area-text {
+  margin: 0;
+  color: var(--ei-color-text-muted);
+}
+
+.area-alert {
+  margin: 0;
+  color: var(--ei-color-status-warning-text);
+}

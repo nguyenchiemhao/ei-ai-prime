@@ -149,9 +149,12 @@ function counts(orgId?: string): Counts {
 /** Deletes one Organization and everything under it, children first. */
 function purgeOrg(orgId: string): void {
   expect(orgId).toMatch(new RegExp(`^${UUID}$`));
-  const byOrg = TABLES_CHILD_FIRST.filter((t) => t !== "organizations").map(
-    (table) => `delete from ${table} where org_id = '${orgId}';`,
-  );
+  // EA-22: sessions and credentials of users (created by sign-in tests) reference users; they go first.
+  const byOrg = [
+    "admin_sessions",
+    "user_credentials",
+    ...TABLES_CHILD_FIRST.filter((t) => t !== "organizations"),
+  ].map((table) => `delete from ${table} where org_id = '${orgId}';`);
   sql(`begin; ${byOrg.join(" ")} delete from organizations where id = '${orgId}'; commit;`);
 }
 
@@ -305,7 +308,11 @@ test.describe("EA-21 Platform Operator CLI and demo seed", () => {
       // The secret never reaches the API container's log.
       const apiLogs = spawn("docker", ["compose", "logs", "--no-color", "api"]).stdout;
       expect(apiLogs).not.toContain(created.link.secret);
-      expect(apiLogs).not.toContain("token=");
+      // EA-22: the only line allowed to carry a token is the local-only "Reset link" line of forgot-password.
+      const tokenLines = lines(apiLogs).filter((line) => line.includes("token="));
+      expect(
+        tokenLines.filter((line) => !line.includes("Reset link (valid 24 h, shown once)")),
+      ).toEqual([]);
 
       // Requesting the printed link: a fragment is never sent, so the admin (nginx) log has the
       // request line without the secret and without "token=".

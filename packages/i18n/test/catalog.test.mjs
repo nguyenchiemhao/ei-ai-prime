@@ -9,7 +9,12 @@ import { fileURLToPath } from "node:url";
 
 const MESSAGES = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../messages");
 // Values that are legitimately identical in both languages: the product name and language names.
-const SAME_IN_BOTH = new Set(["common.productName", "common.language.en", "common.language.vi"]);
+const SAME_IN_BOTH = new Set([
+  "common.productName",
+  "common.language.en",
+  "common.language.vi",
+  "admin.documentTitle",
+]);
 const NAMESPACES = ["admin", "widget", "common"];
 
 const read = (name) => fs.readFileSync(path.join(MESSAGES, name));

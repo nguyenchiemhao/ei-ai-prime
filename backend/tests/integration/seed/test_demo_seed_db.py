@@ -26,6 +26,8 @@ from support.tenants import (
 pytestmark = pytest.mark.integration
 
 FIRST_RUN_COUNTS = {
+    "admin_sessions": 0,
+    "user_credentials": 0,
     "audit_events": 8,
     "set_password_tokens": 6,
     "workspace_memberships": 6,

@@ -8,11 +8,87 @@
     }
   },
   "admin": {
-    "title": "Quản trị",
-    "api": {
-      "checking": "API: đang kiểm tra…",
-      "ok": "API: hoạt động",
-      "unavailable": "API: không khả dụng"
+    "documentTitle": "{{title}} · ei-ai",
+    "shell": {
+      "navLabel": "Chính",
+      "prototype": "Bản thử nghiệm",
+      "organization": "Tổ chức",
+      "workspace": "Không gian làm việc",
+      "empty": "Chưa có nội dung.",
+      "signOut": "Đăng xuất",
+      "unavailable": "Dịch vụ hiện không khả dụng. Hãy thử lại sau.",
+      "group": {
+        "overview": "Tổng quan",
+        "build": "Xây dựng",
+        "deploy": "Triển khai",
+        "review": "Rà soát",
+        "settings": "Cài đặt"
+      },
+      "area": {
+        "dashboard": "Bảng điều khiển",
+        "assistants": "Trợ lý",
+        "knowledge": "Kiến thức",
+        "answer-scripts": "Kịch bản trả lời",
+        "glossary": "Thuật ngữ",
+        "skills": "Kỹ năng & Kết nối",
+        "channels": "Kênh",
+        "conversations": "Hội thoại",
+        "unanswered": "Chưa trả lời",
+        "members": "Thành viên & vai trò",
+        "organization": "Tổ chức"
+      },
+      "role": {
+        "workspace_admin": "Quản trị Workspace",
+        "developer": "Lập trình viên",
+        "builder": "Người xây dựng",
+        "knowledge_editor": "Biên tập kiến thức",
+        "reviewer": "Người rà soát",
+        "viewer": "Người xem",
+        "member": "Thành viên"
+      }
+    },
+    "notFound": {
+      "title": "Không tìm thấy trang",
+      "text": "Trang này không tồn tại hoặc bạn không có quyền truy cập.",
+      "link": "Về bảng điều khiển của bạn"
+    },
+    "noWorkspace": {
+      "title": "Chưa có Workspace",
+      "text": "Bạn chưa là thành viên của Workspace nào. Hãy nhờ quản trị viên tổ chức của bạn."
+    },
+    "signIn": {
+      "title": "Đăng nhập",
+      "subtitle": "Sử dụng và quản lý các trợ lý của tổ chức bạn.",
+      "email": "Email công việc",
+      "password": "Mật khẩu",
+      "forgotLink": "Quên mật khẩu?",
+      "submit": "Đăng nhập",
+      "footer": "Tài khoản do quản trị viên tổ chức của bạn tạo.",
+      "emailRequired": "Nhập email của bạn",
+      "passwordRequired": "Nhập mật khẩu của bạn",
+      "invalidCredentials": "Email hoặc mật khẩu không đúng",
+      "rateLimited": "Quá nhiều lần thử. Hãy đợi một phút rồi thử lại.",
+      "unavailable": "Dịch vụ hiện không khả dụng. Hãy thử lại sau.",
+      "passwordSetNotice": "Mật khẩu của bạn đã được đặt. Đăng nhập để tiếp tục."
+    },
+    "forgot": {
+      "title": "Quên mật khẩu",
+      "text": "Nhập email công việc của bạn. Chúng tôi sẽ gửi cho bạn một liên kết để đặt mật khẩu mới.",
+      "submit": "Gửi liên kết đặt lại",
+      "back": "Quay lại đăng nhập",
+      "confirmation": "Nếu có tài khoản cho email này, một liên kết đặt lại đã được gửi."
+    },
+    "setPassword": {
+      "titleSet": "Đặt mật khẩu của bạn",
+      "titleReset": "Đặt lại mật khẩu của bạn",
+      "newPassword": "Mật khẩu mới",
+      "hint": "Ít nhất 12 ký tự.",
+      "confirm": "Xác nhận mật khẩu",
+      "submit": "Đặt mật khẩu",
+      "tooShort": "Dùng ít nhất 12 ký tự.",
+      "tooLong": "Dùng tối đa 128 ký tự.",
+      "mismatch": "Hai mật khẩu không khớp.",
+      "invalidLink": "Liên kết này không hợp lệ hoặc đã hết hạn. Hãy nhờ quản trị viên tổ chức gửi liên kết mới."
     }
   },
   "widget": {

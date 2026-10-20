@@ -29,20 +29,35 @@ class Settings:
     environment: str
     database_url: str
     valkey_url: str
+    # The sign-in lookup role (EA-22, R42): only ei_ai.auth.directory connects with it.
+    signin_database_url: str
+    # Base URL of the admin app; its origin is the only Origin the CSRF check accepts (EA-22).
+    admin_base_url: str
+    # Read the client address from X-Forwarded-For (only behind the admin nginx proxy).
+    trust_proxy_headers: bool = False
+    auth_rate_limit_per_minute: int = 30
+    session_idle_timeout_seconds: int = 43200
 
     @classmethod
     def from_env(cls, env: Mapping[str, str]) -> "Settings":
+        environment = _environment(env)
         return cls(
-            environment=_environment(env),
+            environment=environment,
             database_url=_required(env, "DATABASE_URL"),
             valkey_url=_required(env, "VALKEY_URL"),
+            signin_database_url=_required(env, "SIGNIN_DATABASE_URL"),
+            admin_base_url=admin_base_url(env, environment),
+            trust_proxy_headers=_boolean(env, "TRUST_PROXY_HEADERS", default=False),
+            auth_rate_limit_per_minute=_positive_int(env, "AUTH_RATE_LIMIT_PER_MINUTE", 30),
+            session_idle_timeout_seconds=_positive_int(env, "SESSION_IDLE_TIMEOUT_SECONDS", 43200),
         )
 
     def __repr__(self) -> str:
         return (
             f"Settings(environment={self.environment!r}, "
             f"database_url={mask_url(self.database_url)!r}, "
-            f"valkey_url={mask_url(self.valkey_url)!r})"
+            f"valkey_url={mask_url(self.valkey_url)!r}, "
+            f"signin_database_url={mask_url(self.signin_database_url)!r})"
         )
 
 
@@ -118,3 +133,27 @@ def _required(env: Mapping[str, str], name: str) -> str:
     if not value:
         raise SettingsError(f"{name} is required")
     return value
+
+
+def _boolean(env: Mapping[str, str], name: str, default: bool) -> bool:
+    value = env.get(name, "")
+    if not value:
+        return default
+    if value.lower() in ("true", "1"):
+        return True
+    if value.lower() in ("false", "0"):
+        return False
+    raise SettingsError(f"{name} must be true or false")
+
+
+def _positive_int(env: Mapping[str, str], name: str, default: int) -> int:
+    value = env.get(name, "")
+    if not value:
+        return default
+    try:
+        number = int(value)
+    except ValueError:
+        raise SettingsError(f"{name} must be a positive integer") from None
+    if number < 1:
+        raise SettingsError(f"{name} must be a positive integer")
+    return number

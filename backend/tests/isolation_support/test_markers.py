@@ -15,6 +15,8 @@ def _rows(label: str) -> OrgRows:
         workspace_membership_id=uuid.uuid4(),
         audit_event_id=uuid.uuid4(),
         set_password_token_id=uuid.uuid4(),
+        user_credential_id=uuid.uuid4(),
+        admin_session_id=uuid.uuid4(),
         label=label,
         suffix=uuid.uuid4().hex[:8],
     )

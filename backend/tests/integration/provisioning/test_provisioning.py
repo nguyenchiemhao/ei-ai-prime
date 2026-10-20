@@ -12,11 +12,13 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ei_ai.audit.events import record_platform_event
+from ei_ai.audit.events import record_event
 from ei_ai.auth.set_password import hash_secret
 from ei_ai.db.tenant import tenant_transaction
 from ei_ai.provisioning import service
 from ei_ai.provisioning.service import (
+    AddedMember,
+    add_workspace_member,
     create_organization,
     create_workspace,
     invite_user,
@@ -107,6 +109,8 @@ async def test_create_organization_creates_org_workspace_owner_and_token(
         "SELECT workspace_id, user_id, role FROM workspace_memberships WHERE org_id = :org",
     ) == [(result.workspace_id, result.owner_id, "workspace_admin")]
     assert await count_org_rows(app_engine, org) == {
+        "admin_sessions": 0,
+        "user_credentials": 0,
         "audit_events": 3,
         "set_password_tokens": 1,
         "workspace_memberships": 1,
@@ -239,7 +243,7 @@ async def test_failure_after_inserts_rolls_back_everything(
 ) -> None:
     captured: list[uuid.UUID] = []
     real_new_org_id = service.new_org_id
-    real_record = record_platform_event
+    real_record = record_event
     calls = 0
 
     async def spy(engine: AsyncEngine) -> uuid.UUID:
@@ -256,7 +260,7 @@ async def test_failure_after_inserts_rolls_back_everything(
 
     with pytest.MonkeyPatch.context() as patch:
         patch.setattr(service, "new_org_id", spy)
-        patch.setattr(service, "record_platform_event", failing_third)
+        patch.setattr(service, "record_event", failing_third)
         with pytest.raises(RuntimeError):
             await create_organization(
                 app_engine, name=f"Rollback {_suffix()}", owner_email="o@example.com"
@@ -478,3 +482,84 @@ async def test_audit_rows_hold_no_token_or_email(
             needle=needle,
         )
         assert hits == [(0,)], needle
+
+
+async def test_add_member_adds_the_workspace_membership_and_audit_event(
+    app_engine: AsyncEngine, created: list[uuid.UUID]
+) -> None:
+    sfx = _suffix()
+    org = await _new_org(app_engine, created)
+    second = await create_workspace(app_engine, org.org_id, f"Second {sfx}")
+    invited = await invite_user(app_engine, org.org_id, f"m.{sfx}@example.com", ["org_admin"])
+    before = await _events(app_engine, org.org_id)
+
+    added = await add_workspace_member(
+        app_engine, org.org_id, second.workspace_id, f" M.{sfx}@Example.com ", "viewer"
+    )
+
+    assert added == AddedMember(invited.user_id, f"m.{sfx}@example.com", "viewer")
+    assert await _rows(
+        app_engine,
+        org.org_id,
+        "SELECT workspace_id, user_id, role FROM workspace_memberships"
+        " WHERE org_id = :org AND user_id = :user",
+        user=invited.user_id,
+    ) == [(second.workspace_id, invited.user_id, "viewer")]
+    assert await _events(app_engine, org.org_id) == sorted(
+        [*before, (ACTOR, "workspace.member_added", "user", invited.user_id)]
+    )
+
+
+async def test_add_member_errors_write_nothing(
+    app_engine: AsyncEngine, created: list[uuid.UUID]
+) -> None:
+    sfx = _suffix()
+    org = await _new_org(app_engine, created)
+    second = await create_workspace(app_engine, org.org_id, f"Second {sfx}")
+    before = await count_org_rows(app_engine, org.org_id)
+    ws, email = second.workspace_id, org.owner_email
+
+    failures = [
+        (add_workspace_member(app_engine, uuid.uuid4(), ws, email, "viewer"), "Organization not"),
+        (
+            add_workspace_member(app_engine, org.org_id, uuid.uuid4(), email, "viewer"),
+            "Workspace not found in this Organization",
+        ),
+        (
+            add_workspace_member(app_engine, org.org_id, ws, f"nobody.{sfx}@example.com", "viewer"),
+            "user not found in this Organization",
+        ),
+        (
+            add_workspace_member(app_engine, org.org_id, org.workspace_id, email, "viewer"),
+            "the user is already a member of this Workspace",
+        ),
+        (add_workspace_member(app_engine, org.org_id, ws, email, "org_admin"), "--role must be"),
+        (add_workspace_member(app_engine, org.org_id, ws, email, "boss"), "unknown role"),
+        (add_workspace_member(app_engine, org.org_id, ws, "a@b", "viewer"), "invalid email"),
+    ]
+    for call, message in failures:
+        with pytest.raises(ProvisioningError) as error:
+            await call
+        assert message in str(error.value)
+
+    assert await count_org_rows(app_engine, org.org_id) == before
+
+
+async def test_add_member_cannot_use_another_org_user_or_workspace(
+    app_engine: AsyncEngine, two_orgs: TwoOrgs
+) -> None:
+    a, b = two_orgs.a, two_orgs.b
+    before_a, before_b = (
+        await count_org_rows(app_engine, a.org_id),
+        await count_org_rows(app_engine, b.org_id),
+    )
+
+    with pytest.raises(ProvisioningError) as workspace_error:
+        await add_workspace_member(app_engine, a.org_id, b.workspace_id, a.email, "viewer")
+    with pytest.raises(ProvisioningError) as user_error:
+        await add_workspace_member(app_engine, a.org_id, a.workspace_id, b.email, "viewer")
+
+    assert str(workspace_error.value) == "Workspace not found in this Organization"
+    assert str(user_error.value) == "user not found in this Organization"
+    assert await count_org_rows(app_engine, a.org_id) == before_a
+    assert await count_org_rows(app_engine, b.org_id) == before_b
