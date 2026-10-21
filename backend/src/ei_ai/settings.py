@@ -5,6 +5,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from urllib.parse import urlsplit, urlunsplit
 
+from ei_ai.auth.passwords import MAX_LENGTH as MAX_PASSWORD_LENGTH
+
 ENVIRONMENTS = ("local", "test", "production")
 
 
@@ -173,6 +175,18 @@ def admin_base_url(env: Mapping[str, str], environment: str) -> str:
     if not value.startswith(("http://", "https://")):
         raise SettingsError("ADMIN_BASE_URL must be an http or https URL")
     return value.rstrip("/")
+
+
+def seed_password(env: Mapping[str, str]) -> str:
+    """The shared test password of the demo seed (``EI_AI_SEED_PASSWORD``, local/test only).
+
+    Required and at most ``passwords.MAX_LENGTH`` characters; errors name the variable, never the
+    value. The password policy is not applied: the demo value is below it on purpose.
+    """
+    value = _required(env, "EI_AI_SEED_PASSWORD")
+    if len(value) > MAX_PASSWORD_LENGTH:
+        raise SettingsError(f"EI_AI_SEED_PASSWORD must be at most {MAX_PASSWORD_LENGTH} characters")
+    return value
 
 
 def _environment(env: Mapping[str, str]) -> str:

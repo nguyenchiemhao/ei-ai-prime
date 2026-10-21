@@ -119,7 +119,7 @@ test.describe("EA-13 repo skeleton", () => {
     expect(second.stdout).toBe(first.stdout);
     expect(first.stdout).toContain("Mekong Devworks");
     expect(first.stdout).toContain("People Ops");
-    expect(first.stdout).toContain("Members: 6");
+    expect(first.stdout).toContain("Members: 10");
     // The dry-run note of EA-13 is gone: the seed is real now.
     expect(first.stdout).not.toContain("FND-04");
 
@@ -244,12 +244,14 @@ test.describe("EA-13 repo skeleton", () => {
     const workflow = fs.readFileSync(path.join(ROOT, ".github/workflows/ci.yml"), "utf8");
     const jobsSection = workflow.slice(workflow.indexOf("\njobs:"));
     const jobs = [...jobsSection.matchAll(/^ {2}([a-z-]+):\n/gm)].map((m) => m[1]);
-    expect(jobs).toEqual(["frontend", "backend", "checks", "tenant-isolation", "stack"]);
+    expect(jobs).toEqual(["gate", "frontend", "backend", "checks", "tenant-isolation", "stack"]);
     const limits = [...workflow.matchAll(/timeout-minutes:\s*(\d+)/g)].map((m) => Number(m[1]));
-    // five jobs plus the 5-minute cap on the tenant-isolation suite step (EA-19)
-    expect(limits).toHaveLength(6);
+    // the gate job and the five check jobs, plus the 5-minute cap on the tenant-isolation suite step (EA-19)
+    expect(limits).toHaveLength(7);
     for (const limit of limits) expect(limit).toBeLessThanOrEqual(10);
-    expect(workflow).not.toMatch(/^\s+needs:/m); // parallel
+    // parallel: the five check jobs wait only for the gate job, never for each other
+    const needs = [...workflow.matchAll(/^\s+needs:\s*(.+)$/gm)].map((m) => (m[1] ?? "").trim());
+    expect(needs).toEqual(["gate", "gate", "gate", "gate", "gate"]);
     expect(workflow).toMatch(/cancel-in-progress:\s*true/);
     expect(workflow).toMatch(/cache:\s*npm/);
     expect(workflow).toMatch(/cache:\s*pip/);

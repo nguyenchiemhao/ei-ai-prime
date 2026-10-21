@@ -1,0 +1,47 @@
+{
+  "version": 3,
+  "organization_id": "0192a000-0000-7000-8000-00000000ea94",
+  "organization": "Sông Hàn Retail",
+  "workspaces": [
+    {
+      "name": "Customer Care",
+      "collections": [
+        {
+          "name": "Store Policies",
+          "access_level": "authenticated",
+          "local_only": false,
+          "folders": [
+            {
+              "name": "Returns & exchanges"
+            },
+            {
+              "name": "Delivery & installation"
+            },
+            {
+              "name": "Warranty"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "members": [
+    {
+      "name": "Ngân Trịnh",
+      "email": "ngan.trinh@songhanretail.example",
+      "org_role": "org_admin",
+      "workspaces": {
+        "Customer Care": "workspace_admin"
+      }
+    },
+    {
+      "name": "Trung Võ",
+      "email": "sysadmin@mekongdevworks.example",
+      "org_role": "org_owner",
+      "workspaces": {
+        "Customer Care": "workspace_admin"
+      },
+      "shared_password": false
+    }
+  ]
+}

@@ -8,6 +8,8 @@ import path from "node:path";
 import { ROOT } from "../lib/docker.mjs";
 
 const SECRET_NAME = /PASSWORD|SECRET|TOKEN|KEY/i;
+// The shared demo password is a documented local/test value, not a secret (see docs/dev/seed-data.md).
+const DOCUMENTED_NAME = "EI_AI_SEED_PASSWORD";
 const example = fs.readFileSync(path.join(ROOT, ".env.example"), "utf8");
 const assignments = example
   .split("\n")
@@ -16,7 +18,9 @@ const assignments = example
 
 test("env_example_has_no_secret_values", () => {
   assert.ok(assignments.length >= 2, "expected the variables of the local environment");
-  for (const [name, value] of assignments.filter(([name]) => SECRET_NAME.test(name))) {
+  for (const [name, value] of assignments.filter(
+    ([name]) => SECRET_NAME.test(name) && name !== DOCUMENTED_NAME,
+  )) {
     assert.ok(
       value === "__GENERATED__" || value === "",
       `${name} must be __GENERATED__ or empty in .env.example`,
@@ -33,6 +37,12 @@ test("env_example_has_no_secret_values", () => {
       `${name}=__GENERATED__ is missing`,
     );
   }
+});
+
+test("env_example_documents_the_seed_password", () => {
+  const entry = assignments.find(([name]) => name === DOCUMENTED_NAME);
+  assert.ok(entry, `${DOCUMENTED_NAME} is missing`);
+  assert.notEqual(entry[1], "", `${DOCUMENTED_NAME} must have a default value`);
 });
 
 test("env_is_git_ignored", () => {

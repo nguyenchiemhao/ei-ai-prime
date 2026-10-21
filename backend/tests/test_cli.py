@@ -18,7 +18,7 @@ def _set_env(monkeypatch: pytest.MonkeyPatch, environment: str) -> None:
         monkeypatch.setenv(name, value)
 
 
-def _must_not_load(env: object, manifest: DemoManifest) -> str:
+def _must_not_load(env: object, manifests: tuple[DemoManifest, ...]) -> str:
     raise AssertionError("the environment guard must run before settings or the database")
 
 
@@ -26,17 +26,20 @@ def test_seed_demo_prints_summary_and_exits_0(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     _set_env(monkeypatch, "local")
-    loaded: list[str] = []
+    loaded: list[list[str]] = []
 
-    def load(env: object, manifest: DemoManifest) -> str:
-        loaded.append(manifest.organization)
-        return "Demo seed: Mekong Devworks\n  Members: 6"
+    def load(env: object, manifests: tuple[DemoManifest, ...]) -> str:
+        loaded.append([manifest.organization for manifest in manifests])
+        return "Demo seed: Mekong Devworks\n  Members: 10\nDemo seed: Sông Hàn Retail\n  Members: 2"
 
     monkeypatch.setattr(cli, "load_demo_data", load)
 
     assert cli.main(["seed", "demo"]) == 0
-    assert "Members: 6" in capsys.readouterr().out
-    assert loaded == ["Mekong Devworks"]
+    captured = capsys.readouterr()
+    assert "Members: 10" in captured.out
+    assert "Demo seed: Sông Hàn Retail" in captured.out
+    assert captured.err == ""
+    assert loaded == [["Mekong Devworks", "Sông Hàn Retail"]]
 
 
 @pytest.mark.parametrize("admin_url", [None, ""])
@@ -75,7 +78,7 @@ def test_seed_demo_exits_1_when_database_is_unreachable_without_leaking_details(
 ) -> None:
     _set_env(monkeypatch, "local")
 
-    def unreachable(env: object, manifest: DemoManifest) -> str:
+    def unreachable(env: object, manifests: tuple[DemoManifest, ...]) -> str:
         raise ConnectionError(f"cannot reach {ENV['DATABASE_URL']}")
 
     monkeypatch.setattr(cli, "load_demo_data", unreachable)
@@ -92,7 +95,7 @@ def test_seed_demo_prints_a_provisioning_error(
     _set_env(monkeypatch, "local")
     message = 'an Organization named "Mekong Devworks" already exists with another id'
 
-    def taken(env: object, manifest: DemoManifest) -> str:
+    def taken(env: object, manifests: tuple[DemoManifest, ...]) -> str:
         raise ProvisioningError(message)
 
     monkeypatch.setattr(cli, "load_demo_data", taken)
@@ -110,16 +113,42 @@ def test_missing_settings_exit_1_and_name_the_variable(
     assert capsys.readouterr().err == "configuration error: DATABASE_URL is required\n"
 
 
-def test_invalid_admin_base_url_is_a_configuration_error_for_the_seed(
+@pytest.mark.parametrize(
+    ("value", "message"),
+    [
+        (None, "EI_AI_SEED_PASSWORD is required"),
+        ("", "EI_AI_SEED_PASSWORD is required"),
+        ("Q" * 129, "EI_AI_SEED_PASSWORD must be at most 128 characters"),
+    ],
+)
+def test_seed_password_problems_are_configuration_errors_without_the_value(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    value: str | None,
+    message: str,
+) -> None:
+    _set_env(monkeypatch, "local")
+    monkeypatch.delenv("EI_AI_SEED_PASSWORD", raising=False)
+    if value is not None:
+        monkeypatch.setenv("EI_AI_SEED_PASSWORD", value)
+
+    assert cli.main(["seed", "demo"]) == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == f"configuration error: {message}\n"
+    if value:
+        assert value not in captured.err
+
+
+def test_the_seed_no_longer_reads_the_admin_base_url(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     _set_env(monkeypatch, "local")
+    monkeypatch.delenv("EI_AI_SEED_PASSWORD", raising=False)
     monkeypatch.setenv("ADMIN_BASE_URL", "admin.example.com")
 
     assert cli.main(["seed", "demo"]) == 1
-    assert capsys.readouterr().err == (
-        "configuration error: ADMIN_BASE_URL must be an http or https URL\n"
-    )
+    assert capsys.readouterr().err == "configuration error: EI_AI_SEED_PASSWORD is required\n"
 
 
 def test_unknown_command_exits_2() -> None:

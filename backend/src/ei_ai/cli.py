@@ -44,7 +44,9 @@ def _seed() -> int:
     # is read, so a refused seed exits 2 whatever else is configured.
     environment = os.environ.get("EI_AI_ENV", "production")
     try:
-        summary = run_demo_seed(environment, lambda manifest: load_demo_data(os.environ, manifest))
+        summary = run_demo_seed(
+            environment, lambda manifests: load_demo_data(os.environ, manifests)
+        )
     except SeedRefused as error:
         print(f"refused: {error}", file=sys.stderr)
         return 2

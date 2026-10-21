@@ -12,6 +12,7 @@ import { expect, test } from "@playwright/test";
 import { adminUrl } from "../../scripts/lib/admin-url.mjs";
 
 const DEMO_ORG = "0192a000-0000-7000-8000-00000000ea21";
+const SONG_HAN_ORG = "0192a000-0000-7000-8000-00000000ea94";
 const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const SEED_REFUSED = "refused: the demo seed runs only in local or test environments";
 const LEAKS = /Key \(|Traceback|SELECT|INSERT|postgresql:\/\//;
@@ -69,9 +70,6 @@ const ADMIN = adminUrl(ROOT, process.env);
 const ADMIN_RE = escapeRegExp(ADMIN);
 const LINK_LINE = new RegExp(
   `^Set-password link \\(valid 24 h, shown once\\): ${ADMIN_RE}/set-password#token=(${UUID})\\.([A-Za-z0-9_-]{43})$`,
-);
-const SEED_LINK_LINE = new RegExp(
-  `^ {4}- (\\S+): ${ADMIN_RE}/set-password#token=(${UUID})\\.([A-Za-z0-9_-]{43})$`,
 );
 
 type Run = { status: number | null; stdout: string; stderr: string };
@@ -236,6 +234,15 @@ function eventSet(orgId: string): string[] {
 
 function demoCounts(): Counts {
   return counts(DEMO_ORG);
+}
+
+function songHanCounts(): Counts {
+  return counts(SONG_HAN_ORG);
+}
+
+/** Row count of one table of one Organization, as the superuser. */
+function orgTableCount(table: string, orgId: string): number {
+  return Number(sql(`select count(*) from ${table} where org_id = '${orgId}'`));
 }
 
 test.describe("EA-21 Platform Operator CLI and demo seed", () => {
@@ -800,27 +807,58 @@ test.describe("EA-21 Platform Operator CLI and demo seed", () => {
     const warmUp = seed();
     expect(warmUp.status, warmUp.stderr).toBe(0);
     const before = demoCounts();
+    const songHanBefore = songHanCounts();
     const auditTotal = counts().audit_events;
     expect(before).toMatchObject({
       organizations: 1,
+      workspaces: 2,
+      users: 10,
+      memberships: 10,
+      workspace_memberships: 11,
+    });
+    expect(songHanBefore).toMatchObject({
+      organizations: 1,
       workspaces: 1,
-      users: 6,
-      memberships: 6,
-      workspace_memberships: 6,
+      users: 2,
+      memberships: 2,
+      workspace_memberships: 2,
     });
     const roles = rows(
       `select role from workspace_memberships where org_id = '${DEMO_ORG}'`,
     ).sort();
     expect(roles).toEqual(
-      ["builder", "developer", "knowledge_editor", "reviewer", "viewer", "workspace_admin"].sort(),
+      [
+        "workspace_admin",
+        "workspace_admin",
+        "workspace_admin",
+        "workspace_admin",
+        "builder",
+        "developer",
+        "developer",
+        "knowledge_editor",
+        "knowledge_editor",
+        "reviewer",
+        "viewer",
+      ].sort(),
     );
     expect(
       rows(
         `select org_role from memberships where org_id = '${DEMO_ORG}' and org_role is not null`,
-      ),
-    ).toEqual(["org_admin"]);
+      ).sort(),
+    ).toEqual(["org_admin", "org_owner", "org_owner"]);
     expect(rows(`select display_name from users where org_id = '${DEMO_ORG}'`).sort()).toEqual(
-      ["Hà Vũ", "Linh Tran", "Minh Pham", "Quang Le", "Son Hoang", "Thao Nguyen"].sort(),
+      [
+        "Duy Lâm",
+        "Hà Vũ",
+        "Linh Tran",
+        "Minh Pham",
+        "Phúc Lương",
+        "Quang Le",
+        "Son Hoang",
+        "Thao Nguyen",
+        "Trung Võ",
+        "Vy Huỳnh",
+      ].sort(),
     );
 
     const first = seed();
@@ -829,88 +867,135 @@ test.describe("EA-21 Platform Operator CLI and demo seed", () => {
     expect(second.status, second.stderr).toBe(0);
     expect(second.stdout).toBe(first.stdout);
     expect(first.stdout).toContain("Demo seed: Mekong Devworks");
+    expect(first.stdout).toContain("Demo seed: Sông Hàn Retail");
     expect(first.stdout).toContain(`Organization: Mekong Devworks (${DEMO_ORG}): already present`);
-    expect(first.stdout).toMatch(
-      new RegExp(`Workspace: People Ops \\(${UUID}\\): already present`),
-    );
-    expect(first.stdout).toContain("Members: 6");
-    expect(first.stdout).toContain("Audit events written: 0");
     expect(first.stdout).toContain(
-      'Set-password links: none (no member was created; use "ei-ai user link" for a new link)',
+      `Organization: Sông Hàn Retail (${SONG_HAN_ORG}): already present`,
+    );
+    for (const workspace of ["People Ops", "Engineering", "Customer Care"]) {
+      expect(first.stdout).toMatch(
+        new RegExp(`Workspace: ${workspace} \\(${UUID}\\): already present`),
+      );
+    }
+    expect(first.stdout).toContain("Members: 10");
+    expect(first.stdout).toContain("Members: 2");
+    expect(first.stdout).toContain("Collections: 8 (created: 0)");
+    expect(first.stdout).toContain("Collections: 1 (created: 0)");
+    expect(first.stdout).toContain("Folders: 33 (created: 0)");
+    expect(first.stdout).toContain("Folders: 3 (created: 0)");
+    expect(first.stdout).toContain("Shared test password applied to 0 of 10 accounts");
+    expect(first.stdout).toContain("Shared test password applied to 0 of 1 accounts");
+    expect(lines(first.stdout).filter((line) => line === "  Audit events written: 0")).toHaveLength(
+      2,
     );
     expect(first.stdout).not.toContain(": created");
-    expect(first.stdout).not.toContain("#token=");
+    expect(first.stdout).not.toMatch(/set-password|#token=/i);
     expect(lines(first.stdout).filter((line) => line.endsWith(": already present"))).toHaveLength(
-      8,
+      17,
     );
 
     expect(demoCounts()).toEqual(before);
+    expect(songHanCounts()).toEqual(songHanBefore);
     expect(counts().audit_events).toBe(auditTotal);
     expect(sql("select count(*) from organizations where lower(name) = 'mekong devworks'")).toBe(
       "1",
     );
   });
 
-  test("AC3 TC-3-2: a fresh load creates everything once and prints one link per member", async () => {
+  test("AC3 TC-3-2: a fresh load creates everything once and issues no set-password link", async () => {
     const warmUp = seed();
     expect(warmUp.status, warmUp.stderr).toBe(0);
     purgeOrg(DEMO_ORG);
+    purgeOrg(SONG_HAN_ORG);
     expect(demoCounts().organizations).toBe(0);
+    expect(songHanCounts().organizations).toBe(0);
 
     const fresh = seed();
     expect(fresh.status, fresh.stderr).toBe(0);
     expect(fresh.stdout).toContain(`Organization: Mekong Devworks (${DEMO_ORG}): created`);
-    expect(fresh.stdout).toMatch(new RegExp(`Workspace: People Ops \\(${UUID}\\): created`));
-    expect(fresh.stdout).toContain("Members: 6");
-    expect(fresh.stdout).toContain("Audit events written: 14");
-    expect(lines(fresh.stdout).filter((line) => line.endsWith(": created"))).toHaveLength(8);
-    expect(fresh.stdout).toContain("Set-password links (valid 24 h, shown once):");
-
-    const links = lines(fresh.stdout)
-      .map((line) => SEED_LINK_LINE.exec(line))
-      .filter((match): match is RegExpExecArray => match !== null);
-    expect(links).toHaveLength(6);
-    expect(new Set(links.map((match) => match[1])).size).toBe(6);
-    expect(new Set(links.map((match) => match[3])).size).toBe(6);
-    for (const match of links) {
-      expect(match[2]).toBe(DEMO_ORG);
-      expect(
-        sql(
-          `select count(*) from set_password_tokens where org_id = '${DEMO_ORG}'
-           and used_at is null and token_hash = '${sha256Hex(match[3] as string)}'`,
-        ),
-      ).toBe("1");
+    expect(fresh.stdout).toContain(`Organization: Sông Hàn Retail (${SONG_HAN_ORG}): created`);
+    for (const workspace of ["People Ops", "Engineering", "Customer Care"]) {
+      expect(fresh.stdout).toMatch(new RegExp(`Workspace: ${workspace} \\(${UUID}\\): created`));
     }
+    expect(fresh.stdout).toContain("Members: 10");
+    expect(fresh.stdout).toContain("Members: 2");
+    expect(fresh.stdout).toContain("Collections: 8 (created: 8)");
+    expect(fresh.stdout).toContain("Folders: 33 (created: 33)");
+    expect(fresh.stdout).toContain("Collections: 1 (created: 1)");
+    expect(fresh.stdout).toContain("Folders: 3 (created: 3)");
+    expect(fresh.stdout).toContain("Shared test password applied to 10 of 10 accounts");
+    expect(fresh.stdout).toContain("Shared test password applied to 1 of 1 accounts");
+    expect(fresh.stdout).toContain("  Audit events written: 78");
+    expect(fresh.stdout).toContain("  Audit events written: 13");
+    expect(lines(fresh.stdout).filter((line) => line.endsWith(": created"))).toHaveLength(17);
+    expect(fresh.stdout).not.toMatch(/set-password|#token=/i);
 
-    // EA-32: the seed also creates six demo collections, each with a collection.created event.
+    // Every account gets the shared password, so no set-password token exists.
     const afterFirst = demoCounts();
     expect(afterFirst).toEqual({
-      audit_events: 14,
-      set_password_tokens: 6,
-      workspace_memberships: 6,
-      memberships: 6,
-      users: 6,
+      audit_events: 78,
+      set_password_tokens: 0,
+      workspace_memberships: 11,
+      memberships: 10,
+      users: 10,
+      workspaces: 2,
+      organizations: 1,
+    });
+    expect(songHanCounts()).toEqual({
+      audit_events: 13,
+      set_password_tokens: 0,
+      workspace_memberships: 2,
+      memberships: 2,
+      users: 2,
       workspaces: 1,
       organizations: 1,
     });
-    expect(
+    expect(orgTableCount("user_credentials", DEMO_ORG)).toBe(10);
+    expect(orgTableCount("user_credentials", SONG_HAN_ORG)).toBe(1);
+    expect(orgTableCount("collections", DEMO_ORG)).toBe(8);
+    expect(orgTableCount("folders", DEMO_ORG)).toBe(33);
+    expect(orgTableCount("collections", SONG_HAN_ORG)).toBe(1);
+    expect(orgTableCount("folders", SONG_HAN_ORG)).toBe(3);
+    const eventsOf = (orgId: string) =>
       rows(
-        `select action || '|' || count(*) from audit_events where org_id = '${DEMO_ORG}' group by action`,
-      ).sort(),
-    ).toEqual([
-      "collection.created|6",
-      "organization.created|1",
-      "user.invited|6",
-      "workspace.created|1",
-    ]);
-    expect(rows(`select distinct actor from audit_events where org_id = '${DEMO_ORG}'`)).toEqual([
-      "platform-operator",
-    ]);
+        `select action || '|' || count(*) from audit_events where org_id = '${orgId}' group by action`,
+      ).sort();
+    expect(eventsOf(DEMO_ORG)).toEqual(
+      [
+        "collection.created|8",
+        "folder.created|33",
+        "member.org_role_changed|3",
+        "member.workspace_role_changed|11",
+        "organization.created|1",
+        "user.invited|10",
+        "user.password_set|10",
+        "workspace.created|2",
+      ].sort(),
+    );
+    expect(eventsOf(SONG_HAN_ORG)).toEqual(
+      [
+        "collection.created|1",
+        "folder.created|3",
+        "member.org_role_changed|2",
+        "member.workspace_role_changed|2",
+        "organization.created|1",
+        "user.invited|2",
+        "user.password_set|1",
+        "workspace.created|1",
+      ].sort(),
+    );
+    for (const orgId of [DEMO_ORG, SONG_HAN_ORG]) {
+      expect(rows(`select distinct actor from audit_events where org_id = '${orgId}'`)).toEqual([
+        "platform-operator",
+      ]);
+    }
 
     // A second run changes nothing and issues no new token.
     const again = seed();
     expect(again.status, again.stderr).toBe(0);
-    expect(again.stdout).toContain("Audit events written: 0");
+    expect(lines(again.stdout).filter((line) => line === "  Audit events written: 0")).toHaveLength(
+      2,
+    );
     expect(again.stdout).not.toContain(": created");
     expect(demoCounts()).toEqual(afterFirst);
   });

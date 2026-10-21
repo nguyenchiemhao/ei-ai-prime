@@ -22,6 +22,7 @@ import {
 import { memoryWarning } from "./lib/memory-preflight.mjs";
 import { runMigrations } from "./lib/migrate.mjs";
 import { resetDatabase } from "./lib/reset.mjs";
+import { seedCommand, seedPassword } from "./lib/seed-password.mjs";
 
 /** The URLs printed after a successful start (the admin port follows ADMIN_PORT, as in compose.yaml). */
 function serviceUrls() {
@@ -168,6 +169,13 @@ function reset() {
   process.exit(code);
 }
 
+// Runs the demo seed with the shared password in the environment (shell value first, as Compose does).
+function runSeed() {
+  const value = process.env.EI_AI_SEED_PASSWORD || seedPassword(ROOT);
+  const env = value ? { ...process.env, EI_AI_SEED_PASSWORD: value } : process.env;
+  return compose([...ALL_PROFILE_ARGS, ...seedCommand()], { env }).code;
+}
+
 const [command, ...rest] = process.argv.slice(2);
 switch (command) {
   case "up":
@@ -183,7 +191,7 @@ switch (command) {
     migrate();
     break;
   case "seed":
-    process.exit(compose([...ALL_PROFILE_ARGS, "exec", "-T", "api", "ei-ai", "seed", "demo"]).code);
+    process.exit(runSeed());
     break;
   case "ps":
     process.exit(compose([...ALL_PROFILE_ARGS, "ps", "--all"]).code);

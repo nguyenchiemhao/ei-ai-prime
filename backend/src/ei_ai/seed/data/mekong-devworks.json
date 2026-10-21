@@ -1,73 +1,269 @@
 {
-  "version": 2,
+  "version": 3,
   "organization_id": "0192a000-0000-7000-8000-00000000ea21",
   "organization": "Mekong Devworks",
-  "workspace": "People Ops",
+  "workspaces": [
+    {
+      "name": "People Ops",
+      "collections": [
+        {
+          "name": "Company & Careers",
+          "access_level": "public",
+          "local_only": false,
+          "folders": [
+            {
+              "name": "About Mekong Devworks"
+            },
+            {
+              "name": "Hiring process"
+            },
+            {
+              "name": "Candidate FAQ"
+            }
+          ]
+        },
+        {
+          "name": "Employee Handbook",
+          "access_level": "authenticated",
+          "local_only": false,
+          "folders": [
+            {
+              "name": "Policies",
+              "folders": [
+                {
+                  "name": "Leave & time off"
+                },
+                {
+                  "name": "Working hours & overtime"
+                },
+                {
+                  "name": "Remote work & business travel"
+                }
+              ]
+            },
+            {
+              "name": "Benefits",
+              "folders": [
+                {
+                  "name": "Allowances"
+                },
+                {
+                  "name": "Insurance & health care"
+                }
+              ]
+            },
+            {
+              "name": "Onboarding & offboarding",
+              "folders": [
+                {
+                  "name": "First week"
+                },
+                {
+                  "name": "Leaving the company"
+                }
+              ]
+            },
+            {
+              "name": "Templates",
+              "folders": [
+                {
+                  "name": "HR forms"
+                },
+                {
+                  "name": "Contracts",
+                  "folders": [
+                    {
+                      "name": "Labor contracts"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Engineering Standards",
+          "access_level": "authenticated",
+          "local_only": false,
+          "folders": [
+            {
+              "name": "Coding conventions"
+            },
+            {
+              "name": "Code review"
+            },
+            {
+              "name": "Definition of Done"
+            }
+          ]
+        },
+        {
+          "name": "IT & Security",
+          "access_level": "authenticated",
+          "local_only": false,
+          "folders": [
+            {
+              "name": "Accounts & access"
+            },
+            {
+              "name": "Devices & equipment"
+            },
+            {
+              "name": "Security policies"
+            }
+          ]
+        },
+        {
+          "name": "Manager Handbook",
+          "access_level": "restricted",
+          "groups": [
+            "managers"
+          ],
+          "local_only": true,
+          "folders": [
+            {
+              "name": "Performance reviews"
+            },
+            {
+              "name": "Hiring & approvals"
+            }
+          ]
+        },
+        {
+          "name": "Project Falcon",
+          "subtitle": "Client: Japan · under NDA",
+          "access_level": "restricted",
+          "groups": [
+            "project-falcon"
+          ],
+          "local_only": true,
+          "folders": [
+            {
+              "name": "Requirements"
+            },
+            {
+              "name": "Meeting notes"
+            },
+            {
+              "name": "Delivery"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Engineering",
+      "collections": [
+        {
+          "name": "Architecture Decisions",
+          "access_level": "authenticated",
+          "local_only": false,
+          "folders": [
+            {
+              "name": "Accepted"
+            },
+            {
+              "name": "Superseded"
+            }
+          ]
+        },
+        {
+          "name": "Runbooks",
+          "access_level": "restricted",
+          "groups": [
+            "on-call"
+          ],
+          "local_only": true,
+          "folders": [
+            {
+              "name": "Incidents",
+              "folders": [
+                {
+                  "name": "Postmortems"
+                }
+              ]
+            },
+            {
+              "name": "Deployments"
+            }
+          ]
+        }
+      ]
+    }
+  ],
   "members": [
     {
       "name": "Linh Tran",
       "email": "linh.tran@mekongdevworks.example",
-      "roles": ["org_admin", "workspace_admin"]
+      "org_role": "org_admin",
+      "workspaces": {
+        "People Ops": "workspace_admin"
+      }
     },
     {
       "name": "Minh Pham",
       "email": "minh.pham@mekongdevworks.example",
-      "roles": ["builder"]
+      "workspaces": {
+        "People Ops": "builder"
+      }
     },
     {
       "name": "Thao Nguyen",
       "email": "thao.nguyen@mekongdevworks.example",
-      "roles": ["knowledge_editor"]
+      "workspaces": {
+        "People Ops": "knowledge_editor"
+      }
     },
     {
       "name": "Quang Le",
       "email": "quang.le@mekongdevworks.example",
-      "roles": ["developer"]
+      "workspaces": {
+        "People Ops": "developer",
+        "Engineering": "workspace_admin"
+      }
     },
     {
       "name": "Hà Vũ",
       "email": "ha.vu@mekongdevworks.example",
-      "roles": ["reviewer"]
+      "workspaces": {
+        "People Ops": "reviewer"
+      }
     },
     {
       "name": "Son Hoang",
       "email": "son.hoang@mekongdevworks.example",
-      "roles": ["viewer"]
-    }
-  ],
-  "collections": [
-    {
-      "name": "Company & Careers",
-      "access_level": "public",
-      "local_only": false
+      "workspaces": {
+        "People Ops": "viewer"
+      }
     },
     {
-      "name": "Employee Handbook",
-      "access_level": "authenticated",
-      "local_only": false
+      "name": "Duy Lâm",
+      "email": "duy.lam@mekongdevworks.example",
+      "org_role": "org_owner",
+      "workspaces": {}
     },
     {
-      "name": "Engineering Standards",
-      "access_level": "authenticated",
-      "local_only": false
+      "name": "Vy Huỳnh",
+      "email": "vy.huynh@mekongdevworks.example",
+      "workspaces": {
+        "Engineering": "developer"
+      }
     },
     {
-      "name": "IT & Security",
-      "access_level": "authenticated",
-      "local_only": false
+      "name": "Phúc Lương",
+      "email": "phuc.luong@mekongdevworks.example",
+      "workspaces": {
+        "Engineering": "knowledge_editor"
+      }
     },
     {
-      "name": "Manager Handbook",
-      "access_level": "restricted",
-      "groups": ["managers"],
-      "local_only": true
-    },
-    {
-      "name": "Project Falcon",
-      "subtitle": "Client: Japan · under NDA",
-      "access_level": "restricted",
-      "groups": ["project-falcon"],
-      "local_only": true
+      "name": "Trung Võ",
+      "email": "sysadmin@mekongdevworks.example",
+      "org_role": "org_owner",
+      "workspaces": {
+        "People Ops": "workspace_admin",
+        "Engineering": "workspace_admin"
+      }
     }
   ]
 }
