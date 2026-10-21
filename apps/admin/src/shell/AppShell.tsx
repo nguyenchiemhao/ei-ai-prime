@@ -5,7 +5,9 @@ import { type ApiResult } from "../api/client";
 import { getWorkspace, type WorkspaceInfo } from "../api/workspaces";
 import { useSession } from "../auth/SessionProvider";
 import { AreaPage } from "../pages/AreaPage";
+import { CollectionDetailPage } from "../pages/CollectionDetailPage";
 import { ForbiddenPage } from "../pages/ForbiddenPage";
+import { KnowledgePage } from "../pages/KnowledgePage";
 import { MembersPage } from "../pages/MembersPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { findArea, visibleAreas } from "./navigation";
@@ -29,7 +31,7 @@ interface Answer {
 export function AppShell() {
   const { t } = useTranslation();
   const { refresh: refreshSession } = useSession();
-  const { workspaceId = "", area } = useParams();
+  const { workspaceId = "", area, itemId } = useParams();
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [version, setVersion] = useState(0);
   const refresh = useCallback(() => setVersion((current) => current + 1), []);
@@ -65,6 +67,8 @@ export function AppShell() {
   }
   const shown = findArea(current.area);
   if (!shown || !context) return <NotFoundPage />;
+  // Only the Knowledge area has item pages (a collection); any other area + item is not found.
+  if (itemId !== undefined && shown.slug !== "knowledge") return <NotFoundPage />;
   const allowed = visibleAreas(context.access.permissions).includes(shown);
   return (
     <WorkspaceAccessContext.Provider value={context}>
@@ -72,6 +76,12 @@ export function AppShell() {
         <Sidebar workspace={context.access} area={shown.slug} />
         {!allowed ? (
           <ForbiddenPage />
+        ) : shown.slug === "knowledge" ? (
+          itemId === undefined ? (
+            <KnowledgePage />
+          ) : (
+            <CollectionDetailPage />
+          )
         ) : shown.slug === "members" ? (
           <MembersPage />
         ) : (

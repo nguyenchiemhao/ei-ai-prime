@@ -24,5 +24,35 @@ ROUTE_PERMISSIONS: dict[tuple[str, str], str] = {
     ("POST", "/workspaces/{workspace_id}/members"): Permission.MEMBERS_MANAGE.value,
     ("PUT", "/workspaces/{workspace_id}/members/{user_id}"): Permission.MEMBERS_MANAGE.value,
     ("DELETE", "/workspaces/{workspace_id}/members/{user_id}"): Permission.MEMBERS_MANAGE.value,
+    ("GET", "/workspaces/{workspace_id}/collections"): Permission.KNOWLEDGE_MANAGE.value,
+    ("POST", "/workspaces/{workspace_id}/collections"): Permission.KNOWLEDGE_MANAGE.value,
+    (
+        "GET",
+        "/workspaces/{workspace_id}/collections/{collection_id}",
+    ): Permission.KNOWLEDGE_MANAGE.value,
+    (
+        "PATCH",
+        "/workspaces/{workspace_id}/collections/{collection_id}",
+    ): Permission.KNOWLEDGE_MANAGE.value,
+    (
+        "PUT",
+        "/workspaces/{workspace_id}/collections/{collection_id}/access",
+    ): Permission.COLLECTIONS_ACCESS_MANAGE.value,
+    (
+        "DELETE",
+        "/workspaces/{workspace_id}/collections/{collection_id}",
+    ): Permission.KNOWLEDGE_MANAGE.value,
+    (
+        "POST",
+        "/workspaces/{workspace_id}/collections/{collection_id}/folders",
+    ): Permission.KNOWLEDGE_MANAGE.value,
+    (
+        "PATCH",
+        "/workspaces/{workspace_id}/collections/{collection_id}/folders/{folder_id}",
+    ): Permission.KNOWLEDGE_MANAGE.value,
+    (
+        "DELETE",
+        "/workspaces/{workspace_id}/collections/{collection_id}/folders/{folder_id}",
+    ): Permission.KNOWLEDGE_MANAGE.value,
     ("PUT", "/organization/members/{user_id}/org-role"): Permission.ORG_ROLES_MANAGE.value,
 }

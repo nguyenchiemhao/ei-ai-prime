@@ -23,7 +23,17 @@ MEMBER_ORG_ROLE_CHANGED = "member.org_role_changed"
 MODEL_CATALOG_ENTRY_ADDED = "model.catalog_entry_added"
 MODEL_CLOUD_CALL_BLOCKED = "model.cloud_call_blocked"
 
-TargetType = Literal["organization", "workspace", "user", "model"]
+COLLECTION_CREATED = "collection.created"
+COLLECTION_UPDATED = "collection.updated"
+COLLECTION_ACCESS_CHANGED = "collection.access_changed"
+COLLECTION_GROUPS_CHANGED = "collection.groups_changed"
+COLLECTION_LOCAL_ONLY_CHANGED = "collection.local_only_changed"
+COLLECTION_DELETED = "collection.deleted"
+FOLDER_CREATED = "folder.created"
+FOLDER_RENAMED = "folder.renamed"
+FOLDER_DELETED = "folder.deleted"
+
+TargetType = Literal["organization", "workspace", "user", "model", "collection", "folder"]
 
 
 def user_actor(user_id: uuid.UUID) -> str:

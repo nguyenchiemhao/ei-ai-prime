@@ -90,7 +90,7 @@ The service layer checks the permission again (`ensure`) before it changes data.
 
 ## How the sensitive rules are proven today (R1)
 
-Most endpoints behind the sensitive permissions do not exist yet (conversations, connector secrets, signing keys, publish, collection access). Until they land, the matrix tests pin who holds the four permissions, test-only probe routes carry those permissions through the generated role x endpoint test, and the reviewed route table forces each future route to declare its permission, so it is tested the day it is added.
+Most endpoints behind the sensitive permissions do not exist yet (conversations, connector secrets, signing keys, publish). The collection access route exists (`PUT /workspaces/{workspace_id}/collections/{collection_id}/access`, `collections.access.manage`, EA-32): it is in the reviewed route table and runs in the generated role x endpoint test. Until the others land, the matrix tests pin who holds the four permissions, test-only probe routes carry those permissions through the generated role x endpoint test, and the reviewed route table forces each future route to declare its permission, so it is tested the day it is added.
 
 ## Decisions
 

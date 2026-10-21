@@ -15,6 +15,8 @@ from ei_ai.db.tenant import tenant_transaction
 
 # Every table of the schema, children first (the order in which fixture rows can be deleted).
 DELETE_ORDER = (
+    "folders",
+    "collections",
     "admin_sessions",
     "user_credentials",
     "audit_events",
@@ -70,6 +72,8 @@ class OrgRows:
     user_credential_id: uuid.UUID
     admin_session_id: uuid.UUID
     model_catalog_entry_id: uuid.UUID
+    collection_id: uuid.UUID
+    folder_id: uuid.UUID
     # The digest of the fixture model row: random, so each Organization has its own.
     model_digest: str
     label: str
@@ -91,6 +95,8 @@ class OrgRows:
             "user_credentials": self.user_credential_id,
             "admin_sessions": self.admin_session_id,
             "model_catalog": self.model_catalog_entry_id,
+            "collections": self.collection_id,
+            "folders": self.folder_id,
         }[table]
 
     @property
@@ -123,6 +129,8 @@ UPDATE_SETS = {
     "user_credentials": ("failed_attempts", 3),
     "admin_sessions": ("token_hash", "0" * 64),
     "model_catalog": ("display_name", "renamed-by-intruder"),
+    "collections": ("name", "renamed-by-intruder"),
+    "folders": ("name", "renamed-by-intruder"),
 }
 
 
@@ -138,6 +146,8 @@ async def create_org_rows(engine: AsyncEngine, label: str) -> OrgRows:
         user_credential_id=uuid.uuid4(),
         admin_session_id=uuid.uuid4(),
         model_catalog_entry_id=uuid.uuid4(),
+        collection_id=uuid.uuid4(),
+        folder_id=uuid.uuid4(),
         model_digest=f"sha256:{secrets.token_hex(32)}",
         label=label,
         suffix=uuid.uuid4().hex[:8],
@@ -238,6 +248,30 @@ async def create_org_rows(engine: AsyncEngine, label: str) -> OrgRows:
                 "model_id": FIXTURE_MODEL_ID,
                 "version": FIXTURE_MODEL_VERSION,
                 "digest": rows.model_digest,
+            },
+        )
+        await conn.execute(
+            text(
+                "INSERT INTO collections (id, org_id, workspace_id, name, access_level)"
+                " VALUES (:id, :org, :ws, :name, 'authenticated')"
+            ),
+            {
+                "id": rows.collection_id,
+                "org": rows.org_id,
+                "ws": rows.workspace_id,
+                "name": f"Collection {label} {rows.suffix}",
+            },
+        )
+        await conn.execute(
+            text(
+                "INSERT INTO folders (id, org_id, collection_id, name, depth)"
+                " VALUES (:id, :org, :collection, :name, 1)"
+            ),
+            {
+                "id": rows.folder_id,
+                "org": rows.org_id,
+                "collection": rows.collection_id,
+                "name": f"Folder {label} {rows.suffix}",
             },
         )
     return rows

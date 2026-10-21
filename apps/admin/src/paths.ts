@@ -7,6 +7,7 @@ export const PATHS = {
   reset: "/reset",
   noWorkspace: "/no-workspace",
   workspaceArea: "/w/:workspaceId/:area",
+  workspaceItem: "/w/:workspaceId/:area/:itemId",
   notFound: "*",
 } as const;
 

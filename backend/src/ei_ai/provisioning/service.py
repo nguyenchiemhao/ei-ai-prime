@@ -25,6 +25,7 @@ from ei_ai.audit.events import (
     record_role_change,
 )
 from ei_ai.auth.set_password import issue_token
+from ei_ai.db.constraints import violated_constraint
 from ei_ai.db.tenant import tenant_transaction
 from ei_ai.members.rows import find_user_id, insert_member, insert_workspace_member
 from ei_ai.provisioning.rows import (
@@ -87,16 +88,9 @@ class AddedMember:
     role: str
 
 
-def _violated_constraint(error: IntegrityError) -> str | None:
-    """Name of the constraint a database error violated, if the driver reports one."""
-    diag = getattr(error.orig, "diag", None)
-    name: str | None = getattr(diag, "constraint_name", None)
-    return name
-
-
 def raise_if_violated(error: IntegrityError, constraint: str, message: str) -> None:
     """Raise ``ProvisioningError(message)`` when ``error`` violated ``constraint``."""
-    if _violated_constraint(error) == constraint:
+    if violated_constraint(error) == constraint:
         # "from None": the original error text holds the conflicting key values.
         raise ProvisioningError(message) from None
 

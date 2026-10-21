@@ -62,3 +62,8 @@ export function visibleAreas(permissions: readonly string[]): Area[] {
 export function areaPath(workspaceId: string, slug: AreaSlug): string {
   return `/w/${workspaceId}/${slug}`;
 }
+
+/** The path of the detail page of one collection. */
+export function collectionPath(workspaceId: string, collectionId: string): string {
+  return `${areaPath(workspaceId, "knowledge")}/${collectionId}`;
+}

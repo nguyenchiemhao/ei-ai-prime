@@ -106,6 +106,123 @@
         "alreadyMember": "Người này đã là thành viên của workspace này."
       }
     },
+    "knowledge": {
+      "title": "Kiến thức",
+      "subtitle": "Bộ sưu tập chứa tài liệu của bạn. Quyền truy cập được đặt theo từng bộ sưu tập và được kiểm tra trước khi bất cứ nội dung nào đến mô hình.",
+      "new": "Bộ sưu tập mới",
+      "search": "Tìm bộ sưu tập",
+      "noMatch": "Không có bộ sưu tập nào khớp với tìm kiếm.",
+      "tableLabel": "Bộ sưu tập",
+      "footnote": "Chỉ Quản trị workspace mới đổi được ai được đọc một bộ sưu tập. Đặt bộ sưu tập là Công khai sẽ yêu cầu xác nhận và được ghi trong nhật ký kiểm toán.",
+      "empty": {
+        "title": "Chưa có bộ sưu tập nào",
+        "text": "Tạo một bộ sưu tập để bắt đầu thêm tài liệu."
+      },
+      "access": {
+        "public": "Công khai",
+        "authenticated": "Đã đăng nhập",
+        "restricted": "Hạn chế"
+      },
+      "legend": {
+        "public": "Bất kỳ ai, kể cả khách ẩn danh.",
+        "authenticated": "Mọi người dùng đã đăng nhập vào ứng dụng của bạn.",
+        "restricted": "Chỉ những người thuộc một trong các nhóm được liệt kê (từ token của widget hoặc Thành viên & vai trò)."
+      },
+      "column": {
+        "collection": "Bộ sưu tập",
+        "access": "Ai được đọc",
+        "dataHandling": "Xử lý dữ liệu",
+        "documents": "Tài liệu",
+        "status": "Trạng thái",
+        "usedBy": "Được dùng bởi"
+      },
+      "dataHandling": {
+        "any": "Mọi mô hình được phép",
+        "local": "Chỉ mô hình cục bộ"
+      },
+      "status": {
+        "none": "Chưa có tài liệu",
+        "ready": "Tất cả đã sẵn sàng",
+        "processing": "{{count}} đang xử lý",
+        "needsAttention": "{{count}} cần chú ý"
+      },
+      "usedBy": {
+        "none": "Chưa được dùng"
+      },
+      "error": {
+        "forbidden": "Bạn không có quyền thực hiện thao tác này.",
+        "nameTaken": {
+          "collection": "Đã có bộ sưu tập với tên này.",
+          "folder": "Đã có thư mục với tên này ở đây."
+        },
+        "folderNotEmpty": "Hãy xóa các thư mục con trước.",
+        "folderTooDeep": "Thư mục chỉ lồng được tối đa 3 cấp.",
+        "groupsRequired": "Cần ít nhất một nhóm",
+        "invalidGroup": "Tên nhóm dài 1–64 ký tự, không chứa dấu phẩy; tối đa 20 nhóm.",
+        "generic": "Đã xảy ra lỗi. Hãy thử lại."
+      },
+      "dialog": {
+        "createTitle": "Bộ sưu tập mới",
+        "editTitle": "Quyền truy cập & cài đặt",
+        "name": "Tên",
+        "subtitle": "Phụ đề (không bắt buộc)",
+        "access": "Ai được đọc",
+        "groups": "Nhóm",
+        "groupsHelp": "Phân tách các nhóm bằng dấu phẩy. Người dùng khớp khi token của widget hoặc Thành viên & vai trò liệt kê một trong các nhóm này.",
+        "localOnly": "Chỉ dùng mô hình cục bộ",
+        "localOnlyHelp": "Chỉ mô hình cục bộ mới được trả lời từ bộ sưu tập này; không thể gắn nó vào trợ lý dùng mô hình đám mây.",
+        "create": "Tạo bộ sưu tập",
+        "save": "Lưu",
+        "cancel": "Hủy",
+        "accessLocked": "Chỉ Quản trị workspace mới đổi được ai được đọc một bộ sưu tập."
+      },
+      "confirmPublic": {
+        "title": "Đặt bộ sưu tập này là Công khai?",
+        "text": "Bất kỳ ai, kể cả khách ẩn danh, đều có thể nhận câu trả lời từ tài liệu của bộ sưu tập. Thay đổi này được ghi trong nhật ký kiểm toán.",
+        "confirm": "Đặt công khai",
+        "cancel": "Hủy"
+      },
+      "message": {
+        "created": "Đã tạo {{name}}.",
+        "saved": "Đã lưu thay đổi.",
+        "deleted": "Đã xóa {{name}}."
+      },
+      "detail": {
+        "breadcrumbLabel": "Đường dẫn",
+        "settings": "Quyền truy cập & cài đặt",
+        "foldersLabel": "Thư mục",
+        "newFolder": "Thư mục mới",
+        "noFolders": "Chưa có thư mục nào.",
+        "addSubfolder": "Thêm thư mục con vào {{name}}",
+        "rename": "Đổi tên {{name}}",
+        "delete": "Xóa {{name}}",
+        "documentsTitle": "Tài liệu",
+        "documentsEmpty": "Chưa có tài liệu nào."
+      },
+      "folderDialog": {
+        "createTitle": "Thư mục mới",
+        "renameTitle": "Đổi tên thư mục",
+        "name": "Tên thư mục",
+        "create": "Tạo thư mục",
+        "save": "Lưu",
+        "cancel": "Hủy"
+      },
+      "folderDelete": {
+        "title": "Xóa thư mục?",
+        "text": "Thư mục {{name}} sẽ bị xóa.",
+        "confirm": "Xóa thư mục",
+        "cancel": "Hủy"
+      },
+      "deleteCollection": {
+        "label": "Xóa bộ sưu tập",
+        "consequence": "Xóa bộ sưu tập, các thư mục của nó và mọi nội dung đã được lập chỉ mục từ đó. Không thể hoàn tác.",
+        "button": "Xóa bộ sưu tập",
+        "title": "Xóa {{name}}?",
+        "input": "Nhập {{name}} để xác nhận",
+        "confirm": "Xóa bộ sưu tập",
+        "cancel": "Hủy"
+      }
+    },
     "forbidden": {
       "title": "Không có quyền truy cập",
       "text": "Vai trò của bạn trong workspace này không bao gồm trang này. Hãy nhờ quản trị viên workspace nếu bạn cần."

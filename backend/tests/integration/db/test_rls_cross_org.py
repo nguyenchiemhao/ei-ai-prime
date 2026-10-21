@@ -56,6 +56,14 @@ FORGED_INSERTS = {
         f" VALUES (:other_org, 'chat', 'forged', 'forged', 'v1', 'sha256:{'d' * 64}', 'local',"
         " 'local-chat')"
     ),
+    "collections": (
+        "INSERT INTO collections (org_id, workspace_id, name, access_level)"
+        " VALUES (:other_org, :other_ws, 'forged', 'authenticated')"
+    ),
+    "folders": (
+        "INSERT INTO folders (org_id, collection_id, name, depth)"
+        " VALUES (:other_org, :other_collection, 'forged', 1)"
+    ),
 }
 
 
@@ -138,6 +146,7 @@ async def test_insert_for_other_org_is_rejected_42501(
     params = {
         "other_org": two_orgs.b.org_id,
         "other_ws": two_orgs.b.workspace_id,
+        "other_collection": two_orgs.b.collection_id,
         "own_user": two_orgs.a.user_id,
     }
     params = {k: v for k, v in params.items() if f":{k}" in sql}

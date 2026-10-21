@@ -14,3 +14,4 @@ Test data rule: every case creates its own data with a unique marker (`qa-EA<n>-
 
 | Ticket | Area | File | Spec | Scripts |
 |---|---|---|---|---|
+| EA-32 | knowledge | [knowledge/EA-32-collections-folders.md](knowledge/EA-32-collections-folders.md) | `e2e/knowledge/EA-32-collections.spec.ts`, `e2e/knowledge/EA-32-collections-perf.spec.ts` | `e2e/knowledge/scripts/EA-32-collections-explore-data.mjs` |
