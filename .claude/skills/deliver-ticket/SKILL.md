@@ -1,7 +1,7 @@
 ---
 name: deliver-ticket
-description: Lead of the ei-ai superpowers-based flow. Delivers one Jira EA ticket — feature, bug fix or chore — autonomously — designer (autonomous brainstorming or debugging, plan, test contract), per-task implementers and reviewers (superpowers subagent-driven development), black-box QA in parallel, final review, verification, 1–2 commits, Jira update. Asks the owner only BLOCKING questions. Run as /deliver-ticket [EA-<n>] [--auto-commit] [--merge] [--push].
-argument-hint: "[EA-<n>] [--auto-commit] [--merge] [--push]"
+description: Lead of the ei-ai superpowers-based flow. Delivers one Jira EA ticket — feature, bug fix or chore — autonomously — designer (autonomous brainstorming or debugging, plan, test contract), per-task implementers and reviewers (superpowers subagent-driven development), black-box QA in parallel, final review, verification, 1–2 commits, Jira update. Asks the owner only BLOCKING questions. Run as /deliver-ticket [EA-<n>] [--auto] [--auto-commit] [--merge] [--push].
+argument-hint: "[EA-<n>] [--auto] [--auto-commit] [--merge] [--push]"
 disable-model-invocation: true
 ---
 
@@ -17,7 +17,8 @@ Design: `docs/superpowers/specs/2026-10-20-deliver-ticket-design.md`. This flow 
 - `--auto-commit` — commit without the owner's approval when verification passes (this is `git-commit`'s auto mode).
 - `--merge` — push the ticket branch for its CI run and, once green, merge into the base branch (step 6). `--merge` is the owner's request to push the ticket branch; the base stays local.
 - `--push` — also push the base branch after the merge. Without either, keep the branch local.
-- The owner may write these in words (e.g. "merge và push" = `--merge --push`).
+- `--auto` — the whole run without stops: `--auto-commit --merge --push`. Owner decision 2026-10-21. The owner still gets every BLOCKING question, a ticket from another epic, a merge conflict and a red CI after its fix round; nothing else waits for approval.
+- The owner may write these in words (e.g. "merge và push" = `--merge --push`, "auto" or "auto mode" = `--auto`).
 
 ## Owner overrides of superpowers
 
