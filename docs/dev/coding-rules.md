@@ -56,6 +56,8 @@ Used by the Developer and Code Reviewer agents and by humans. The short, non-neg
 - Playwright Test (`@playwright/test`), specs in `e2e/<area>/<ticket-key>-<slug>.spec.ts`.
 - Selectors: `getByRole` / `getByLabel` / `getByTestId` — no CSS/XPath tied to layout.
 - One spec file per ticket; one `test()` per Acceptance Criterion, titled `AC<n>: <criterion>`.
+- Test data hygiene: specs and scripts share the local database with every other check, so each one creates its own data with a unique marker (`qa-EA<n>-<run>`), never changes the demo Organization or seed rows (or restores them exactly), and deletes what it created in teardown. QA proves it with SQL (row counts before = after, no row with the marker) before it reports.
+- Reusable cases: QA saves each ticket's cases as readable steps in `docs/qa/<area>/EA-<n>-<slug>.md` (index: `docs/qa/README.md`) and the scripts it used beyond the specs in `e2e/<area>/scripts/EA-<n>-<slug>-<purpose>.mjs`; both are committed with the ticket.
 
 ## 3. Commands
 

@@ -1,7 +1,7 @@
 ---
 name: developer
 description: Implements one EA ticket from its approved plan (.work/EA-<n>/plan.md) on the current ticket branch, test-first with unit and integration tests, following the project coding rules and the plan's test contract; also fixes the bugs and findings from QA reports, code reviews and the Lead's review. Used by the /ship-ticket pipeline. Does not write E2E specs (QA owns them).
-tools: Read, Edit, Write, Bash, PowerShell, Grep, Glob, Skill, WebFetch, WebSearch, mcp__claude_ai_Atlassian__getJiraIssue
+tools: Read, Edit, Write, Bash, PowerShell, Grep, Glob, Skill, WebFetch, WebSearch
 model: sonnet
 effort: high
 color: green

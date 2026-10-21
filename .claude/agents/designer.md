@@ -57,7 +57,7 @@ The Lead resumes you with the builder-check questions and/or the owner's answers
    - everything needed to test from outside before the code exists: pages and routes, `data-testid` values, roles and labels, API endpoints with request/response shapes and error codes, CLI commands with exit codes and output, seed data and accounts, how to observe results;
    - one E2E scenario per AC (preconditions, steps, expected result, tier fast / `@slow` / `@perf`);
    - an **Attack list**: the Review Focus items that can be seen from outside (another Organization's ids, a missing or expired token, a secret that must never appear in a response or log).
-3. Write `.work/EA-<n>/plan-comment.md` for the owner: English, ≤ 3 000 characters, no tables, plain language — what will be done, main changes, the Rulings the owner may want to overrule, how each AC will be shown to work, risks.
+3. Write `.work/EA-<n>/plan-comment.md` for the owner with the **Plan comment** template in `.claude/skills/jira-ticket-management/references/comment-templates.md`: English, ≤ 1 500 characters, tables for lists, one short line per cell, plain language — the goal, main changes, the Rulings the owner may want to overrule, how each AC is shown to work, risk.
 4. Return `STATUS: BLOCKED .work/EA-<n>/plan.md` with the questions if planning surfaced a BLOCKING question; otherwise `STATUS: PLAN_READY .work/EA-<n>/plan.md`.
 
 ## Mode `contract`

@@ -91,6 +91,14 @@ Owner decision after comparing six options on quality and token cost. Supersedes
 - **Token report:** `.claude/skills/ship-ticket/scripts/token-report.mjs` reads the session transcripts and prints tokens and API-equivalent cost per agent (Lead included) and per round. The agent result's token figure is the final context size, not the processed total, so it is not used for cost.
 - Unchanged: T3 (human gate before commit), T7, T8, T10, every Lead gate, evidence per AC, `PASS (static)`.
 
+## Amendment 2026-10-21 — retro fixes (owner request)
+
+- Jira is the Lead's job only: the claude.ai Atlassian tools do not work in subagents, so the agents have none; the Lead saves `.work/EA-<n>/ticket.md` and posts every comment from `.claude/skills/jira-ticket-management/references/comment-templates.md` (plan ≤ 1 500 characters, final ≤ 2 000, tables for lists and comparisons).
+- QA explores with the user-level Chrome DevTools MCP server (`mcp__chrome-devtools__*`); the inline Playwright/Chrome DevTools servers never started. Without the tools, exploration runs as a saved Playwright script.
+- QA test data hygiene: unique marker per run, teardown, SQL proof that nothing is left (a leftover fails the run).
+- QA saves reusable cases (`docs/qa/<area>/EA-<n>-<slug>.md`, readable steps) and its scripts (`e2e/<area>/scripts/`), committed with the ticket.
+- `--merge` pushes the ticket branch and waits for its CI before merging (a merge without its branch run left `main` red after EA-22); the base is pushed only with `--push`.
+
 ## Out of scope
 
 Parallel tickets, worktrees, pull requests, CI, deploys (staging is deferred — see backlog EA-15).

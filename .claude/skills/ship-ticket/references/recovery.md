@@ -14,7 +14,7 @@ Stop the pipeline, keep the working tree as is, and tell the owner: where it sto
 
 ## Blocked rule
 
-When a ticket cannot move because of something the team cannot decide or fix (an environment problem, a missing account or key, an owner decision with no safe default), transition it to *Blocked* and add a comment with:
+When a ticket cannot move because of something the team cannot decide or fix (an environment problem, a missing account or key, an owner decision with no safe default), transition it to *Blocked* and post the **Blocked comment** of `.claude/skills/jira-ticket-management/references/comment-templates.md` (a facts table and an owner-action table) with:
 
 - **Reason** — what cannot proceed and which AC are affected;
 - **Root cause** — verified now, with the command output or source;

@@ -12,7 +12,7 @@ Embeddable enterprise AI assistant. Product decisions D1–D66: `docs/workshop/`
 - One ticket at a time through `/ship-ticket` (agent team: `.claude/agents/`, design in `docs/superpowers/specs/2026-10-13-dev-agent-team-design.md`). Trial: `/deliver-ticket`, the superpowers-based flow (design in `docs/superpowers/specs/2026-10-20-deliver-ticket-design.md`).
 - Git through the `git-commit` skill, Jira through the `jira-ticket-management` skill.
 - Commit messages: no `Co-Authored-By` or other AI attribution lines (overrides default attribution guidance).
-- Never push, force-push, or skip hooks unless the owner asks.
+- Never push, force-push, or skip hooks unless the owner asks. Running `/ship-ticket` or `/deliver-ticket` with `--merge` is the request to push the ticket branch for its CI run (and only that branch); `--push` also pushes the base.
 - Scratch files for a ticket go in `.work/EA-<n>/` (git-ignored).
 - Prefer ripgrep for search speed: the Grep tool (built on ripgrep; file list first, then content with `head_limit`), or `rg` in Bash instead of `grep -r`/`find | grep`. Use `grep` only to filter another command's output. Scripts, CI and hooks keep `grep`/Node, since `rg` may not be installed there.
 

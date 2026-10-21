@@ -15,7 +15,8 @@ Design: `docs/superpowers/specs/2026-10-20-deliver-ticket-design.md`. This flow 
 
 - `EA-<n>` — the ticket. If missing, select one as `/ship-ticket` step 2 does.
 - `--auto-commit` — commit without the owner's approval when verification passes (this is `git-commit`'s auto mode).
-- `--merge` / `--push` — merge and push as in step 6. Without them, keep the branch.
+- `--merge` — push the ticket branch for its CI run and, once green, merge into the base branch (step 6). `--merge` is the owner's request to push the ticket branch; the base stays local.
+- `--push` — also push the base branch after the merge. Without either, keep the branch local.
 - The owner may write these in words (e.g. "merge và push" = `--merge --push`).
 
 ## Owner overrides of superpowers
@@ -69,7 +70,7 @@ As `/ship-ticket` steps 1–3: clean tree, Atlassian MCP, Node ≥ 20, Docker en
 3. `BLOCKED` → ask the owner the BLOCKING questions in one AskUserQuestion (the designer's options and recommendation), resume the designer in mode `revise` with the answers, repeat.
 
 ### 2. Plan
-Resume the designer in mode `plan` (`BLOCKED` → as step 1.3). Check `plan.md`: the AC map and Global Constraints sit in the header (before Task 1), every task names files and has an Interfaces block that repeats the contract values it implements, Review Focus is filled, size within budget; `contract.md` exists for a `ui`/`api` profile. Post `plan-comment.md` to the ticket (markdown); keep the comment id in `final.md`, not in `plan.md`.
+Resume the designer in mode `plan` (`BLOCKED` → as step 1.3). Check `plan.md`: the AC map and Global Constraints sit in the header (before Task 1), every task names files and has an Interfaces block that repeats the contract values it implements, Review Focus is filled, size within budget; `contract.md` exists for a `ui`/`api` profile. Post `plan-comment.md` to the ticket (markdown; the **Plan comment** template of `comment-templates.md`, ≤ 1 500 characters, tables); keep the comment id in `final.md`, not in `plan.md`.
 
 ### 3. Build ‖ QA design
 In one message:
@@ -87,21 +88,21 @@ When every task is complete in the ledger:
 ### 5. Verify
 Use `superpowers:verification-before-completion`: run `npm run check` and `npm run e2e` (fast tier, all tickets) yourself on the final tree, with the stack started by `npm run up` and stopped by `npm run down`; output to `.work/EA-<n>/logs/`.
 - Red → one verify-fix: write the failures into `fix-brief.md`, dispatch one fixer, one scoped re-review, QA `recheck` if an AC is affected, then verify again. Still red → escalate.
-- Green → write `.work/EA-<n>/final.md`: each AC from Jira (verbatim) → evidence (task test, QA case, review); every Ruling (designer's and the ledger's); checks; unfixed minors under "Improvements". Run the token report (`node .claude/skills/ship-ticket/scripts/token-report.mjs --since "$(cat .work/EA-<n>/started-at)" --ticket EA-<n>`; `other` covers general-purpose agents with an unknown description) and put its two lines in `final.md`. Append the retro entry to `docs/dev/team-retro.md` (marked "deliver-ticket trial").
+- Green → write `.work/EA-<n>/final.md`: each AC from Jira (verbatim) → evidence (task test, QA case, review); every Ruling (designer's and the ledger's); checks; unfixed minors under "Improvements". Run the token report (`node .claude/skills/ship-ticket/scripts/token-report.mjs --since "$(cat .work/EA-<n>/started-at)" --ticket EA-<n>`; `other` covers general-purpose agents with an unknown description) and put its two lines in `final.md`. Append the retro entry to `docs/dev/team-retro.md` (marked "deliver-ticket trial"). Check that QA saved its reusable assets (`docs/qa/<area>/EA-<n>-<slug>.md`, its row in `docs/qa/README.md`, scripts under `e2e/<area>/scripts/`); missing → resume QA to save them.
 
 ### 6. Commit (1–2 commits), merge, push
 1. **Squash — the last step before committing.** After it the ledger's task SHAs are unreachable and review packages can no longer be built from them; nothing that needs them may follow. `git reset --soft <base SHA>`, then `git restore --staged .`, then stage and commit by group with the `git-commit` skill: one commit for the code and its tests (`[EA-<n>] feat|fix|chore(<scope>): …`), an optional second one for docs or the retro. All its safety checks apply. Without `--auto-commit`, show the owner the summary and the messages first and wait for OK.
-2. **`--push`:** push the ticket branch and wait for its CI run (as `/ship-ticket` step 9b). Red → one fixer on the CI failures, a scoped re-review, QA `recheck` if an AC is affected, then a new commit on top (no re-squash) and push again; still red → escalate.
+2. **`--merge` / `--push` — branch CI first, always:** push the ticket branch and wait for its CI run (as `/ship-ticket` step 9b); never merge before it is green. Red → one fixer on the CI failures, a scoped re-review, QA `recheck` if an AC is affected, then a new commit on top (no re-squash) and push again; still red → escalate. No CI run (or CI down) → ask the owner; do not merge.
 3. **`--merge` / `--push`:** merge into the base branch from `.work/EA-<n>/base` exactly as `/ship-ticket` step 9b (fetch, `pull --ff-only`, `merge --no-ff`, `npm run check` only for a non-trivial merge, push the base only with `--push`, wait for CI on the base).
 4. Then delete the SDD workspace (`rm -rf <workspace>`), after collecting its Rulings into `final.md`.
 
 ### 7. Close
-- Jira: markdown comment (summary, branch, commits, merge/push, AC → evidence, tests, bugs found and fixed, Rulings the owner may want to revisit, known limitations), then the transition rules of `/ship-ticket` step 10 (*In Review* / *Done* / *Human Review*).
+- Jira: post the **Final comment** of `.claude/skills/jira-ticket-management/references/comment-templates.md` (≤ 2 000 characters, tables for the facts, ACs, bugs, Rulings to revisit and follow-ups), then the transition rules of `/ship-ticket` step 10 (*In Review* / *Done* / *Human Review*).
 - **Security review suggestion:** if the diff or the Review Focus touches authentication, tokens, tenant scoping, RBAC, Connectors/Tools/outbound HTTP, upload, logging of user data or prompt construction, end the report with "Suggested: run `/security-review` on this branch (reason: …)". Do not run it.
 - Report to the owner (Vietnamese, short): ticket, branch, commits, AC status, what changed, QA result and bugs, review rounds, **Rulings I made** (each with its cost if wrong), the security suggestion, the two token lines (run the report again for the final numbers).
 
 ## Guardrails
 
-- One ticket per run. Push only with `--push`; never force, amend pushed commits, or skip hooks.
+- One ticket per run. Push only with `--merge` (the ticket branch, for its CI) or `--push` (also the base); never force, amend pushed commits, or skip hooks.
 - Never mark a ticket Done without evidence for every AC and before its branch is merged.
 - Never fix findings yourself and never edit agent outputs to make them pass; send work back.

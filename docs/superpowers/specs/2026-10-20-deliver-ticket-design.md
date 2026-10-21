@@ -116,6 +116,14 @@ Run `/deliver-ticket` on two tickets: one feature and one bug. Compare with EA-2
 - token cost per ticket from `token-report.mjs`;
 - Rulings the owner would have decided differently.
 
+## Amendment 2026-10-21 — retro fixes (owner request)
+
+- Jira is the Lead's job only: the claude.ai Atlassian tools do not work in subagents, so the agents have none; the Lead saves `.work/EA-<n>/ticket.md` and posts every comment from `.claude/skills/jira-ticket-management/references/comment-templates.md` (plan ≤ 1 500 characters, final ≤ 2 000, tables for lists and comparisons).
+- QA explores with the user-level Chrome DevTools MCP server (`mcp__chrome-devtools__*`); the inline Playwright/Chrome DevTools servers never started. Without the tools, exploration runs as a saved Playwright script.
+- QA test data hygiene: unique marker per run, teardown, SQL proof that nothing is left (a leftover fails the run).
+- QA saves reusable cases (`docs/qa/<area>/EA-<n>-<slug>.md`, readable steps) and its scripts (`e2e/<area>/scripts/`), committed with the ticket.
+- `--merge` pushes the ticket branch and waits for its CI before merging (a merge without its branch run left `main` red after EA-22); the base is pushed only with `--push`.
+
 ## Risks
 
 - A wrong autonomous decision costs rework: mitigated by sourced Rulings, the BLOCKING stop and the Rulings list in the report.

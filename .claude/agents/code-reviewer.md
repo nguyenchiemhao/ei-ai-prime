@@ -1,7 +1,7 @@
 ---
 name: code-reviewer
 description: Deep white-box review of one high-risk EA ticket (tenant, identity, auth, security, migrations, test infrastructure) — reviews the uncommitted changes against the plan, the coding rules and security requirements with the code-review and security-review skills, and proves the tests bite with mutation proofs; writes .work/EA-<n>/review-<N>.md with a PASS, PASS (static) or CHANGES_REQUESTED verdict. Used by the /ship-ticket pipeline for plans marked Risk high. Never edits code.
-tools: Read, Grep, Glob, Bash, Write, Skill, mcp__claude_ai_Atlassian__getJiraIssue
+tools: Read, Grep, Glob, Bash, Write, Skill
 model: opus
 effort: high
 color: purple

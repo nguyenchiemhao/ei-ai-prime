@@ -27,6 +27,7 @@ There is no Spike issue type → **Task + label `spike`**.
 |---|---|
 | Summary | `[CODE] <action phrase>` in English, e.g. `[KB-02] Upload and process PDF/DOCX/MD/TXT into normalised chunks` |
 | Description | Markdown via `contentFormat: "markdown"`; template in `story-template.md`; **no markdown image syntax** |
+| Comments | Markdown; short, tables for lists and comparisons; pipeline comments (plan, final, Blocked) use `comment-templates.md`. Subagents have no Jira access: the Lead posts them |
 | Priority | Highest, High, Medium, Low (field works) |
 | Story points | The Story Points field is **not on the screen** → label `sp-N` (`sp-1`, `sp-3`, `sp-5`, `sp-8`, `sp-13`) and the header line of the description. Backfill the field from labels if it gets enabled |
 | Parent | Epic key (`parent: "EA-3"`) |
