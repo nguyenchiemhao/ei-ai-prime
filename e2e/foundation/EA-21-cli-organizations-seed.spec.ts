@@ -150,9 +150,11 @@ function counts(orgId?: string): Counts {
 function purgeOrg(orgId: string): void {
   expect(orgId).toMatch(new RegExp(`^${UUID}$`));
   // EA-22: sessions and credentials of users (created by sign-in tests) reference users; they go first.
+  // EA-24: model_catalog (seeded for the demo Organization, added by `ei-ai model add`) references organizations.
   const byOrg = [
     "admin_sessions",
     "user_credentials",
+    "model_catalog",
     ...TABLES_CHILD_FIRST.filter((t) => t !== "organizations"),
   ].map((table) => `delete from ${table} where org_id = '${orgId}';`);
   sql(`begin; ${byOrg.join(" ")} delete from organizations where id = '${orgId}'; commit;`);

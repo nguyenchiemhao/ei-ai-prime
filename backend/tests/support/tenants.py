@@ -23,12 +23,17 @@ DELETE_ORDER = (
     "memberships",
     "workspaces",
     "users",
+    "model_catalog",
     "organizations",
 )
 
 
 # Not a real hash: it only has to satisfy the argon2id prefix CHECK of ``user_credentials``.
 FIXTURE_PASSWORD_HASH = "$argon2id$v=19$m=19456,t=2,p=1$fixture"
+
+# The model row of every fixture Organization: the same ref everywhere, its own random digest.
+FIXTURE_MODEL_ID = "fixture-chat"
+FIXTURE_MODEL_VERSION = "v1"
 
 
 def tenant_key_column(table: str) -> str:
@@ -64,6 +69,9 @@ class OrgRows:
     set_password_token_id: uuid.UUID
     user_credential_id: uuid.UUID
     admin_session_id: uuid.UUID
+    model_catalog_entry_id: uuid.UUID
+    # The digest of the fixture model row: random, so each Organization has its own.
+    model_digest: str
     label: str
     suffix: str
 
@@ -82,6 +90,7 @@ class OrgRows:
             "set_password_tokens": self.set_password_token_id,
             "user_credentials": self.user_credential_id,
             "admin_sessions": self.admin_session_id,
+            "model_catalog": self.model_catalog_entry_id,
         }[table]
 
     @property
@@ -113,6 +122,7 @@ UPDATE_SETS = {
     "set_password_tokens": ("token_hash", "0" * 64),
     "user_credentials": ("failed_attempts", 3),
     "admin_sessions": ("token_hash", "0" * 64),
+    "model_catalog": ("display_name", "renamed-by-intruder"),
 }
 
 
@@ -127,6 +137,8 @@ async def create_org_rows(engine: AsyncEngine, label: str) -> OrgRows:
         set_password_token_id=uuid.uuid4(),
         user_credential_id=uuid.uuid4(),
         admin_session_id=uuid.uuid4(),
+        model_catalog_entry_id=uuid.uuid4(),
+        model_digest=f"sha256:{secrets.token_hex(32)}",
         label=label,
         suffix=uuid.uuid4().hex[:8],
     )
@@ -210,6 +222,22 @@ async def create_org_rows(engine: AsyncEngine, label: str) -> OrgRows:
                 "org": rows.org_id,
                 "user": rows.user_id,
                 "hash": secrets.token_hex(32),
+            },
+        )
+        await conn.execute(
+            text(
+                "INSERT INTO model_catalog (id, org_id, kind, display_name, model_id, version,"
+                " digest, deployment, provider)"
+                " VALUES (:id, :org, 'chat', :name, :model_id, :version, :digest, 'local',"
+                " 'local-chat')"
+            ),
+            {
+                "id": rows.model_catalog_entry_id,
+                "org": rows.org_id,
+                "name": f"Model {label} {rows.suffix}",
+                "model_id": FIXTURE_MODEL_ID,
+                "version": FIXTURE_MODEL_VERSION,
+                "digest": rows.model_digest,
             },
         )
     return rows

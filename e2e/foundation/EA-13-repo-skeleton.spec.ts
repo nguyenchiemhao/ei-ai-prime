@@ -95,13 +95,14 @@ test.describe("EA-13 repo skeleton", () => {
       expect(byService[service]?.Health).toBe("healthy");
     }
 
-    // The model is really loaded: /v1/models of the (unpublished) model server lists the alias.
+    // The model is really loaded: /v1/models of the (unpublished) model server lists the alias. EA-24: the
+    // served id is the alias plus @sha256- and the first 12 hex of the checked file's sha256.
     const models = execFileSync(
       "docker",
       ["compose", "exec", "-T", "model", "curl", "-fsS", "http://localhost:8080/v1/models"],
       { cwd: ROOT, encoding: "utf8" },
     );
-    expect(models).toContain('"id":"qwen3-4b-instruct-2507"');
+    expect(models).toContain('"id":"qwen3-4b-instruct-2507@sha256-3605803b982c"');
   });
 
   test("AC2: seed runs twice and the admin UI is reachable at http://localhost:3000", async ({

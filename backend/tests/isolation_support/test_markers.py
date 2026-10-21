@@ -17,6 +17,8 @@ def _rows(label: str) -> OrgRows:
         set_password_token_id=uuid.uuid4(),
         user_credential_id=uuid.uuid4(),
         admin_session_id=uuid.uuid4(),
+        model_catalog_entry_id=uuid.uuid4(),
+        model_digest=f"sha256:{'0' * 64}",
         label=label,
         suffix=uuid.uuid4().hex[:8],
     )

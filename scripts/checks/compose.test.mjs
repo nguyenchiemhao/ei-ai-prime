@@ -75,32 +75,53 @@ test("core_services_have_healthcheck_and_mem_limit", () => {
   }
 });
 
-test("model_healthcheck_requires_alias_in_v1_models", () => {
+test("model_healthcheck_requires_the_checksummed_alias_in_v1_models", () => {
   const command = services.model.healthcheck.test.join(" ");
-  const alias = services.model.command[services.model.command.indexOf("--alias") + 1];
+  const alias = services.model.environment.LLM_ALIAS;
   assert.match(alias, /^[a-z0-9.-]+$/);
   assert.ok(command.includes("/v1/models"), "must query /v1/models");
   assert.ok(
     !command.includes("/health"),
     "/health answers 200 without a loaded model (b11580 router mode)",
   );
-  assert.ok(command.includes(`"id":"${alias}"`), `must look for the alias ${alias}`);
-  // Exact command: a weaker grep (for example one that only matches "object":"list") would report
-  // healthy in router mode with no model loaded.
+  // Exact command (EA-24): the start script serves "<alias>@sha256-<12 hex>", so healthy means the
+  // verified file is loaded. A weaker grep (for example "object":"list") would pass with no model.
   assert.deepEqual(services.model.healthcheck.test, [
     "CMD-SHELL",
-    `curl -fsS http://localhost:8080/v1/models | grep -q '"id":"${alias}"'`,
+    `curl -fsS http://localhost:8080/v1/models | grep -q '"id":"${alias}@sha256-'`,
   ]);
 });
 
-test("model_command_pins_file_with_m_and_mu_at_a_commit", () => {
-  const command = services.model.command;
-  const file = command[command.indexOf("-m") + 1];
-  const url = command[command.indexOf("-mu") + 1];
-  assert.match(file, /^\/models\/.+\.gguf$/);
+test("model_starts_through_the_checksum_script_with_a_file_pinned_at_a_commit", () => {
+  const model = services.model;
+  assert.equal(model.image, "ghcr.io/ggml-org/llama.cpp:server-b11580");
+  assert.deepEqual(model.entrypoint, ["/bin/sh", "/opt/ei-ai/start-model.sh"]);
+  assert.ok(!model.command, "the script builds the server command");
+  const { LLM_MODEL_FILE: file, LLM_MODEL_URL: url, LLM_MODEL_SHA256: sha } = model.environment;
+  assert.match(file, /^[^/]+\.gguf$/);
   assert.match(url, /^https:\/\/huggingface\.co\/.+\/resolve\/[0-9a-f]{40}\/.+\.gguf$/);
-  assert.ok(url.endsWith(path.posix.basename(file)), "-m and -mu must name the same file");
-  assert.equal(services.model.image, "ghcr.io/ggml-org/llama.cpp:server-b11580");
+  assert.ok(url.endsWith(`/${file}`), "the URL and the file name must name the same file");
+  assert.match(sha, /^[0-9a-f]{64}$/);
+  const mounts = (model.volumes ?? []).map((v) => `${v.type} ${v.target} ${v.read_only === true}`);
+  assert.deepEqual(mounts.sort(), ["bind /opt/ei-ai true", "volume /models false"]);
+  const script = model.volumes.find((v) => v.target === "/opt/ei-ai");
+  assert.equal(path.resolve(script.source), path.join(ROOT, "infra", "model"));
+  assert.ok(fs.existsSync(path.join(ROOT, "infra", "model", "start-model.sh")));
+});
+
+test("model_sha256_and_alias_can_be_overridden", () => {
+  const sha = "0".repeat(64);
+  const moved = JSON.parse(config({ ...DUMMY, LLM_MODEL_SHA256: sha, LLM_ALIAS: "other" }).stdout);
+  assert.equal(moved.services.model.environment.LLM_MODEL_SHA256, sha);
+  assert.equal(moved.services.model.environment.LLM_ALIAS, "other");
+  assert.match(moved.services.model.healthcheck.test[1], /"id":"other@sha256-'$/);
+});
+
+test("api_and_backend_tools_call_the_local_model_and_have_no_egress_proxy_yet", () => {
+  for (const name of ["api", "backend-tools"]) {
+    assert.equal(services[name].environment.MODEL_LOCAL_BASE_URL, "http://model:8080/v1");
+    assert.equal(services[name].environment.EGRESS_PROXY_URL, undefined);
+  }
 });
 
 test("published_ports_are_fixed_and_loopback_only", () => {

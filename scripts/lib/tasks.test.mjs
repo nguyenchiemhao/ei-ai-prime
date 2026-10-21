@@ -23,7 +23,11 @@ test("tasks_pin_the_backend_commands", () => {
     ],
   });
   assert.deepEqual(tasks["backend:bench-rls"], {
-    backend: ["pytest", "-m", "benchmark", "--no-cov", "-s"],
+    backend: ["pytest", "tests/perf/test_rls_overhead.py", "-m", "benchmark", "--no-cov", "-s"],
+    services: true,
+  });
+  assert.deepEqual(tasks["backend:bench-gateway"], {
+    backend: ["pytest", "tests/perf/test_gateway_overhead.py", "-m", "benchmark", "--no-cov", "-s"],
     services: true,
   });
   assert.deepEqual(tasks["backend:openapi"], {

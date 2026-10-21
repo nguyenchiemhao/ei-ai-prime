@@ -49,7 +49,12 @@ export const tasks = {
 
   // RLS overhead measurement (FND-01 NFR); output goes to docs/architecture/data-model.md.
   "backend:bench-rls": {
-    backend: ["pytest", "-m", "benchmark", "--no-cov", "-s"],
+    backend: ["pytest", "tests/perf/test_rls_overhead.py", "-m", "benchmark", "--no-cov", "-s"],
+    services: true,
+  },
+  // Model Gateway overhead (EA-24 NFR); output goes to docs/architecture/model-gateway.md.
+  "backend:bench-gateway": {
+    backend: ["pytest", "tests/perf/test_gateway_overhead.py", "-m", "benchmark", "--no-cov", "-s"],
     services: true,
   },
 

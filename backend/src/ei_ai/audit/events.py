@@ -18,8 +18,10 @@ USER_SIGNED_OUT = "user.signed_out"
 USER_LOCKED_OUT = "user.locked_out"
 USER_PASSWORD_SET = "user.password_set"
 WORKSPACE_MEMBER_ADDED = "workspace.member_added"
+MODEL_CATALOG_ENTRY_ADDED = "model.catalog_entry_added"
+MODEL_CLOUD_CALL_BLOCKED = "model.cloud_call_blocked"
 
-TargetType = Literal["organization", "workspace", "user"]
+TargetType = Literal["organization", "workspace", "user", "model"]
 
 
 def user_actor(user_id: uuid.UUID) -> str:

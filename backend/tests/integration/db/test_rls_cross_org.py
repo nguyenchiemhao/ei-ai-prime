@@ -50,6 +50,12 @@ FORGED_INSERTS = {
         "INSERT INTO admin_sessions (org_id, user_id, token_hash)"
         f" VALUES (:other_org, :own_user, '{'e' * 64}')"
     ),
+    "model_catalog": (
+        "INSERT INTO model_catalog (org_id, kind, display_name, model_id, version, digest,"
+        " deployment, provider)"
+        f" VALUES (:other_org, 'chat', 'forged', 'forged', 'v1', 'sha256:{'d' * 64}', 'local',"
+        " 'local-chat')"
+    ),
 }
 
 

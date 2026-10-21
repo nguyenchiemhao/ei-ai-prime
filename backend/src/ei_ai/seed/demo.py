@@ -33,6 +33,7 @@ from ei_ai.audit.events import (
 from ei_ai.auth.set_password import set_password_link
 from ei_ai.db.engine import run_with_app_engine
 from ei_ai.db.tenant import tenant_transaction
+from ei_ai.model_gateway.catalog_rows import ensure_platform_models
 from ei_ai.provisioning.rows import (
     find_user_id,
     find_workspace_id,
@@ -169,13 +170,17 @@ async def _ensure_member(
 
 
 async def seed_manifest(engine: AsyncEngine, manifest: DemoManifest) -> SeedResult:
-    """Create what is missing of the manifest in one tenant transaction, with audit events."""
+    """Create what is missing of the manifest in one tenant transaction, with audit events, and
+    the platform models of the model catalog (without audit events)."""
     org_id = manifest.organization_id
     try:
         async with engine.connect() as conn, tenant_transaction(conn, org_id):
             org_created = await _ensure_organization(conn, manifest)
             ws_id, ws_created = await _ensure_workspace(conn, manifest)
             secrets = [await _ensure_member(conn, org_id, ws_id, m) for m in manifest.members]
+            # The platform models (EA-24): no audit event and no output line, so the summary
+            # and the audit count stay as they were.
+            await ensure_platform_models(conn, org_id)
     except IntegrityError as error:
         raise_if_violated(
             error,
