@@ -47,16 +47,14 @@ async def insert_workspace_member(
     )
 
 
-async def insert_member(
+async def insert_user(
     conn: AsyncConnection,
     org_id: uuid.UUID,
     email: str,
     display_name: str,
     org_role: str | None,
-    workspace: tuple[uuid.UUID, str] | None,
-) -> tuple[uuid.UUID, str]:
-    """Insert a user, its membership, its Workspace membership (``(workspace_id, role)``, if
-    any) and a set-password token. Returns ``(user_id, secret)``."""
+) -> uuid.UUID:
+    """Insert a user and its Organization membership (no Workspace, no token); the user id."""
     result = await conn.execute(
         text(
             "INSERT INTO users (org_id, email, display_name)"
@@ -69,6 +67,20 @@ async def insert_member(
         text("INSERT INTO memberships (org_id, user_id, org_role) VALUES (:org, :user, :role)"),
         {"org": org_id, "user": user_id, "role": org_role},
     )
+    return user_id
+
+
+async def insert_member(
+    conn: AsyncConnection,
+    org_id: uuid.UUID,
+    email: str,
+    display_name: str,
+    org_role: str | None,
+    workspace: tuple[uuid.UUID, str] | None,
+) -> tuple[uuid.UUID, str]:
+    """Insert a user, its membership, its Workspace membership (``(workspace_id, role)``, if
+    any) and a set-password token. Returns ``(user_id, secret)``."""
+    user_id = await insert_user(conn, org_id, email, display_name, org_role)
     if workspace is not None:
         await insert_workspace_member(conn, org_id, workspace[0], user_id, workspace[1])
     return user_id, await issue_token(conn, org_id, user_id)

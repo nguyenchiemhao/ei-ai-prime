@@ -15,3 +15,4 @@ Test data rule: every case creates its own data with a unique marker (`qa-EA<n>-
 | Ticket | Area | File | Spec | Scripts |
 |---|---|---|---|---|
 | EA-32 | knowledge | [knowledge/EA-32-collections-folders.md](knowledge/EA-32-collections-folders.md) | `e2e/knowledge/EA-32-collections.spec.ts`, `e2e/knowledge/EA-32-collections-perf.spec.ts` | `e2e/knowledge/scripts/EA-32-collections-explore-data.mjs` |
+| EA-94 | foundation | [foundation/EA-94-demo-seed.md](foundation/EA-94-demo-seed.md) | `e2e/foundation/EA-94-demo-seed.spec.ts`, `e2e/foundation/EA-94-seed-perf.spec.ts` | `e2e/foundation/scripts/EA-94-demo-seed-explore.mjs`, `e2e/foundation/scripts/EA-94-demo-seed-check-state.mjs` |

@@ -1,5 +1,5 @@
 """Rows of ``user_credentials``: the attempt reservation (lockout bookkeeping), its refund, the
-reset on success, and the upsert.
+reset on success, the upsert, and the demo seed's insert of a missing credential.
 
 A sign-in attempt is counted before its password is checked (reserve, then refund): the
 reservation applies the failure rule to an unlocked credential and hands out the hash, so
@@ -153,6 +153,31 @@ async def reset_after_success(
 async def record_lockout(conn: AsyncConnection, org_id: uuid.UUID, user_id: uuid.UUID) -> None:
     """Audit ``user.locked_out`` (actor ``system``) for the failed attempt that locked."""
     await record_event(conn, org_id, SYSTEM_ACTOR, USER_LOCKED_OUT, "user", user_id)
+
+
+async def has_credential(conn: AsyncConnection, org_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+    """True when the user has a password (the hash itself is never read)."""
+    result = await conn.execute(
+        text("SELECT 1 FROM user_credentials WHERE org_id = :org AND user_id = :user"),
+        {"org": org_id, "user": user_id},
+    )
+    return result.first() is not None
+
+
+async def insert_credential_if_missing(
+    conn: AsyncConnection, org_id: uuid.UUID, user_id: uuid.UUID, password_hash: str
+) -> bool:
+    """Store a hash for a user without a password; an existing credential is left as it is.
+    True when the hash was stored."""
+    result = await conn.execute(
+        text(
+            "INSERT INTO user_credentials (org_id, user_id, password_hash)"
+            " VALUES (:org, :user, :hash)"
+            " ON CONFLICT (org_id, user_id) DO NOTHING RETURNING user_id"
+        ),
+        {"org": org_id, "user": user_id, "hash": password_hash},
+    )
+    return result.first() is not None
 
 
 async def upsert_credential(

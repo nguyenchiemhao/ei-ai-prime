@@ -19,9 +19,10 @@ from ei_ai.model_gateway.errors import ModelError, ModelErrorCode
 from ei_ai.model_gateway.factory import build_gateway
 from ei_ai.model_gateway.refs import ModelRef
 from ei_ai.model_gateway.results import ChatMessage, TextDelta
-from ei_ai.seed.demo import DemoManifest, load_manifest, seed_manifest
+from ei_ai.seed.demo import DemoManifest, seed_manifest
 from ei_ai.settings import ModelSettings
 from support.fake_model_server import FakeModelServer, running_fake_model_server
+from support.seed import TEST_SEED_PASSWORD, variant_manifests
 from support.tenants import FIXTURE_MODEL_ID, FIXTURE_MODEL_VERSION, TwoOrgs, purge_org_ids
 
 pytestmark = pytest.mark.integration
@@ -80,13 +81,8 @@ async def _block_events(engine: AsyncEngine, org: uuid.UUID) -> list[tuple[Any, 
 @pytest.fixture
 async def seeded(app_engine: AsyncEngine) -> AsyncIterator[DemoManifest]:
     """The demo manifest seeded into a random Organization; purged afterwards."""
-    manifest = load_manifest().model_copy(
-        update={
-            "organization_id": uuid.uuid4(),
-            "organization": f"Mekong Devworks {uuid.uuid4().hex[:8]}",
-        }
-    )
-    await seed_manifest(app_engine, manifest)
+    manifest = variant_manifests()[0]
+    await seed_manifest(app_engine, manifest, TEST_SEED_PASSWORD)
     try:
         yield manifest
     finally:

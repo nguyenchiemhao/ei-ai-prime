@@ -20,11 +20,11 @@ const DOTENV_LINE =
 const generate = () => randomBytes(16).toString("hex");
 
 /**
- * Value of `name` in `<root>/.env`, parsed like Compose (quotes, inline comments, the last duplicate
+ * Value of `name` in `<root>/<file>` (default `.env`), parsed like Compose (quotes, inline comments, the last duplicate
  * wins), or undefined when the file, the line or the value is missing.
  */
-export function envFileValue(root, name) {
-  const target = path.join(root, ".env");
+export function envFileValue(root, name, file = ".env") {
+  const target = path.join(root, file);
   if (!fs.existsSync(target)) return undefined;
   let value;
   for (const line of fs.readFileSync(target, "utf8").replace(/\r\n/g, "\n").split("\n")) {

@@ -18,7 +18,7 @@ Python 3.12, FastAPI, Pydantic v2. Package `ei_ai` in `src/ei_ai` (src layout).
 | `src/ei_ai/cli.py` | `ei-ai seed demo`, `ei-ai db upgrade` (migrations + schema guard), `ei-ai db current`, and the Platform Operator commands `org create`, `workspace create`, `user invite`, `user link` (exit 0 done, 1 failed, 2 refused or usage error) |
 | `src/ei_ai/provisioning/` | Platform-plane provisioning (FND-04): input validation, row helpers, the service (Organization, Workspace, invitation, link) and the CLI commands; imported only by `cli.py` and `seed/` (a test enforces it) |
 | `src/ei_ai/audit/` | `record_event`: audit events with an explicit actor (`platform-operator`, `system` or `user:<id>`) (append-only enforcement comes with FND-08) |
-| `src/ei_ai/seed/` | Versioned Mekong Devworks demo manifest and its idempotent load (`ei-ai seed demo`, local and test only) |
+| `src/ei_ai/seed/` | Versioned demo manifests, one per Organization (`data/*.json`), and their idempotent load (`ei-ai seed demo`, local and test only) |
 | `src/ei_ai/rbac/` | 3-tier RBAC (FND-06): role codes, the reviewed permission matrix, the per-request access check and the route declarations (`requires`, `requires_org`, `signed_in`, `public`); see `docs/architecture/rbac.md` |
 | `src/ei_ai/members/` | Members & roles service: list, invite, change and revoke Workspace roles, change Organization roles; checks the permission again and audits every role change |
 | `src/ei_ai/openapi_export.py` | Writes the OpenAPI document that `packages/api-types` is generated from |
