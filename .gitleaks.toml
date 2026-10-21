@@ -1,5 +1,17 @@
-# gitleaks configuration (EA-13 / SET-03): the default rule set, no allowlist.
+# gitleaks configuration (EA-13 / SET-03): the default rule set and one reviewed allowlist entry.
 # Add an [[allowlists]] entry only for a finding that is proven to be a false positive, and say why
 # in a comment above it.
 [extend]
 useDefault = true
+
+# False positive (EA-24, Lead decision 2026-10-20): generic-api-key at commit e9f7aee,
+# e2e/foundation/EA-22-admin-sign-in.spec.ts:974 is `const secret = "Echo-probe-Secret-4242";`,
+# a test probe string the EA-22 spec checks is never echoed, not a credential. The commit is in
+# pushed history and cannot be rewritten. All three conditions must hold (AND): that commit, that
+# file and exactly that value, so the same string anywhere else is still reported.
+[[allowlists]]
+description = "EA-22 E2E echo probe string (not a credential)"
+condition = "AND"
+commits = ["e9f7aeead343f312714ce6111a8a93f699acbfaf"]
+paths = ['''^e2e/foundation/EA-22-admin-sign-in\.spec\.ts$''']
+regexes = ['''^Echo-probe-Secret-4242$''']

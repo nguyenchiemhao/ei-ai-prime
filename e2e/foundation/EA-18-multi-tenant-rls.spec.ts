@@ -15,11 +15,13 @@ const ROOT = path.resolve(import.meta.dirname, "..", "..");
 const ADMIN_URL = adminUrl(ROOT, process.env);
 const FORGED = "0b9c1c3e-5f0a-4a52-9a53-2c0f1f6f7a11";
 // EA-21 (FND-04) added audit_events and set_password_tokens (migration 0002); EA-22 (FND-05) added
-// admin_sessions and user_credentials, the ei_ai_signin role and the sign_in_lookup policy (head 0004).
+// admin_sessions and user_credentials, the ei_ai_signin role and the sign_in_lookup policy (head 0004);
+// EA-24 (FND-07) added model_catalog (head 0005).
 const TABLES = [
   "admin_sessions",
   "audit_events",
   "memberships",
+  "model_catalog",
   "organizations",
   "set_password_tokens",
   "user_credentials",
@@ -27,7 +29,7 @@ const TABLES = [
   "workspace_memberships",
   "workspaces",
 ];
-const REVISION = "0004";
+const REVISION = "0005";
 const STANDARD_EXPRESSION = "NULLIF(current_setting('app.current_org'::text, true), ''::text)";
 
 /** Runs SQL through psql in the db container; returns stdout, stderr and the exit code. */
@@ -55,7 +57,7 @@ test.describe("EA-18 multi-tenant data model with RLS", () => {
        where table_schema='public' and column_name='org_id' and is_nullable='NO' and data_type='uuid'`,
     );
     expect(columns).toBe(
-      "admin_sessions,audit_events,memberships,set_password_tokens,user_credentials,users,workspace_memberships,workspaces",
+      "admin_sessions,audit_events,memberships,model_catalog,set_password_tokens,user_credentials,users,workspace_memberships,workspaces",
     );
 
     const rls = scalar(
@@ -74,7 +76,7 @@ test.describe("EA-18 multi-tenant data model with RLS", () => {
     );
     expect(others).toBe("alembic_version");
 
-    // 10 policies: one standard FOR ALL policy per table for every role, plus the one exception
+    // 11 policies: one standard FOR ALL policy per table for every role, plus the one exception
     // `sign_in_lookup` (EA-22): FOR SELECT, only for ei_ai_signin, USING (true), no WITH CHECK.
     const policies = psql(
       "postgres",
@@ -258,7 +260,7 @@ rollback;
        where grantee='ei_ai_app' and table_schema='public'`,
     );
     expect(privileges).toBe("DELETE,INSERT,SELECT,UPDATE");
-    // ... on each of the 9 tables, and on nothing else.
+    // ... on each of the 10 tables, and on nothing else.
     const perTable = psql(
       "postgres",
       `select table_name || ':' || string_agg(privilege_type, ',' order by privilege_type)

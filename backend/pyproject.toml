@@ -17,6 +17,8 @@ dependencies = [
   "redis==8.1.0",
   "argon2-cffi==25.1.0",
   "anyio==4.15.1",
+  "openai==3.29.0",
+  "httpx2==2.15.1",
 ]
 
 [project.optional-dependencies]
@@ -37,6 +39,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "ei_ai.seed" = ["data/*.json"]
+"ei_ai.model_gateway" = ["data/*.json"]
 "ei_ai.db.migrations" = ["script.py.mako"]
 
 [tool.ruff]
@@ -62,7 +65,7 @@ testpaths = ["tests"]
 markers = [
   "integration: needs the Compose stack (db, valkey); run with -m integration",
   "isolation: tenant-isolation suite (FND-02); run with npm run backend -- test-isolation",
-  "benchmark: RLS overhead measurement (FND-01 NFR); run with npm run backend -- bench-rls",
+  "benchmark: overhead measurements (FND-01 RLS, EA-24 gateway); npm run backend -- bench-rls / bench-gateway",
 ]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"

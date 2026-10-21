@@ -52,7 +52,8 @@ def test_guard_ignores_objects_that_belong_to_extensions(
     functions = {f.name for f in snapshot.functions}
 
     assert not any(name.startswith("vector") for name in names | functions)
-    assert functions == {"uuid_generate_v7"}
+    # Our own functions only: the UUIDv7 default and the model_catalog pin trigger (0005).
+    assert functions == {"uuid_generate_v7", "model_catalog_pin_immutable"}
 
 
 def test_guard_reports_table_without_org_id(tx_conn: psycopg.Connection) -> None:

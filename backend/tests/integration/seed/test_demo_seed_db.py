@@ -34,6 +34,8 @@ FIRST_RUN_COUNTS = {
     "memberships": 6,
     "workspaces": 1,
     "users": 6,
+    # The three platform models of the manifest (EA-24); the seed writes no audit event for them.
+    "model_catalog": 3,
     "organizations": 1,
 }
 

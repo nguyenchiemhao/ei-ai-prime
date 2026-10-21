@@ -207,7 +207,9 @@ test("token_report_picks_the_newest_session_that_mentions_the_ticket", (t) => {
 
 test("token_report_prints_one_line_per_agent_and_one_line_per_round", (t) => {
   const projectsDir = fs.mkdtempSync(path.join(os.tmpdir(), "token-report-"));
-  const projectDir = path.join(projectsDir, "d--repo");
+  // An absolute working directory on any OS ("D:\repo" is relative on Linux, where CI runs)
+  const cwd = path.resolve(os.tmpdir(), "repo");
+  const projectDir = path.join(projectsDir, cwd.replace(/[^a-zA-Z0-9]/g, "-"));
   const subagents = path.join(projectDir, "s1", "subagents");
   const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 1_000_000 };
   t.after(() => fs.rmSync(projectsDir, { recursive: true, force: true }));
@@ -224,7 +226,7 @@ test("token_report_prints_one_line_per_agent_and_one_line_per_round", (t) => {
   ]);
   fs.writeFileSync(path.join(subagents, "agent-a.meta.json"), JSON.stringify({ agentType: "developer" }));
 
-  assert.equal(findProjectDir(projectsDir, "D:\\repo"), projectDir);
+  assert.equal(findProjectDir(projectsDir, cwd), projectDir);
   assert.equal(
     formatReport(collectReport(projectDir, "s1", null)),
     [

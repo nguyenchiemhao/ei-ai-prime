@@ -71,6 +71,7 @@ Agents run exactly these, from the repository root (details and prerequisites: `
 | Start app locally | `npm run up` (add `-- --no-model` to skip the model; it applies the database migrations first); `npm run seed` for the demo data; `npm run down` to stop |
 | Database migrations | `npm run migrate` (starts the database if needed, applies the migrations and runs the schema guard; safe to repeat) |
 | RLS overhead benchmark | `npm run backend -- bench-rls` (FND-01 NFR; not part of `npm run check`) |
+| Model Gateway overhead benchmark | `npm run backend -- bench-gateway` (EA-24 NFR; not part of `npm run check`) |
 | E2E tests | `npm run e2e` = fast tier, skips `@slow`/`@perf` (one-time browser install: `npx playwright install chromium`; the stack must be running); `npm run e2e:full` = every spec; `npm run e2e:perf` = `@perf` only |
 | All CI checks | `npm run check` (`-- --skip-stack` without Docker services) |
 
@@ -84,7 +85,7 @@ Run the cheapest tier that gives the evidence you need. Owner decision 2026-10-1
 | T2 round gate | `npm run check` (local mirror of CI) once per round; CI on the pushed branch | End of a developer round; reviewer round 1; the Lead uses the branch CI run | Developer, reviewer, Lead |
 | T3 fast E2E | `npm run e2e -- e2e/<area>/<ticket>-*` (Playwright, fast tier; API specs use the `request` fixture) | QA `run` and `recheck` (QA writes them in mode `design` from the plan, before the code exists); the Lead runs the fast tier of all tickets in the final review | QA, Lead |
 | T4 completion | Browser exploration with Playwright MCP / Chrome DevTools MCP (console, network, performance) for `ui` tickets; the ticket's own `@slow` and `@perf` specs (`npm run e2e:full -- e2e/<area>/<ticket>-*`) | In QA `run` (and in `recheck` when the fix touched what they cover); browser exploration only for `ui` tickets | QA |
-| On demand | `npm run e2e:full` (all tickets), `npm run e2e:perf`, benchmarks (`npm run backend -- bench-rls`), cold-start measurements | When a change touches that area, before a milestone, or when the owner asks | Lead decides |
+| On demand | `npm run e2e:full` (all tickets), `npm run e2e:perf`, benchmarks (`npm run backend -- bench-rls`, `npm run backend -- bench-gateway`), cold-start measurements | When a change touches that area, before a milestone, or when the owner asks | Lead decides |
 
 Rules:
 - Tag a Playwright test `{ tag: "@slow" }` when it copies the repository, starts a second Compose project or re-runs whole task suites; `{ tag: "@perf" }` when it measures time or overhead. `npm run e2e` skips both.

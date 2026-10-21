@@ -138,7 +138,10 @@ def test_auth_route_failure_is_a_plain_500_without_traceback(
     assert "auth_route_failed operation=hash_secret error=RuntimeError" in caplog.text
     printed = capsys.readouterr()
     # The test client logs its own request lines (the URL path); only the app's logs count.
-    app_logs = "\n".join(r.getMessage() for r in caplog.records if r.name != "httpx")
+    # Starlette's TestClient uses httpx2 when it is installed (the openai SDK 3.x brings it).
+    app_logs = "\n".join(
+        r.getMessage() for r in caplog.records if r.name not in ("httpx", "httpx2")
+    )
     tracebacks = [r for r in caplog.records if r.exc_info]
     written = "\n".join([app_logs, printed.out, printed.err])
     assert tracebacks == []

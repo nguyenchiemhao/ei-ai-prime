@@ -1,5 +1,6 @@
 """Command line entry point: ``ei-ai seed demo``, ``ei-ai db upgrade``, ``ei-ai db current`` and
-the Platform Operator commands ``org create``, ``workspace create``, ``user invite``, ``user link``.
+the Platform Operator commands ``org create``, ``workspace create``, ``user invite``, ``user link``,
+``model add`` and ``model try``.
 
 Exit codes: 0 done, 1 failed, 2 refused/usage.
 """
@@ -11,6 +12,7 @@ from collections.abc import Sequence
 
 from ei_ai.db.migrate import current_revision, guard_violations, upgrade_head
 from ei_ai.db.migrations.roles import MigrationRoleError
+from ei_ai.model_gateway.commands import add_model_parsers, run_model_command
 from ei_ai.provisioning.commands import (
     COMMAND_GROUPS,
     add_provisioning_parsers,
@@ -33,6 +35,7 @@ def _parser() -> argparse.ArgumentParser:
     actions.add_parser("upgrade", help="apply migrations to head, then run the schema guard")
     actions.add_parser("current", help="print the current revision")
     add_provisioning_parsers(commands)
+    add_model_parsers(commands)
     return parser
 
 
@@ -109,4 +112,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _seed()
     if args.command in COMMAND_GROUPS:
         return run_provisioning_command(args)
+    if args.command == "model":
+        return run_model_command(args)
     return _db_upgrade() if args.action == "upgrade" else _db_current()

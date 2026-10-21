@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "models": [
+    {
+      "kind": "chat",
+      "display_name": "Qwen3 4B Instruct 2507",
+      "model_id": "qwen3-4b-instruct-2507",
+      "version": "2026.10",
+      "digest": "sha256:3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597",
+      "source_revision": "unsloth/Qwen3-4B-Instruct-2507-GGUF@a06e946bb6b655725eafa393f4a9745d460374c9/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+      "deployment": "local",
+      "provider": "local-chat",
+      "vietnamese_quality": null,
+      "vietnamese_quality_measured": false,
+      "tool_use": true,
+      "context_window": 8192,
+      "speed": null,
+      "status": "available"
+    },
+    {
+      "kind": "embedding",
+      "display_name": "BGE-M3",
+      "model_id": "bge-m3",
+      "version": "2026.10",
+      "digest": "sha256:aa473d51f451a22f0fcf39ba3330c14bed38a385712b1113440f69df4047a173",
+      "source_revision": "ggml-org/bge-m3-Q8_0-GGUF@9eba04c5d75ba5a1595e45de734d36bef4e5cb98/bge-m3-q8_0.gguf",
+      "deployment": "local",
+      "provider": "local-embedding",
+      "vietnamese_quality": null,
+      "vietnamese_quality_measured": false,
+      "tool_use": false,
+      "context_window": 8192,
+      "speed": null,
+      "status": "available"
+    },
+    {
+      "kind": "rerank",
+      "display_name": "BGE Reranker v2 M3",
+      "model_id": "bge-reranker-v2-m3",
+      "version": "2026.10",
+      "digest": "sha256:a43c7c9b11a4c1517e5bf95151960e1621d1b72f7a493364b01e386cf1aaa1d3",
+      "source_revision": "gpustack/bge-reranker-v2-m3-GGUF@3093af03b1a635e67b084b1d8c03c5f5e020fd05/bge-reranker-v2-m3-Q8_0.gguf",
+      "deployment": "local",
+      "provider": "local-rerank",
+      "vietnamese_quality": null,
+      "vietnamese_quality_measured": false,
+      "tool_use": false,
+      "context_window": 8192,
+      "speed": null,
+      "status": "available"
+    }
+  ]
+}

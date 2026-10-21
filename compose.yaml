@@ -11,7 +11,7 @@
 
 name: ei-ai
 
-# One default for the model alias, used by the server command. The healthcheck below repeats the same
+# One default for the model alias, used by the start script. The healthcheck below repeats the same
 # default (a YAML anchor cannot be expanded inside a string); compose.test.mjs keeps the two equal.
 x-llm-alias: &llm_alias "${LLM_ALIAS:-qwen3-4b-instruct-2507}"
 
@@ -54,35 +54,25 @@ services:
     mem_limit: 256m
 
   # llama.cpp server: OpenAI-compatible endpoint, ~4B model on CPU. Multi-GB download on first start.
+  # infra/model/start-model.sh (EA-24) downloads the file by Hugging Face revision (commit, not branch)
+  # when it is missing, refuses to start when its sha256 differs from LLM_MODEL_SHA256, and serves it as
+  # "<LLM_ALIAS>@sha256-<first 12 hex of the file's actual sha256>" (hashing adds ~5-15 s per start).
+  # The Model Gateway calls exactly that id, so a newer build can never answer for a pinned one (D18).
   model:
     image: ghcr.io/ggml-org/llama.cpp:server-b11580
     profiles: ["model"]
-    command:
-      # Downloaded by Hugging Face revision (commit), not by branch, so the file cannot change under us.
-      # "-m" is required: with "-mu" alone, build b11580 starts in router mode with no model loaded
-      # (and /health still answers 200). "-m" gives the local path the URL is downloaded to.
-      - "-m"
-      - "/models/${LLM_MODEL_FILE:-Qwen3-4B-Instruct-2507-Q4_K_M.gguf}"
-      - "-mu"
-      - "${LLM_MODEL_URL:-https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF/resolve/a06e946bb6b655725eafa393f4a9745d460374c9/Qwen3-4B-Instruct-2507-Q4_K_M.gguf}"
-      - "--alias"
-      - *llm_alias
-      - "--host"
-      - "0.0.0.0"
-      - "--port"
-      - "8080"
-      - "-c"
-      - "8192"
-      - "-t"
-      - "6"
-      - "--jinja"
+    entrypoint: ["/bin/sh", "/opt/ei-ai/start-model.sh"]
     environment:
-      LLAMA_CACHE: /models
+      LLM_MODEL_FILE: ${LLM_MODEL_FILE:-Qwen3-4B-Instruct-2507-Q4_K_M.gguf}
+      LLM_MODEL_URL: ${LLM_MODEL_URL:-https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF/resolve/a06e946bb6b655725eafa393f4a9745d460374c9/Qwen3-4B-Instruct-2507-Q4_K_M.gguf}
+      LLM_MODEL_SHA256: ${LLM_MODEL_SHA256:-3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597}
+      LLM_ALIAS: *llm_alias
     volumes:
       - model-cache:/models
+      - ./infra/model:/opt/ei-ai:ro
     healthcheck:
-      # Healthy only when /v1/models lists the configured alias, i.e. a model is loaded.
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/v1/models | grep -q '\"id\":\"${LLM_ALIAS:-qwen3-4b-instruct-2507}\"'"]
+      # Healthy only when /v1/models lists the checksummed alias, i.e. the verified model is loaded.
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/v1/models | grep -q '\"id\":\"${LLM_ALIAS:-qwen3-4b-instruct-2507}@sha256-'"]
       interval: 10s
       timeout: 5s
       retries: 6
@@ -106,6 +96,9 @@ services:
       ADMIN_BASE_URL: http://localhost:${ADMIN_PORT:-3000}
       # The admin nginx is the only proxy in front of the API: trust its X-Forwarded-For (EA-22).
       TRUST_PROXY_HEADERS: "true"
+      # Model Gateway (EA-24): the local llama.cpp server on the internal network (no egress proxy).
+      # No EGRESS_PROXY_URL yet (FND-10): cloud model calls are refused (CLOUD_NOT_CONFIGURED).
+      MODEL_LOCAL_BASE_URL: http://model:8080/v1
     depends_on:
       db:
         condition: service_healthy
@@ -172,6 +165,7 @@ services:
       # Sign-in lookup role: the API settings need it; the proof tests connect with it.
       SIGNIN_DATABASE_URL: postgresql://ei_ai_signin:${SIGNIN_DB_PASSWORD:?run npm run up to create .env}@db:5432/ei_ai
       VALKEY_URL: redis://valkey:6379/0
+      MODEL_LOCAL_BASE_URL: http://model:8080/v1
 
   # One-shot database migration: "ei-ai db upgrade" (Alembic to head, then the schema guard). Not started
   # by "up" itself: npm run up / npm run migrate / test-integration run it explicitly after db is healthy.

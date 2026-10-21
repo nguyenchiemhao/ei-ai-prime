@@ -1,10 +1,12 @@
-"""SQLAlchemy 2 models of the tenancy core (0001), provisioning (0002) and admin sign-in (0003).
+"""SQLAlchemy 2 models of the tenancy core (0001), provisioning (0002), admin sign-in (0003) and
+the model catalog (0005).
 The schema itself is created by the migrations, never by ``metadata.create_all``."""
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import (
+    Date,
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
@@ -35,6 +37,8 @@ class Organization(Base):
 
     id: Mapped[uuid.UUID] = _id()
     name: Mapped[str] = mapped_column(Text)
+    # "Allow cloud models" (D17): off by default.
+    allow_cloud_models: Mapped[bool] = mapped_column(server_default=text("false"))
     created_at: Mapped[datetime] = _created_at()
 
 
@@ -167,3 +171,33 @@ class AdminSession(Base):
     token_hash: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = _created_at()
     last_seen_at: Mapped[datetime] = _created_at()
+
+
+class ModelCatalogEntry(Base):
+    """One pinned model version an Organization can call (EA-24). The pin columns (kind, model_id,
+    version, digest, source_revision, deployment, provider) are immutable (database trigger)."""
+
+    __tablename__ = "model_catalog"
+    __table_args__ = (
+        UniqueConstraint("org_id", "id"),
+        UniqueConstraint("org_id", "model_id", "version"),
+    )
+
+    id: Mapped[uuid.UUID] = _id()
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"))
+    kind: Mapped[str] = mapped_column(Text)
+    display_name: Mapped[str] = mapped_column(Text)
+    model_id: Mapped[str] = mapped_column(Text)
+    version: Mapped[str] = mapped_column(Text)
+    digest: Mapped[str | None] = mapped_column(Text)
+    source_revision: Mapped[str | None] = mapped_column(Text)
+    deployment: Mapped[str] = mapped_column(Text)
+    provider: Mapped[str] = mapped_column(Text)
+    vietnamese_quality: Mapped[str | None] = mapped_column(Text)
+    vietnamese_quality_measured: Mapped[bool] = mapped_column(server_default=text("false"))
+    tool_use: Mapped[bool] = mapped_column(server_default=text("false"))
+    context_window: Mapped[int | None]
+    speed: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Text, server_default=text("'available'"))
+    retirement_date: Mapped[date | None] = mapped_column(Date)
+    created_at: Mapped[datetime] = _created_at()
