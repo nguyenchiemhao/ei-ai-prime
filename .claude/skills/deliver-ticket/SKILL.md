@@ -33,8 +33,12 @@ These win over the superpowers skills' own rules. Tell every agent the ones that
 8. **No finishing menu:** `superpowers:finishing-a-development-branch` is not used; merge/push follow the arguments. The SDD "Finish" step only collects the Rulings.
 9. **Test tiers:** implementers run T1 (tests and lint/type of the changed area, `docs/dev/coding-rules.md` §3.1) per step instead of the implementer prompt's full suite; the full `npm run check` and `npm run e2e` run once, in step 5. No E2E in tasks.
 10. **No automatic security review:** suggest it at close (step 7).
+11. **Task budget:** at most 6 tasks per ticket; the designer merges mechanical work into larger tasks.
+12. **Tiered task review:** a task marked `Review: own` (it implements a Review Focus item) gets its own task review, as superpowers says. Tasks marked `Review: batch B<k>` are implemented one by one, then reviewed together in **one** review after the last task of group B<k> (step 3).
+13. **Effort:** implementers (fix rounds 1–3 resume them), scoped re-reviewers and QA `recheck` run with `effort: "medium"`. The designer, task reviewers, the final reviewer, fresh fixers (fix rounds 4–5 and the fix wave) and QA `design`/`run` keep their default (`high`).
+14. **Task dependencies are planned:** the plan lists which interfaces each task consumes from earlier tasks. A review finding on such an interface — even a Minor — is carried into the dispatch of every dependent task still to run.
 
-Everything else follows superpowers unchanged: TDD, per-task review with two verdicts, fix-loop limits and breaker, ledger, verification before completion, "Rulings I made".
+Everything else follows superpowers unchanged: TDD, task review with two verdicts, fix-loop limits and breaker, ledger, verification before completion, "Rulings I made".
 
 ## Team
 
@@ -42,13 +46,13 @@ Everything else follows superpowers unchanged: TDD, per-task review with two ver
 |---|---|---|---|
 | Designer | `designer` (modes `design`, `revise`, `plan`, `contract`) | opus | (agent type) |
 | Builder check | general-purpose + superpowers brainstorming `builder-check-prompt.md` | sonnet | `Builder check` |
-| Implementer / fixer | general-purpose + SDD `implementer-prompt.md` | the task's model hint (default sonnet); one tier up in fix rounds 4–5 | `Implement` / `Fix` |
-| Task reviewer / re-reviewer | general-purpose + SDD `task-reviewer-prompt.md` / `re-review-prompt.md` | sonnet; opus for tasks in the Review Focus | `Review` |
+| Implementer / fixer | general-purpose + SDD `implementer-prompt.md` | the task's model hint (default sonnet), effort medium; one tier up and default effort in fix rounds 4–5 and for the fix-wave fixer | `Implement` / `Fix` |
+| Task reviewer (`own` task or batch group) / re-reviewer | general-purpose + SDD `task-reviewer-prompt.md` / `re-review-prompt.md` | task reviewer: opus for `own` tasks, sonnet for batch groups, default effort; re-reviewer: sonnet, effort medium | `Review` |
 | Final reviewer | general-purpose + requesting-code-review `code-reviewer.md` | opus | `Final review` |
-| QA | `deliver-qa` (modes `design`, `run`, `recheck`) | sonnet | (agent type) |
+| QA | `deliver-qa` (modes `design`, `run`, `recheck`) | sonnet; `recheck` is a fresh dispatch with effort medium | (agent type) |
 
 The description prefixes let the token report label general-purpose agents. Rules for every dispatch:
-- Pass `model` explicitly for general-purpose agents. Pass files, not pasted content; read the files agents write.
+- Pass `model` explicitly for general-purpose agents, and `effort: "medium"` where the table says so (owner override 13). A resumed agent keeps the effort it was spawned with, so QA `recheck` is a new `deliver-qa` dispatch that reads `.work/EA-<n>/test-cases.md` and `qa-report.md` instead of a resume. Pass files, not pasted content; read the files agents write.
 - **Implementers, fixers and reviewers** always get, besides their brief: the plan's Global Constraints and `.work/EA-<n>/contract.md` (the values QA tests against; a mismatch is a QA bug).
 - **Independence:** QA gets only `.work/EA-<n>/contract.md`, `.work/EA-<n>/ticket.md` and how to run the app — never `spec.md`, `plan.md`, the diff or implementer reports. Implementers and fixers never get QA's test cases or specs; they get bug rows (steps, expected, actual) only.
 - Never run QA `run`/`recheck` together with anything else that starts the local stack. Reviewers are read-only and run no checks.
@@ -74,7 +78,10 @@ Resume the designer in mode `plan` (`BLOCKED` → as step 1.3). Check `plan.md`:
 
 ### 3. Build ‖ QA design
 In one message:
-- Use the `superpowers:subagent-driven-development` skill as controller on `.work/EA-<n>/plan.md`, with overrides 3, 4, 7, 8 and 9: workspace via its `sdd-workspace` script, ledger, pre-flight conflict scan, then the task loop (implementer → review package → task reviewer → fix loop with its limits and breaker). Implementers work on the current branch and commit per task.
+- Use the `superpowers:subagent-driven-development` skill as controller on `.work/EA-<n>/plan.md`, with overrides 3, 4, 7, 8, 9 and 11–14: workspace via its `sdd-workspace` script, ledger, pre-flight conflict scan (use the plan's Task dependencies table as its pair list), then the task loop. Implementers (effort medium) work on the current branch and commit per task.
+  - `Review: own` task: implementer → review package → task reviewer → fix loop with its limits and breaker, as superpowers says.
+  - `Review: batch B<k>` task: implementer, then the next task without a review; ledger `Task <N>: implemented (batch B<k>, commits <a7>..<b7>)`. After the group's last task: one review package from the group's base to `HEAD` and **one** task reviewer (sonnet) with every brief and report of the group; the fix loop runs on the group (each finding goes to the implementer of the task it is in; one scoped re-review per round); then `Task <N>: complete (batch B<k>, …)` for each task of the group. A group never spans an `own` task.
+  - Before each dispatch, check the ledger for findings (any severity) on the interfaces the task's `Depends on:` line names, and carry them into the dispatch (override 14).
 - Dispatch `deliver-qa` mode `design` (profile `ui`/`api`; `docs` → QA SKIPPED unless step 4 sets explore `yes`): from `contract.md` and `ticket.md` only; `test-cases.md` and draft specs; no app, no runs.
 
 QA `BLOCKED` (contract too vague) → resume the designer in mode `contract`, forward the changed values to the implementers of the tasks still to run, then resume QA in mode `design`.
@@ -83,7 +90,7 @@ QA `BLOCKED` (contract too vague) → resume the designer in mode `contract`, fo
 When every task is complete in the ledger:
 - Final whole-branch review as the superpowers skill says, with the review package from the SHA in `.work/EA-<n>/base` to `HEAD`, opus, `code-reviewer.md`, the ledger's deferred and parked lines; read-only.
 - In parallel, resume `deliver-qa` mode `run` (`docs` profile: mode `design` first). Explore `yes` for profile `ui` or when the diff touches `apps/admin/` or `apps/widget/`. Give it how to run the app (`npm run up`, `npm run seed`, URLs from `.env`).
-- Findings or blocker/major QA bugs → write `.work/EA-<n>/fix-brief.md` (the review findings, the QA bug rows as steps / expected / actual, the Global Constraints) and dispatch **one** fixer (sonnet; opus when a finding is in the Review Focus) on it. Then one scoped re-review of the fix range (`re-review-prompt.md`) and QA `recheck` naming the ACs the fix touched. Residual findings: adjudicate as the superpowers breaker says and record the Rulings. QA `FAIL` caused by the environment → escalate.
+- Findings or blocker/major QA bugs → write `.work/EA-<n>/fix-brief.md` (the review findings, the QA bug rows as steps / expected / actual, the Global Constraints) and dispatch **one** fixer (sonnet; opus when a finding is in the Review Focus) on it. Then one scoped re-review of the fix range (`re-review-prompt.md`, sonnet, effort medium) and QA `recheck` (a fresh `deliver-qa` dispatch, effort medium) naming the ACs the fix touched. Residual findings: adjudicate as the superpowers breaker says and record the Rulings. QA `FAIL` caused by the environment → escalate.
 
 ### 5. Verify
 Use `superpowers:verification-before-completion`: run `npm run check` and `npm run e2e` (fast tier, all tickets) yourself on the final tree, with the stack started by `npm run up` and stopped by `npm run down`; output to `.work/EA-<n>/logs/`.

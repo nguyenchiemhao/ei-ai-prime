@@ -129,3 +129,14 @@ Run `/deliver-ticket` on two tickets: one feature and one bug. Compare with EA-2
 - A wrong autonomous decision costs rework: mitigated by sourced Rulings, the BLOCKING stop and the Rulings list in the report.
 - No mutation reviewer: tests that do not bite can pass review; the owner can still run `security-review`, and the final reviewer checks the Review Focus tests.
 - More agents per ticket (one implementer and one reviewer per task): cost is measured in the trial before any wider use.
+
+## Changes after the first run (2026-10-21, owner decision)
+
+EA-22 cost $58, about 1.8x the EA-21 `/ship-ticket` run: 12 tasks gave 19 implementer and 20 reviewer dispatches, and the Lead had to carry four reviewer minors by hand into later tasks. Changes (overrides 11–14 in `SKILL.md`):
+
+- **Task budget:** at most 6 tasks per ticket; the designer merges mechanical work.
+- **Tiered task review:** only tasks that implement a Review Focus item (`Review: own`) get their own task review; consecutive mechanical tasks form a batch group (`Review: batch B<k>`) reviewed once after its last task. The final whole-branch review is unchanged.
+- **Effort medium** for implementers, scoped re-reviewers and QA `recheck` (a fresh dispatch, since a resumed agent keeps its spawn effort). Designer, task and final reviewers, fresh fixers and QA `design`/`run` stay on `high`.
+- **Planned task dependencies:** the plan has a Task dependencies table and a `Depends on:` line per task; findings on those interfaces are carried into the dependent tasks.
+
+Watch on the next runs: whether batch review lets a defect through to the final review that a per-task review would have caught, and the cost per ticket against the ~$30–35 target.
