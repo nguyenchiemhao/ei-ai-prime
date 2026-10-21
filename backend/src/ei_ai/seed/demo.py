@@ -33,11 +33,10 @@ from ei_ai.audit.events import (
 from ei_ai.auth.set_password import set_password_link
 from ei_ai.db.engine import run_with_app_engine
 from ei_ai.db.tenant import tenant_transaction
+from ei_ai.members.rows import find_user_id, insert_member
 from ei_ai.model_gateway.catalog_rows import ensure_platform_models
 from ei_ai.provisioning.rows import (
-    find_user_id,
     find_workspace_id,
-    insert_member,
     insert_organization,
     insert_workspace,
     organization_exists,

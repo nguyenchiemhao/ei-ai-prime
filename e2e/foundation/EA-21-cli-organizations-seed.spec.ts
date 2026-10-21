@@ -255,8 +255,9 @@ test.describe("EA-21 Platform Operator CLI and demo seed", () => {
       expect(created.link.secret).toHaveLength(43);
 
       const org = created.orgId;
+      // EA-23: 3 events plus the two role events of the founding owner (Org Owner + Workspace Admin).
       expect(counts(org)).toEqual({
-        audit_events: 3,
+        audit_events: 5,
         set_password_tokens: 1,
         workspace_memberships: 1,
         memberships: 1,
@@ -439,6 +440,10 @@ test.describe("EA-21 Platform Operator CLI and demo seed", () => {
       "target_type",
       "target_id",
       "created_at",
+      // EA-23 (migration 0006): Workspace and old/new role of a role-change event.
+      "workspace_id",
+      "old_value",
+      "new_value",
     ]);
   });
 
@@ -675,7 +680,7 @@ test.describe("EA-21 Platform Operator CLI and demo seed", () => {
       );
 
       expect(counts()).toEqual(before);
-      expect(eventSet(org.orgId)).toHaveLength(3);
+      expect(eventSet(org.orgId)).toHaveLength(5); // EA-23: + the owner's two role events
     } finally {
       purgeBySuffix(sfx);
     }
@@ -983,9 +988,14 @@ test.describe("EA-21 Platform Operator CLI and demo seed", () => {
         `platform-operator|user.invited|user|${builderId}`,
         `platform-operator|user.invited|user|${adminId}`,
         `platform-operator|user.set_password_link_issued|user|${builderId}`,
+        // EA-23: role events of the owner (Org Owner, Workspace Admin), the builder and the Org Admin.
+        `platform-operator|member.org_role_changed|user|${org.ownerId}`,
+        `platform-operator|member.workspace_role_changed|user|${org.ownerId}`,
+        `platform-operator|member.workspace_role_changed|user|${builderId}`,
+        `platform-operator|member.org_role_changed|user|${adminId}`,
       ].sort();
       expect(eventSet(orgId)).toEqual(expected);
-      expect(eventSet(orgId)).toHaveLength(7);
+      expect(eventSet(orgId)).toHaveLength(11);
 
       // No audit column holds an email, a secret or a name.
       const auditText = rows(
@@ -1090,7 +1100,14 @@ test.describe("EA-21 Platform Operator CLI and demo seed", () => {
         ),
       ).toEqual([`${email}|Trần Văn Dual`]);
       expect(eventSet(org.orgId)).toContain(`platform-operator|user.invited|user|${userId}`);
-      expect(eventSet(org.orgId)).toHaveLength(4);
+      // EA-23: one Org-role and one Workspace-role event for the invited user, two for the owner.
+      expect(eventSet(org.orgId)).toContain(
+        `platform-operator|member.org_role_changed|user|${userId}`,
+      );
+      expect(eventSet(org.orgId)).toContain(
+        `platform-operator|member.workspace_role_changed|user|${userId}`,
+      );
+      expect(eventSet(org.orgId)).toHaveLength(8);
     } finally {
       purgeBySuffix(sfx);
     }

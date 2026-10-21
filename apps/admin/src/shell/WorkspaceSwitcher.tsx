@@ -1,14 +1,14 @@
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import type { WorkspaceAccess } from "../api/workspaces";
+import type { WorkspaceInfo } from "../api/workspaces";
 import { useSession } from "../auth/SessionProvider";
 import { Chevron } from "./Chevron";
 import { type AreaSlug, areaPath } from "./navigation";
 import { useMenu } from "./useMenu";
 
 /** Lists only the Workspaces the signed-in user belongs to; choosing one keeps the current area. */
-export function WorkspaceSwitcher({ current, area }: { current: WorkspaceAccess; area: AreaSlug }) {
+export function WorkspaceSwitcher({ current, area }: { current: WorkspaceInfo; area: AreaSlug }) {
   const { t } = useTranslation();
   const { session } = useSession();
   const navigate = useNavigate();

@@ -68,6 +68,7 @@ async def test_session_info_lists_only_memberships(
     assert response.json() == {
         "user": {"id": str(a.user_id), "display_name": a.names.user, "email": a.email},
         "organization": {"id": str(a.org_id), "name": a.names.organization},
+        "org_role": None,
         "workspaces": [
             {"id": str(alpha), "name": f"Alpha {a.suffix}", "role": "builder"},
             {"id": str(a.workspace_id), "name": a.names.workspace, "role": "member"},
@@ -77,6 +78,48 @@ async def test_session_info_lists_only_memberships(
     assert f"Beta {a.suffix}" not in response.text
     for marker in b.markers():
         assert marker not in response.text
+
+
+async def test_org_owner_lists_every_workspace_and_the_org_role(
+    client: httpx.AsyncClient, app_engine: AsyncEngine, two_orgs: TwoOrgs
+) -> None:
+    a = two_orgs.a
+    unjoined = await _workspace(app_engine, a, f"Unjoined {a.suffix}", None)
+    await in_tenant(
+        app_engine,
+        a.org_id,
+        "UPDATE memberships SET org_role = 'org_owner' WHERE org_id = :org AND user_id = :user",
+        {"user": a.user_id},
+    )
+    cookie = await _signed_in(client, app_engine, a)
+
+    body = (await _get(client, cookie)).json()
+
+    assert body["org_role"] == "org_owner"
+    assert {w["id"]: w["role"] for w in body["workspaces"]} == {
+        str(a.workspace_id): "member",
+        str(unjoined): None,
+    }
+    assert body["default_workspace_id"] == str(a.workspace_id)
+
+
+async def test_org_admin_without_membership_gets_the_first_workspace_as_default(
+    client: httpx.AsyncClient, app_engine: AsyncEngine, two_orgs: TwoOrgs
+) -> None:
+    a = two_orgs.a
+    await in_tenant(app_engine, a.org_id, "DELETE FROM workspace_memberships WHERE org_id = :org")
+    await in_tenant(
+        app_engine,
+        a.org_id,
+        "UPDATE memberships SET org_role = 'org_admin' WHERE org_id = :org AND user_id = :user",
+        {"user": a.user_id},
+    )
+    cookie = await _signed_in(client, app_engine, a)
+
+    body = (await _get(client, cookie)).json()
+
+    assert body["default_workspace_id"] == str(a.workspace_id)
+    assert [w["role"] for w in body["workspaces"]] == [None]
 
 
 async def test_session_info_ignores_forged_organization_fields(

@@ -5,7 +5,7 @@ import secrets
 from collections.abc import Callable
 from urllib.parse import urlsplit
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
@@ -13,6 +13,7 @@ from starlette.responses import JSONResponse
 from starlette.types import ASGIApp
 
 from ei_ai.auth.sessions import SESSION_COOKIE
+from ei_ai.rbac.declarations import public
 
 CSRF_COOKIE = "ei_csrf"
 CSRF_HEADER = "X-CSRF-Token"
@@ -52,7 +53,12 @@ class CsrfToken(BaseModel):
     csrf_token: str
 
 
-@router.get("/auth/csrf", response_model=CsrfToken, summary="Issue an anonymous CSRF token")
+@router.get(
+    "/auth/csrf",
+    response_model=CsrfToken,
+    dependencies=[Depends(public("issues an anonymous CSRF token, no tenant data"))],
+    summary="Issue an anonymous CSRF token",
+)
 def issue_csrf_token(response: Response) -> CsrfToken:
     """Sets the ``ei_csrf`` cookie and returns the same token; carries no tenant data."""
     return CsrfToken(csrf_token=set_csrf_cookie(response))

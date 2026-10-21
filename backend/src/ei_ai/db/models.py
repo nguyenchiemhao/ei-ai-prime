@@ -1,5 +1,5 @@
-"""SQLAlchemy 2 models of the tenancy core (0001), provisioning (0002), admin sign-in (0003) and
-the model catalog (0005).
+"""SQLAlchemy 2 models of the tenancy core (0001), provisioning (0002), admin sign-in (0003), the
+model catalog (0005) and the audit role-change columns (0006).
 The schema itself is created by the migrations, never by ``metadata.create_all``."""
 
 import uuid
@@ -111,6 +111,10 @@ class AuditEvent(Base):
     action: Mapped[str] = mapped_column(Text)
     target_type: Mapped[str] = mapped_column(Text)
     target_id: Mapped[uuid.UUID]
+    # Role changes (0006): the Workspace (NULL for an Organization role) and the role codes.
+    workspace_id: Mapped[uuid.UUID | None]
+    old_value: Mapped[str | None] = mapped_column(Text)
+    new_value: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = _created_at()
 
 

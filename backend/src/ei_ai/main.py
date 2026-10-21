@@ -9,7 +9,7 @@ from datetime import timedelta
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ei_ai.api import auth, csrf, health, organization, workspaces
+from ei_ai.api import auth, csrf, health, members, organization, workspaces
 from ei_ai.api.csrf import CsrfMiddleware, origin_of
 from ei_ai.api.no_store import NoStoreAuthMiddleware
 from ei_ai.api.validation import install_validation_handler
@@ -18,6 +18,7 @@ from ei_ai.auth.principal import IdentityVerifier
 from ei_ai.auth.rate_limit import RateLimiter
 from ei_ai.auth.session_verifier import SessionCookieVerifier
 from ei_ai.db.engine import create_app_engine
+from ei_ai.rbac.declarations import install_permission_handler
 from ei_ai.readiness import Readiness, build_readiness
 from ei_ai.settings import Settings
 
@@ -86,6 +87,7 @@ def create_app(
     app.state.environment = environment or "production"
     app.state.admin_base_url = (admin_base_url or "").rstrip("/")
     install_validation_handler(app)
+    install_permission_handler(app)
     auth.install_failure_handler(app)
     app.add_middleware(CsrfMiddleware, allowed_origin=lambda: app.state.admin_origin)
     # Outermost: it also marks the CSRF 403 and the validation 422 of /auth/* as no-store.
@@ -93,6 +95,7 @@ def create_app(
     app.include_router(auth.router)
     app.include_router(csrf.router)
     app.include_router(health.router)
+    app.include_router(members.router)
     app.include_router(organization.router)
     app.include_router(workspaces.router)
     return app

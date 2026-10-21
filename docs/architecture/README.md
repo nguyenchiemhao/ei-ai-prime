@@ -6,6 +6,7 @@
 | [oss-license-review.md](oss-license-review.md) — binding approved-libraries list | Proposed | EA-12 (SET-02) |
 | [data-model.md](data-model.md) — multi-tenant data model, RLS and roles | Accepted with FND-01 review | EA-18 (FND-01) |
 | [model-gateway.md](model-gateway.md) — Model Gateway, pinned model catalog, egress seam, adding a model | Built | EA-24 (FND-07) |
+| [rbac.md](rbac.md) — 3-tier roles, the permission matrix, how a route declares its permission | Built | EA-23 (FND-06) |
 
 Check for the licence review (structure and agreement with the ADR; no network, no dependencies): `node --test docs/architecture/checks/oss-license-review.test.mjs`.
 

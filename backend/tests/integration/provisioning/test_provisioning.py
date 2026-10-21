@@ -111,7 +111,7 @@ async def test_create_organization_creates_org_workspace_owner_and_token(
     assert await count_org_rows(app_engine, org) == {
         "admin_sessions": 0,
         "user_credentials": 0,
-        "audit_events": 3,
+        "audit_events": 5,
         "set_password_tokens": 1,
         "workspace_memberships": 1,
         "memberships": 1,
@@ -281,6 +281,8 @@ async def test_each_command_writes_its_audit_events(
             (ACTOR, "organization.created", "organization", org.org_id),
             (ACTOR, "workspace.created", "workspace", org.workspace_id),
             (ACTOR, "user.invited", "user", org.owner_id),
+            (ACTOR, "member.org_role_changed", "user", org.owner_id),
+            (ACTOR, "member.workspace_role_changed", "user", org.owner_id),
         ]
     )
     before = await _events(app_engine, org.org_id)
@@ -301,10 +303,74 @@ async def test_each_command_writes_its_audit_events(
             *before,
             (ACTOR, "workspace.created", "workspace", workspace.workspace_id),
             (ACTOR, "user.invited", "user", builder.user_id),
+            (ACTOR, "member.workspace_role_changed", "user", builder.user_id),
             (ACTOR, "user.invited", "user", admin.user_id),
+            (ACTOR, "member.org_role_changed", "user", admin.user_id),
             (ACTOR, "user.set_password_link_issued", "user", builder.user_id),
         ]
     )
+
+
+async def test_create_organization_audits_the_founding_owners_roles(
+    app_engine: AsyncEngine, created: list[uuid.UUID]
+) -> None:
+    org = await _new_org(app_engine, created)
+
+    assert await _rows(
+        app_engine,
+        org.org_id,
+        "SELECT actor, action, workspace_id, old_value, new_value FROM audit_events"
+        " WHERE org_id = :org AND target_id = :user AND action LIKE 'member.%'"
+        " ORDER BY action",
+        user=org.owner_id,
+    ) == [
+        (ACTOR, "member.org_role_changed", None, None, "org_owner"),
+        (ACTOR, "member.workspace_role_changed", org.workspace_id, None, "workspace_admin"),
+    ]
+
+
+async def test_invite_audits_each_role_with_its_workspace_and_no_old_value(
+    app_engine: AsyncEngine, created: list[uuid.UUID]
+) -> None:
+    sfx = _suffix()
+    org = await _new_org(app_engine, created)
+
+    invited = await invite_user(
+        app_engine,
+        org.org_id,
+        f"both.{sfx}@example.com",
+        ["org_admin", "reviewer"],
+        org.workspace_id,
+    )
+
+    assert await _rows(
+        app_engine,
+        org.org_id,
+        "SELECT action, workspace_id, old_value, new_value FROM audit_events"
+        " WHERE org_id = :org AND target_id = :user AND action LIKE 'member.%'"
+        " ORDER BY action",
+        user=invited.user_id,
+    ) == [
+        ("member.org_role_changed", None, None, "org_admin"),
+        ("member.workspace_role_changed", org.workspace_id, None, "reviewer"),
+    ]
+
+
+async def test_invite_without_roles_writes_no_role_event(
+    app_engine: AsyncEngine, created: list[uuid.UUID]
+) -> None:
+    sfx = _suffix()
+    org = await _new_org(app_engine, created)
+
+    invited = await invite_user(app_engine, org.org_id, f"plain.{sfx}@example.com", [])
+
+    assert await _rows(
+        app_engine,
+        org.org_id,
+        "SELECT count(*) FROM audit_events WHERE org_id = :org AND target_id = :user"
+        " AND action LIKE 'member.%'",
+        user=invited.user_id,
+    ) == [(0,)]
 
 
 async def test_invite_writes_user_membership_workspace_membership_and_token(
@@ -507,8 +573,19 @@ async def test_add_member_adds_the_workspace_membership_and_audit_event(
         user=invited.user_id,
     ) == [(second.workspace_id, invited.user_id, "viewer")]
     assert await _events(app_engine, org.org_id) == sorted(
-        [*before, (ACTOR, "workspace.member_added", "user", invited.user_id)]
+        [
+            *before,
+            (ACTOR, "workspace.member_added", "user", invited.user_id),
+            (ACTOR, "member.workspace_role_changed", "user", invited.user_id),
+        ]
     )
+    assert await _rows(
+        app_engine,
+        org.org_id,
+        "SELECT workspace_id, old_value, new_value FROM audit_events"
+        " WHERE org_id = :org AND action = 'member.workspace_role_changed' AND target_id = :user",
+        user=invited.user_id,
+    ) == [(second.workspace_id, None, "viewer")]
 
 
 async def test_add_member_errors_write_nothing(

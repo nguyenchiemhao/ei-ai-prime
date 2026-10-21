@@ -3,11 +3,14 @@
 import os
 from collections.abc import AsyncIterator, Iterator
 
+import httpx
 import psycopg
 import pytest
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
+from ei_ai.auth.directory import SignInDirectory
 from ei_ai.db.engine import to_sqlalchemy_url
+from support.sign_in import auth_client
 from support.tenants import TwoOrgs, create_org_rows, purge_org_rows
 
 
@@ -68,3 +71,21 @@ async def two_orgs(app_engine: AsyncEngine) -> AsyncIterator[TwoOrgs]:
         yield TwoOrgs(a=a, b=b)
     finally:
         await purge_org_rows(app_engine, a, b)
+
+
+@pytest.fixture
+async def directory() -> AsyncIterator[SignInDirectory]:
+    directory = SignInDirectory(os.environ["SIGNIN_DATABASE_URL"])
+    try:
+        yield directory
+    finally:
+        await directory.dispose()
+
+
+@pytest.fixture
+async def client(
+    app_engine: AsyncEngine, directory: SignInDirectory
+) -> AsyncIterator[httpx.AsyncClient]:
+    """The production app with the real session verifier, for tests that sign in."""
+    async with auth_client(app_engine, directory) as client:
+        yield client

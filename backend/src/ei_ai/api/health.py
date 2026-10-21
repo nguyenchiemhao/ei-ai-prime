@@ -2,9 +2,10 @@
 
 from typing import Literal
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel
 
+from ei_ai.rbac.declarations import public
 from ei_ai.readiness import Readiness, Status, run_checks
 
 router = APIRouter()
@@ -24,7 +25,12 @@ class ReadinessStatus(BaseModel):
     checks: ReadinessChecks
 
 
-@router.get("/healthz", response_model=HealthStatus, summary="Liveness probe")
+@router.get(
+    "/healthz",
+    response_model=HealthStatus,
+    dependencies=[Depends(public("liveness probe, no tenant data"))],
+    summary="Liveness probe",
+)
 def healthz() -> HealthStatus:
     """The process is up. Never calls a dependency."""
     return HealthStatus(status="ok")
@@ -34,6 +40,7 @@ def healthz() -> HealthStatus:
     "/readyz",
     response_model=ReadinessStatus,
     responses={503: {"model": ReadinessStatus, "description": "A dependency is unavailable"}},
+    dependencies=[Depends(public("readiness probe, component names only"))],
     summary="Readiness probe",
 )
 async def readyz(request: Request, response: Response) -> ReadinessStatus:

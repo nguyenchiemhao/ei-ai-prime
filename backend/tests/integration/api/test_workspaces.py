@@ -64,9 +64,76 @@ async def test_member_gets_workspace(
     other = await _get(client, cookie, builder)
 
     assert own.status_code == 200
-    assert own.json() == {"id": str(a.workspace_id), "name": a.names.workspace, "role": "member"}
+    assert own.json() == {
+        "id": str(a.workspace_id),
+        "name": a.names.workspace,
+        "role": "member",
+        "org_role": None,
+        "permissions": ["workspace.access"],
+    }
     assert other.status_code == 200
-    assert other.json() == {"id": str(builder), "name": f"Builder {a.suffix}", "role": "builder"}
+    assert other.json() == {
+        "id": str(builder),
+        "name": f"Builder {a.suffix}",
+        "role": "builder",
+        "org_role": None,
+        "permissions": [
+            "assistants.manage",
+            "assistants.publish",
+            "dashboard.view",
+            "knowledge.manage",
+            "members.view",
+            "playground.use",
+            "workspace.access",
+        ],
+    }
+
+
+async def _set_org_role(engine: AsyncEngine, org: OrgRows, org_role: str | None) -> None:
+    await in_tenant(
+        engine,
+        org.org_id,
+        "UPDATE memberships SET org_role = :role WHERE org_id = :org AND user_id = :user",
+        {"role": org_role, "user": org.user_id},
+    )
+
+
+async def test_org_admin_sees_every_workspace(
+    client: httpx.AsyncClient, app_engine: AsyncEngine, two_orgs: TwoOrgs
+) -> None:
+    a, b = two_orgs.a, two_orgs.b
+    others = await _workspace(app_engine, a, f"Others {a.suffix}", None)
+    await _set_org_role(app_engine, a, "org_admin")
+    cookie = await _signed_in(client, app_engine, a)
+
+    member_of = await _get(client, cookie, a.workspace_id)
+    not_member_of = await _get(client, cookie, others)
+    other_org = await _get(client, cookie, b.workspace_id)
+
+    assert member_of.json()["role"] == "member"
+    assert not_member_of.status_code == 200
+    body = not_member_of.json()
+    assert (body["role"], body["org_role"]) == (None, "org_admin")
+    assert "members.manage" in body["permissions"]
+    assert "org.settings.manage" in body["permissions"]
+    assert "org.roles.manage" not in body["permissions"]
+    assert "conversations.read" not in body["permissions"]
+    assert other_org.status_code == 404
+    assert other_org.json() == {"detail": "not_found"}
+
+
+async def test_non_member_still_404(
+    client: httpx.AsyncClient, app_engine: AsyncEngine, two_orgs: TwoOrgs
+) -> None:
+    a = two_orgs.a
+    hidden = await _workspace(app_engine, a, f"Hidden {a.suffix}", None)
+    cookie = await _signed_in(client, app_engine, a)
+
+    unknown = await _get(client, cookie, uuid.uuid4())
+    not_member = await _get(client, cookie, hidden)
+
+    assert (not_member.status_code, not_member.json()) == (404, {"detail": "not_found"})
+    assert (not_member.status_code, not_member.content) == (unknown.status_code, unknown.content)
 
 
 async def test_workspace_route_404_for_non_member_and_other_org(

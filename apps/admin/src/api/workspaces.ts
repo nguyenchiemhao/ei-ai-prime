@@ -1,8 +1,9 @@
 import type { components } from "@ei-ai/api-types";
 import { type ApiResult, apiRequest } from "./client";
 
-export type WorkspaceAccess = components["schemas"]["SessionWorkspace"];
+/** The signed-in user's roles and permissions in one Workspace (`GET /workspaces/{id}`). */
+export type WorkspaceInfo = components["schemas"]["WorkspaceInfo"];
 
-export function getWorkspace(id: string): Promise<ApiResult<WorkspaceAccess>> {
-  return apiRequest<WorkspaceAccess>("GET", `/workspaces/${encodeURIComponent(id)}`);
+export function getWorkspace(id: string): Promise<ApiResult<WorkspaceInfo>> {
+  return apiRequest<WorkspaceInfo>("GET", `/workspaces/${encodeURIComponent(id)}`);
 }

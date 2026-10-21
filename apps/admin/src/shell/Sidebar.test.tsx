@@ -2,7 +2,7 @@ import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearCsrfToken } from "../api/client";
 import { callsTo, mockApi, renderAt, WS } from "../test/renderApp";
-import { signedInApi, WS_B } from "./shellTestKit";
+import { MULTI_SESSION, signedInApi, WS_B } from "./shellTestKit";
 
 beforeEach(() => clearCsrfToken());
 afterEach(() => {
@@ -17,7 +17,7 @@ async function openShell(path = `/w/${WS}/assistants`, extra: Parameters<typeof 
   return { api, router };
 }
 
-const SLUGS = [
+const BUILDER_SLUGS = [
   "dashboard",
   "assistants",
   "knowledge",
@@ -25,10 +25,53 @@ const SLUGS = [
   "glossary",
   "skills",
   "channels",
-  "conversations",
-  "unanswered",
   "members",
-  "organization",
+];
+const BUILDER_SET = [
+  "Dashboard",
+  "Assistants",
+  "Knowledge",
+  "Answer Scripts",
+  "Glossary",
+  "Skills & Connectors",
+  "Channels",
+  "Members & roles",
+];
+const ALL_ELEVEN = [
+  "Dashboard",
+  "Assistants",
+  "Knowledge",
+  "Answer Scripts",
+  "Glossary",
+  "Skills & Connectors",
+  "Channels",
+  "Conversations",
+  "Unanswered",
+  "Members & roles",
+  "Organization",
+];
+
+// [label, workspace role, organization role, the Sidebar items] (docs/architecture/rbac.md).
+const ROLE_SETS: [string, string | null, string | null, string[]][] = [
+  ["a Builder", "builder", null, BUILDER_SET],
+  ["a Workspace Admin", "workspace_admin", null, BUILDER_SET],
+  [
+    "a Developer",
+    "developer",
+    null,
+    ["Dashboard", "Skills & Connectors", "Channels", "Members & roles"],
+  ],
+  [
+    "a Knowledge Editor",
+    "knowledge_editor",
+    null,
+    ["Dashboard", "Knowledge", "Answer Scripts", "Glossary", "Members & roles"],
+  ],
+  ["a Reviewer", "reviewer", null, ["Dashboard", "Conversations", "Unanswered", "Members & roles"]],
+  ["a Viewer", "viewer", null, ["Dashboard", "Members & roles"]],
+  ["an Org Admin", null, "org_admin", [...BUILDER_SET, "Organization"]],
+  ["an Org Owner", null, "org_owner", [...BUILDER_SET, "Organization"]],
+  ["an Org Admin who is also a Reviewer", "reviewer", "org_admin", ALL_ELEVEN],
 ];
 
 describe("Sidebar", () => {
@@ -41,39 +84,60 @@ describe("Sidebar", () => {
     expect(within(sidebar).getByText("Prototype")).not.toBeNull();
   });
 
-  it("lists_five_groups_and_eleven_items_in_order_with_workspace_hrefs", async () => {
+  it("lists_the_builder_items_in_order_with_workspace_hrefs_and_no_empty_group", async () => {
     await openShell();
     const sidebar = screen.getByTestId("sidebar");
     const groups = within(sidebar).getAllByRole("group");
-    expect(groups.map((group) => within(group).getAllByRole("link").length)).toEqual([
-      1, 5, 1, 2, 2,
-    ]);
+    expect(groups.map((group) => within(group).getAllByRole("link").length)).toEqual([1, 5, 1, 1]);
     expect(groups.map((group) => group.firstElementChild?.textContent)).toEqual([
       "Overview",
       "Build",
       "Deploy",
-      "Review",
       "Settings",
     ]);
 
     const links = within(sidebar).getAllByRole("link");
-    expect(links.map((link) => link.textContent)).toEqual([
-      "Dashboard",
-      "Assistants",
-      "Knowledge",
-      "Answer Scripts",
-      "Glossary",
-      "Skills & Connectors",
-      "Channels",
-      "Conversations",
-      "Unanswered",
-      "Members & roles",
-      "Organization",
-    ]);
+    expect(links.map((link) => link.textContent)).toEqual(BUILDER_SET);
     expect(links.map((link) => link.getAttribute("href"))).toEqual(
-      SLUGS.map((slug) => `/w/${WS}/${slug}`),
+      BUILDER_SLUGS.map((slug) => `/w/${WS}/${slug}`),
     );
     expect(within(sidebar).queryByText("Chat")).toBeNull();
+    expect(within(sidebar).queryByText("Review")).toBeNull();
+    expect(within(sidebar).queryByRole("link", { name: "Conversations" })).toBeNull();
+    expect(within(sidebar).queryByRole("link", { name: "Organization" })).toBeNull();
+  });
+
+  it.each(ROLE_SETS)("shows_only_what_%s_can_use", async (_label, role, orgRole, expected) => {
+    const session = {
+      ...MULTI_SESSION,
+      org_role: orgRole,
+      workspaces: [{ id: WS, name: "People Ops", role }],
+    };
+    mockApi(signedInApi(session));
+    renderAt(`/w/${WS}/members`);
+    await screen.findByTestId("sidebar");
+    const sidebar = screen.getByTestId("sidebar");
+    const links = within(sidebar).getAllByRole("link");
+    expect(links.map((link) => link.textContent)).toEqual(expected);
+    // A heading without items is not in the DOM at all.
+    const counts = within(sidebar)
+      .getAllByRole("group")
+      .map((group) => within(group).getAllByRole("link").length);
+    expect(counts.every((count) => count > 0)).toBe(true);
+  });
+
+  it("shows_no_item_to_a_member_role_and_no_group_heading", async () => {
+    mockApi(
+      signedInApi({
+        ...MULTI_SESSION,
+        workspaces: [{ id: WS, name: "People Ops", role: "member" }],
+      }),
+    );
+    renderAt(`/w/${WS}/dashboard`);
+    await screen.findByTestId("sidebar");
+    const sidebar = screen.getByTestId("sidebar");
+    expect(within(sidebar).queryAllByRole("link")).toEqual([]);
+    expect(within(sidebar).queryAllByRole("group")).toEqual([]);
   });
 
   it("marks_only_the_active_item_with_aria_current_page", async () => {
@@ -130,6 +194,19 @@ describe("Sidebar", () => {
   it("uses_the_role_in_the_current_workspace", async () => {
     await openShell(`/w/${WS_B}/dashboard`);
     expect(screen.getByTestId("user-menu").textContent).toContain("Viewer");
+  });
+
+  it("shows_the_organization_role_when_there_is_no_workspace_role", async () => {
+    mockApi(
+      signedInApi({
+        ...MULTI_SESSION,
+        org_role: "org_owner",
+        workspaces: [{ id: WS, name: "People Ops", role: null }],
+      }),
+    );
+    renderAt(`/w/${WS}/dashboard`);
+    await screen.findByTestId("sidebar");
+    expect(screen.getByTestId("user-menu").textContent).toContain("Org Owner");
   });
 
   it("signs_out_from_the_user_menu_and_goes_to_sign_in", async () => {

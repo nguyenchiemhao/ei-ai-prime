@@ -16,7 +16,7 @@ const ADMIN_URL = adminUrl(ROOT, process.env);
 const FORGED = "0b9c1c3e-5f0a-4a52-9a53-2c0f1f6f7a11";
 // EA-21 (FND-04) added audit_events and set_password_tokens (migration 0002); EA-22 (FND-05) added
 // admin_sessions and user_credentials, the ei_ai_signin role and the sign_in_lookup policy (head 0004);
-// EA-24 (FND-07) added model_catalog (head 0005).
+// EA-24 (FND-07) added model_catalog (head 0005); EA-23 (FND-06) added the audit role-change columns (head 0006).
 const TABLES = [
   "admin_sessions",
   "audit_events",
@@ -29,7 +29,7 @@ const TABLES = [
   "workspace_memberships",
   "workspaces",
 ];
-const REVISION = "0005";
+const REVISION = "0006";
 const STANDARD_EXPRESSION = "NULLIF(current_setting('app.current_org'::text, true), ''::text)";
 
 /** Runs SQL through psql in the db container; returns stdout, stderr and the exit code. */

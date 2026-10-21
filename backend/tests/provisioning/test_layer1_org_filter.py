@@ -14,10 +14,19 @@ SRC = Path(__file__).resolve().parents[2] / "src" / "ei_ai"
 MODULES = (
     "provisioning/rows.py",
     "provisioning/service.py",
+    "members/rows.py",
+    "rbac/access.py",
     "auth/set_password.py",
     "audit/events.py",
 )
-_TABLE = re.compile(r"\b(?:FROM|UPDATE|INTO|JOIN)\s+([a-z_]+)", re.IGNORECASE)
+# A table reference is FROM/UPDATE/INTO/JOIN <table> [AS] [<alias>]; some words after it are SQL.
+_REFERENCE = re.compile(
+    r"\b(?:FROM|UPDATE|INTO|JOIN)\s+([a-z_]+)(?:\s+(?:AS\s+)?([a-z_]+))?", re.IGNORECASE
+)
+_NOT_AN_ALIAS = frozenset(
+    "where set on left right inner outer join cross values order group limit for using as select"
+    " returning and or".split()
+)
 
 
 def sql_literals(source: str) -> list[str]:
@@ -36,14 +45,33 @@ def sql_literals(source: str) -> list[str]:
 
 
 def missing_org_filter(sql: str) -> bool:
-    """True when the statement touches a tenant table without naming the Organization."""
-    tables = {table.lower() for table in _TABLE.findall(sql)} & set(DELETE_ORDER)
-    if not tables:
+    """True when a tenant table of the statement is not itself restricted to the Organization.
+
+    Every reference to a tenant table needs its own ``<alias>.org_id = :org`` (``org_id = :org``
+    for a table without alias; ``id = :org`` for ``organizations``). A filter on a joined table
+    does not count for the other tables: an equality such as ``m.org_id = w.org_id`` is no filter.
+    """
+    references = [
+        (
+            table.lower(),
+            (alias or table).lower()
+            if (alias or "").lower() not in _NOT_AN_ALIAS
+            else table.lower(),
+        )
+        for table, alias in _REFERENCE.findall(sql)
+    ]
+    tenant = [(table, alias) for table, alias in references if table in DELETE_ORDER]
+    if not tenant:
         return False
     if sql.lstrip().upper().startswith("INSERT"):
         return ":org" not in sql
-    keys = ["id = :org"] if tables == {"organizations"} else ["org_id = :org"]
-    return not any(key in sql for key in keys)
+    for table, alias in tenant:
+        column = "id" if table == "organizations" else "org_id"
+        qualified = rf"\b{re.escape(alias)}\.{column}\s*=\s*:org\b"
+        bare = rf"(?<![\w.]){column}\s*=\s*:org\b"
+        if not re.search(qualified, sql) and not (alias == table and re.search(bare, sql)):
+            return True
+    return False
 
 
 def unfiltered_statements(sources: dict[str, str]) -> list[str]:
@@ -70,13 +98,22 @@ def test_the_check_reports_a_statement_without_the_filter() -> None:
             'text("UPDATE set_password_tokens SET used_at = now() WHERE token_hash = :hash")\n'
             'text("SELECT id FROM users u JOIN memberships m ON m.user_id = u.id")\n'
             'text("INSERT INTO users (email) VALUES (:email)")\n'
+            # one table filtered, the joined one only equated to it (the EA-23 mutation B16)
+            'text("SELECT w.id FROM workspaces w JOIN memberships m ON m.org_id = w.org_id'
+            ' AND m.org_id = :org WHERE w.id = :ws")\n'
+            # the filter sits on a subselect alias, not on the outer table
+            'text("SELECT 1 FROM users u WHERE EXISTS (SELECT 1 FROM admin_sessions s'
+            ' WHERE s.org_id = :org AND s.user_id = u.id)")\n'
         ),
         "good.py": (
             'text("SELECT 1 FROM organizations WHERE id = :org")\n'
             'text("DELETE FROM set_password_tokens WHERE org_id = :org AND user_id = :u")\n'
             'text("INSERT INTO workspaces (org_id, name) VALUES (:org, :name)")\n'
             'text("SELECT uuid_generate_v7()")\n'
+            'text("SELECT w.id FROM workspaces w JOIN memberships m ON m.org_id = w.org_id'
+            " LEFT JOIN workspace_memberships wm ON wm.org_id = w.org_id AND wm.org_id = :org"
+            ' WHERE w.org_id = :org AND m.org_id = :org")\n'
         ),
     }
 
-    assert [line.split(":")[0] for line in unfiltered_statements(sources)] == ["bad.py"] * 4
+    assert [line.split(":")[0] for line in unfiltered_statements(sources)] == ["bad.py"] * 6

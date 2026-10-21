@@ -31,8 +31,9 @@ from ei_ai.auth.sessions import SESSION_COOKIE
 from ei_ai.auth.set_password import set_password_with_token
 from ei_ai.auth.sign_in import sign_in, sign_out
 from ei_ai.auth.tokens import parse_token
-from ei_ai.db.models import Organization, User
-from ei_ai.tenancy.context import TenantContext, require_tenant
+from ei_ai.db.models import Membership, Organization, User
+from ei_ai.rbac.declarations import public, signed_in
+from ei_ai.tenancy.context import TenantContext
 from ei_ai.workspaces.memberships import default_workspace_id, list_workspaces
 
 logger = logging.getLogger("ei_ai.auth")
@@ -105,12 +106,13 @@ class SessionOrganization(BaseModel):
 class SessionWorkspace(BaseModel):
     id: UUID
     name: str
-    role: str
+    role: str | None  # None: visible through an Organization role
 
 
 class SessionInfo(BaseModel):
     user: SessionUser
     organization: SessionOrganization
+    org_role: str | None
     workspaces: list[SessionWorkspace]
     default_workspace_id: UUID | None
 
@@ -158,6 +160,11 @@ def _set_session_cookie(response: Response, cookie: str) -> None:
     )
 
 
+_SIGN_IN_REASON = "pre-auth sign-in; the Organization comes from the verified password"
+_SIGN_OUT_REASON = "ends the caller's own session cookie, if any; answers 204 with no tenant data"
+_FORGOT_REASON = "pre-auth; always 202 whatever the email, no tenant data"
+_SET_PASSWORD_REASON = "pre-auth; the Organization comes from the one-time token"
+
 _REJECTED = {"model": ErrorCode, "description": "Wrong email or password, or locked (identical)"}
 _LIMITED = {"model": ErrorCode, "description": "Too many attempts from this address"}
 _CSRF = {"model": ErrorCode, "description": "Missing or wrong CSRF token or Origin (csrf_failed)"}
@@ -168,7 +175,7 @@ _INVALID = {"model": ErrorCode, "description": "Missing or non-string field (inv
     "/auth/sign-in",
     response_model=SignInResponse,
     responses={401: _REJECTED, 403: _CSRF, 422: _INVALID, 429: _LIMITED},
-    dependencies=[Depends(rate_limit("sign-in"))],
+    dependencies=[Depends(rate_limit("sign-in")), Depends(public(_SIGN_IN_REASON))],
     summary="Sign in with email and password",
 )
 async def post_sign_in(body: SignInRequest, request: Request, response: Response) -> SignInResponse:
@@ -195,6 +202,7 @@ async def post_sign_in(body: SignInRequest, request: Request, response: Response
     status_code=204,
     response_class=Response,
     responses={403: _CSRF},
+    dependencies=[Depends(public(_SIGN_OUT_REASON))],
     summary="Sign out: end the session of this cookie",
 )
 async def post_sign_out(request: Request) -> Response:
@@ -215,7 +223,7 @@ async def post_sign_out(request: Request) -> Response:
     summary="The signed-in user, their Organization and their Workspaces",
 )
 async def get_session(
-    tenant: Annotated[TenantContext, Depends(require_tenant)], session: TenantSession
+    tenant: Annotated[TenantContext, Depends(signed_in())], session: TenantSession
 ) -> SessionInfo:
     """Only the caller's own rows: explicit ``org_id`` filters plus row-level security (D46)."""
     user = (
@@ -230,6 +238,13 @@ async def get_session(
             select(Organization.id, Organization.name).where(Organization.id == tenant.org_id)
         )
     ).one_or_none()
+    org_role = (
+        await session.execute(
+            select(Membership.org_role).where(
+                Membership.org_id == tenant.org_id, Membership.user_id == tenant.user_id
+            )
+        )
+    ).scalar_one_or_none()
     if user is None or organization is None:
         raise HTTPException(status_code=401, detail=UNAUTHENTICATED)
     conn = await session.connection()
@@ -237,6 +252,7 @@ async def get_session(
     return SessionInfo(
         user=SessionUser(id=user.id, display_name=user.display_name, email=user.email),
         organization=SessionOrganization(id=organization.id, name=organization.name),
+        org_role=org_role,
         workspaces=[SessionWorkspace(id=w.id, name=w.name, role=w.role) for w in workspaces],
         default_workspace_id=await default_workspace_id(conn, tenant.org_id, tenant.user_id),
     )
@@ -247,7 +263,7 @@ async def get_session(
     status_code=202,
     response_class=Response,
     responses={403: _CSRF, 422: _INVALID, 429: _LIMITED},
-    dependencies=[Depends(rate_limit("forgot"))],
+    dependencies=[Depends(rate_limit("forgot")), Depends(public(_FORGOT_REASON))],
     summary="Ask for a reset link (always 202, whatever the email)",
 )
 async def post_forgot(body: ForgotRequest, request: Request) -> Response:
@@ -276,7 +292,7 @@ async def post_forgot(body: ForgotRequest, request: Request) -> Response:
         422: {"model": ErrorCode, "description": "Password policy or invalid_request"},
         429: _LIMITED,
     },
-    dependencies=[Depends(rate_limit("set-password"))],
+    dependencies=[Depends(rate_limit("set-password")), Depends(public(_SET_PASSWORD_REASON))],
     summary="Set a new password with a one-time link",
 )
 async def post_set_password(body: SetCredentialRequest, request: Request) -> Response:

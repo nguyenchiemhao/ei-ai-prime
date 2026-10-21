@@ -10,7 +10,6 @@ import {
   ADMIN,
   ApiSession,
   MSG,
-  NAV_GROUPS,
   RUN,
   SCREENSHOTS,
   addMember,
@@ -32,6 +31,11 @@ import {
   type QaUser,
   type StorageState,
 } from "../support/ea22";
+import { AREAS_BY_PERSONA, visibleNav } from "../support/ea23";
+
+// EA-23 (FND-06): the Sidebar shows only what the role can use. `main` is a Builder in People Ops.
+const BUILDER_NAV = visibleNav(AREAS_BY_PERSONA.builder ?? []);
+const BUILDER_HIDDEN = ["conversations", "unanswered", "organization"];
 
 const IDENTITY_PARAMS = /[?&](user_?id|org_?id|groups?|tenant)=/i;
 const ALPHA_NAME = `QA22 Alpha ${RUN}`;
@@ -88,7 +92,7 @@ test("AC6: the workspace is switched from the Sidebar, the URL carries the id an
 }) => {
   await withPage(browser, state, async (page) => {
     const seen = watch(page);
-    await page.goto(`/w/${peopleOps}/glossary`);
+    await page.goto(`/w/${peopleOps}/dashboard`);
     const switcher = page.getByTestId("workspace-switcher");
     await expect(switcher).toContainText("Workspace");
     await expect(switcher).toContainText("People Ops");
@@ -106,20 +110,20 @@ test("AC6: the workspace is switched from the Sidebar, the URL carries the id an
     await expect(menu).not.toContainText(HIDDEN_NAME);
 
     await items.nth(1).click();
-    await expect(page).toHaveURL(workspaceUrl(alpha, "glossary"));
+    await expect(page).toHaveURL(workspaceUrl(alpha, "dashboard"));
     await expect(switcher).toContainText(ALPHA_NAME);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Glossary");
-    await expect(page.getByTestId("area-page")).toHaveAttribute("data-area", "glossary");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Dashboard");
+    await expect(page.getByTestId("area-page")).toHaveAttribute("data-area", "dashboard");
     await expect(userMenu).toContainText("Viewer"); // the role in the current Workspace
     await expect(userMenu).not.toContainText("Builder");
     const sidebar = page.getByTestId("sidebar");
-    const glossary = sidebar.getByRole("link", { name: "Glossary" });
-    await expect(glossary).toHaveAttribute("href", `/w/${alpha}/glossary`);
-    await expect(glossary).toHaveAttribute("aria-current", "page");
+    const dashboardLink = sidebar.getByRole("link", { name: "Dashboard", exact: true });
+    await expect(dashboardLink).toHaveAttribute("href", `/w/${alpha}/dashboard`);
+    await expect(dashboardLink).toHaveAttribute("aria-current", "page");
 
     await switcher.click();
     await page.getByRole("menuitemradio", { name: ZETA_NAME }).click();
-    await expect(page).toHaveURL(workspaceUrl(zeta, "glossary"));
+    await expect(page).toHaveURL(workspaceUrl(zeta, "dashboard"));
     await expect(userMenu).toContainText("Workspace Admin");
     await expect(page.getByRole("menuitemradio")).toHaveCount(0); // the menu closed
 
@@ -300,7 +304,12 @@ test("AC7 TC-7-2: the Sidebar has the logo, switchers, groups and links of the S
     };
     await yOf("org-switcher", orgSwitcher);
     await yOf("workspace-switcher", workspaceSwitcher);
-    for (const { group, items } of NAV_GROUPS) {
+    // A Builder sees 8 of the 11 areas: no Review group, no Organization.
+    await expect(sidebar.getByText("Review", { exact: true })).toHaveCount(0);
+    for (const hidden of ["Conversations", "Unanswered", "Organization"]) {
+      await expect(sidebar.getByRole("link", { name: hidden, exact: true }), hidden).toHaveCount(0);
+    }
+    for (const { group, items } of BUILDER_NAV) {
       await yOf(`group ${group}`, sidebar.getByText(group, { exact: true }));
       for (const [label, slug] of items) {
         const link = sidebar.getByRole("link", { name: label, exact: true });
@@ -363,14 +372,19 @@ test("AC7 TC-7-3: every area is an empty page with the label as heading, title a
     const seen = watch(page);
     await page.goto(`/w/${peopleOps}/dashboard`);
     const sidebar = page.getByTestId("sidebar");
-    for (const { items } of NAV_GROUPS) {
+    for (const { items } of BUILDER_NAV) {
       for (const [label, slug] of items) {
         await sidebar.getByRole("link", { name: label, exact: true }).click();
         await expect(page, label).toHaveURL(workspaceUrl(peopleOps, slug));
         await expect(page.getByRole("heading", { level: 1 }), label).toHaveText(label);
-        const area = page.getByTestId("area-page");
-        await expect(area, label).toHaveAttribute("data-area", slug);
-        await expect(area, label).toContainText("Nothing here yet.");
+        if (slug === "members") {
+          // EA-23: Members & roles is a real page now.
+          await expect(page.getByTestId("members-page"), label).toBeVisible();
+        } else {
+          const area = page.getByTestId("area-page");
+          await expect(area, label).toHaveAttribute("data-area", slug);
+          await expect(area, label).toContainText("Nothing here yet.");
+        }
         await expect(page, label).toHaveTitle(`${label} · ei-ai`);
         await expect(sidebar.locator('[aria-current="page"]'), label).toHaveCount(1);
         await expect(sidebar.getByRole("link", { name: label, exact: true })).toHaveAttribute(
@@ -378,6 +392,14 @@ test("AC7 TC-7-3: every area is an empty page with the label as heading, title a
           "page",
         );
       }
+    }
+    // The areas a Builder cannot use are "No access" inside the shell (EA-23).
+    for (const slug of BUILDER_HIDDEN) {
+      await page.goto(`/w/${peopleOps}/${slug}`);
+      const forbidden = page.getByTestId("area-forbidden");
+      await expect(forbidden, slug).toBeVisible();
+      await expect(forbidden.getByRole("heading", { level: 1 })).toHaveText("No access");
+      await expect(sidebar, slug).toBeVisible();
     }
     // Opening an area by URL gives the same page.
     await page.goto(`/w/${peopleOps}/skills`);

@@ -168,6 +168,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organization/members/{user_id}/org-role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Change a user's Organization role (Org Owner only) */
+        put: operations["change_org_role_organization_members__user_id__org_role_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/readyz": {
         parameters: {
             query?: never;
@@ -196,13 +213,54 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * A Workspace the signed-in user belongs to
-         * @description Membership is checked by the dependency; the answer is the caller's own role.
+         * A Workspace the signed-in user can see, with their roles and permissions
+         * @description Visibility is checked by the dependency; the answer is the caller's own roles and the
+         *     permissions they add up to (the admin UI re-reads it on every area or Workspace change).
          */
         get: operations["get_workspace_workspaces__workspace_id__get"];
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The members of a Workspace and their roles */
+        get: operations["list_members_workspaces__workspace_id__members_get"];
+        put?: never;
+        /**
+         * Invite a person to a Workspace with a role
+         * @description Creates the user (with an unused set-password token) when the email is new to the
+         *     Organization; the token is not returned. The role change is audited.
+         */
+        post: operations["invite_member_workspaces__workspace_id__members_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/members/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Change a member's Workspace role */
+        put: operations["change_workspace_role_workspaces__workspace_id__members__user_id__put"];
+        post?: never;
+        /** Revoke a member's Workspace role */
+        delete: operations["remove_member_workspaces__workspace_id__members__user_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -245,6 +303,59 @@ export interface components {
              */
             status: "ok";
         };
+        /**
+         * InviteRequest
+         * @description Only these fields: an ``org_role``, a ``user_id`` or any other field is a 422.
+         */
+        InviteRequest: {
+            /** Display Name */
+            display_name?: string | null;
+            /** Email */
+            email: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "workspace_admin" | "developer" | "builder" | "knowledge_editor" | "reviewer" | "viewer";
+        };
+        /** MemberItem */
+        MemberItem: {
+            /** Display Name */
+            display_name: string;
+            /** Email */
+            email: string;
+            /** Last Active At */
+            last_active_at: string | null;
+            /** Org Role */
+            org_role: string | null;
+            /** Role */
+            role: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** MemberList */
+        MemberList: {
+            /** Members */
+            members: components["schemas"]["MemberItem"][];
+        };
+        /** OrgRoleChanged */
+        OrgRoleChanged: {
+            /** Org Role */
+            org_role: string | null;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** OrgRoleRequest */
+        OrgRoleRequest: {
+            /** Org Role */
+            org_role: ("org_owner" | "org_admin") | null;
+        };
         /** ReadinessChecks */
         ReadinessChecks: {
             /**
@@ -271,6 +382,8 @@ export interface components {
         SessionInfo: {
             /** Default Workspace Id */
             default_workspace_id: string | null;
+            /** Org Role */
+            org_role: string | null;
             organization: components["schemas"]["SessionOrganization"];
             user: components["schemas"]["SessionUser"];
             /** Workspaces */
@@ -308,7 +421,7 @@ export interface components {
             /** Name */
             name: string;
             /** Role */
-            role: string;
+            role: string | null;
         };
         /**
          * SetCredentialRequest
@@ -344,8 +457,20 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+            /** Org Role */
+            org_role: string | null;
+            /** Permissions */
+            permissions: string[];
             /** Role */
-            role: string;
+            role: string | null;
+        };
+        /** WorkspaceRoleRequest */
+        WorkspaceRoleRequest: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "workspace_admin" | "developer" | "builder" | "knowledge_editor" | "reviewer" | "viewer";
         };
     };
     responses: never;
@@ -657,6 +782,77 @@ export interface operations {
             };
         };
     };
+    change_org_role_organization_members__user_id__org_role_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrgRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgRoleChanged"];
+                };
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown user in this Organization (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The last Org Owner cannot be demoted */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Malformed request (invalid_request) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+        };
+    };
     readyz_readyz_get: {
         parameters: {
             query?: never;
@@ -715,7 +911,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorCode"];
                 };
             };
-            /** @description Unknown, not a member or another Organization (not_found) */
+            /** @description Unknown, not visible to the caller or another Organization (not_found) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -725,6 +921,255 @@ export interface operations {
                 };
             };
             /** @description Malformed Workspace id (invalid_request) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+        };
+    };
+    list_members_workspaces__workspace_id__members_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberList"];
+                };
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown or invisible Workspace, or the user is not a member here (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Malformed request (invalid_request) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+        };
+    };
+    invite_member_workspaces__workspace_id__members_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberItem"];
+                };
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown or invisible Workspace, or the user is not a member here (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Already a member of this Workspace */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Malformed request (invalid_request) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+        };
+    };
+    change_workspace_role_workspaces__workspace_id__members__user_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberItem"];
+                };
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown or invisible Workspace, or the user is not a member here (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Malformed request (invalid_request) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+        };
+    };
+    remove_member_workspaces__workspace_id__members__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown or invisible Workspace, or the user is not a member here (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Malformed request (invalid_request) */
             422: {
                 headers: {
                     [name: string]: unknown;

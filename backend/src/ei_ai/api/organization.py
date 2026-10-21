@@ -10,7 +10,8 @@ from sqlalchemy import select
 from ei_ai.api.deps import TenantSession
 from ei_ai.api.errors import ErrorCode
 from ei_ai.db.models import Organization
-from ei_ai.tenancy.context import TenantContext, require_tenant
+from ei_ai.rbac.declarations import signed_in
+from ei_ai.tenancy.context import TenantContext
 
 router = APIRouter()
 
@@ -30,7 +31,7 @@ class CurrentOrganization(BaseModel):
     summary="The Organization of the verified identity",
 )
 async def get_organization(
-    tenant: Annotated[TenantContext, Depends(require_tenant)],
+    tenant: Annotated[TenantContext, Depends(signed_in())],
     session: TenantSession,
 ) -> CurrentOrganization:
     """Always the Organization of the verified token or session. An ``org_id`` sent in a header or

@@ -22,15 +22,14 @@ from ei_ai.audit.events import (
     WORKSPACE_CREATED,
     WORKSPACE_MEMBER_ADDED,
     record_event,
+    record_role_change,
 )
 from ei_ai.auth.set_password import issue_token
 from ei_ai.db.tenant import tenant_transaction
+from ei_ai.members.rows import find_user_id, insert_member, insert_workspace_member
 from ei_ai.provisioning.rows import (
-    find_user_id,
-    insert_member,
     insert_organization,
     insert_workspace,
-    insert_workspace_member,
     organization_exists,
     workspace_exists,
     workspace_member_exists,
@@ -122,7 +121,7 @@ async def create_organization(
     workspace_name: str = DEFAULT_WORKSPACE_NAME,
 ) -> CreatedOrganization:
     """An Organization, its default Workspace and its Org Owner (also Workspace Admin), with a
-    set-password token and three audit events."""
+    set-password token and five audit events (the three creations and the two role grants)."""
     org_name = normalise_org_name(name)
     email = normalise_email(owner_email)
     display_name = default_display_name(owner_name, email)
@@ -152,6 +151,25 @@ async def create_organization(
                 ws_id,
             )
             await record_event(conn, org_id, PLATFORM_OPERATOR, USER_INVITED, "user", owner_id)
+            # The founding user's roles are role changes like any other (AC6, old NULL).
+            await record_role_change(
+                conn,
+                org_id,
+                PLATFORM_OPERATOR,
+                owner_id,
+                workspace_id=None,
+                old=None,
+                new="org_owner",
+            )
+            await record_role_change(
+                conn,
+                org_id,
+                PLATFORM_OPERATOR,
+                owner_id,
+                workspace_id=ws_id,
+                old=None,
+                new="workspace_admin",
+            )
     except IntegrityError as error:
         raise_if_violated(error, "organizations_name_lower_key", ORGANIZATION_NAME_TAKEN)
         raise
@@ -217,6 +235,26 @@ async def invite_user(
                 raise ProvisioningError("Workspace not found in this Organization")
             user_id, secret = await insert_member(conn, org_id, address, name, org_role, workspace)
             await record_event(conn, org_id, PLATFORM_OPERATOR, USER_INVITED, "user", user_id)
+            if org_role is not None:
+                await record_role_change(
+                    conn,
+                    org_id,
+                    PLATFORM_OPERATOR,
+                    user_id,
+                    workspace_id=None,
+                    old=None,
+                    new=org_role,
+                )
+            if workspace is not None:
+                await record_role_change(
+                    conn,
+                    org_id,
+                    PLATFORM_OPERATOR,
+                    user_id,
+                    workspace_id=workspace[0],
+                    old=None,
+                    new=workspace[1],
+                )
     except IntegrityError as error:
         raise_if_violated(
             error,
@@ -276,4 +314,13 @@ async def add_workspace_member(
             raise ProvisioningError("the user is already a member of this Workspace")
         await insert_workspace_member(conn, org_id, workspace_id, user_id, workspace_role)
         await record_event(conn, org_id, PLATFORM_OPERATOR, WORKSPACE_MEMBER_ADDED, "user", user_id)
+        await record_role_change(
+            conn,
+            org_id,
+            PLATFORM_OPERATOR,
+            user_id,
+            workspace_id=workspace_id,
+            old=None,
+            new=workspace_role,
+        )
     return AddedMember(user_id, address, workspace_role)

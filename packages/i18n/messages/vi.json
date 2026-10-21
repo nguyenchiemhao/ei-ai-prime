@@ -45,7 +45,70 @@
         "reviewer": "Người rà soát",
         "viewer": "Người xem",
         "member": "Thành viên"
+      },
+      "orgRole": {
+        "org_owner": "Chủ sở hữu tổ chức",
+        "org_admin": "Quản trị tổ chức"
       }
+    },
+    "members": {
+      "title": "Thành viên & vai trò",
+      "subtitle": "Workspace {{workspace}}. Một người có thể giữ vai trò khác nhau ở mỗi workspace.",
+      "invite": "Mời thành viên",
+      "tableLabel": "Danh sách thành viên",
+      "column": {
+        "member": "Thành viên",
+        "role": "Vai trò trong {{workspace}}",
+        "lastActive": "Hoạt động gần nhất"
+      },
+      "roleFor": "Vai trò của {{name}}",
+      "lastActive": {
+        "today": "Hôm nay",
+        "yesterday": "Hôm qua",
+        "daysAgo": "{{days}} ngày trước",
+        "never": "Chưa bao giờ"
+      },
+      "status": {
+        "updated": "Đã cập nhật vai trò.",
+        "invited": "Đã tạo lời mời cho {{email}}."
+      },
+      "error": {
+        "forbidden": "Bạn không có quyền thực hiện thao tác này.",
+        "generic": "Đã xảy ra lỗi. Hãy thử lại."
+      },
+      "matrix": {
+        "title": "Mỗi vai trò làm được gì",
+        "permissionColumn": "Quyền",
+        "admin": "Quản trị",
+        "yes": "Có",
+        "no": "Không",
+        "note": "Các dòng được tô nổi bật là quyền nhạy cảm và được tách ở các vai trò riêng. Quản trị viên cần đọc hội thoại sẽ tự gán cho mình vai trò Người rà soát; thay đổi đó được ghi trong nhật ký kiểm toán.",
+        "permission": {
+          "knowledge": "Tài liệu, kịch bản, thuật ngữ",
+          "assistants": "Trợ lý, kỹ năng, kênh",
+          "playground": "Sân thử (thử bản nháp, xem vết xử lý)",
+          "publish": "Xuất bản trợ lý",
+          "connectors": "Kết nối, bí mật, khóa ký",
+          "conversations": "Đọc hội thoại",
+          "collectionAccess": "Đổi người được đọc một bộ sưu tập",
+          "dashboard": "Bảng điều khiển"
+        }
+      },
+      "inviteDialog": {
+        "title": "Mời thành viên",
+        "email": "Địa chỉ email",
+        "name": "Tên (không bắt buộc)",
+        "role": "Vai trò",
+        "send": "Gửi lời mời",
+        "cancel": "Hủy",
+        "invalidEmail": "Nhập địa chỉ email hợp lệ.",
+        "invalidInput": "Hãy kiểm tra địa chỉ email và tên (tối đa 200 ký tự).",
+        "alreadyMember": "Người này đã là thành viên của workspace này."
+      }
+    },
+    "forbidden": {
+      "title": "Không có quyền truy cập",
+      "text": "Vai trò của bạn trong workspace này không bao gồm trang này. Hãy nhờ quản trị viên workspace nếu bạn cần."
     },
     "notFound": {
       "title": "Không tìm thấy trang",
