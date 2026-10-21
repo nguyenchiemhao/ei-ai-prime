@@ -205,7 +205,7 @@ Later stories reuse the helpers: `assert_route_isolated`, `assert_public_route_c
 
 ## CI
 
-`.github/workflows/ci.yml` runs on every push to any branch (ticket branches and `main`) and manually, so a branch is checked without opening a pull request. Five jobs run in parallel on `ubuntu-24.04`, each with a 10 minute limit (the suite step of `tenant-isolation` has 5); a newer push to the same branch cancels the older run. Every step calls the same task runner as `npm run check`.
+`.github/workflows/ci.yml` runs on every push to any branch (ticket branches and `main`) and manually, so a branch is checked without opening a pull request. A push to `main` skips the check jobs when it is a merge with the same tree as the merged branch head and that head already passed CI (a small `gate` job decides, `scripts/ci-gate.mjs`); any other push to `main` runs them. Five jobs run in parallel on `ubuntu-24.04`, each with a 10 minute limit (the suite step of `tenant-isolation` has 5); a newer push to the same branch cancels the older run. Every step calls the same task runner as `npm run check`.
 
 | Job | Steps |
 |---|---|

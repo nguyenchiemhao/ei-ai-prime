@@ -151,6 +151,7 @@ Follow `git-commit` mode `commit`:
 - `git fetch`, switch to the base, `git pull --ff-only`, then `git merge --no-ff <branch> -m "[EA-<n>] chore(<scope>): merge <short summary>" -m "Refs: EA-<n>"`. On a conflict, stop and ask the owner.
 - Run `npm run check` on the base only when the merge was not trivial: a conflict was resolved, or the base moved since the branch was created. Otherwise push and rely on CI on the base.
 - With `--push` only: `git push origin <base>` (never force), then wait for CI on the base before moving the ticket to Done. With `--merge` alone the base stays local; the branch run is the CI evidence.
+- CI on the base is gated (`scripts/ci-gate.mjs`, owner decision 2026-10-21): when the merge commit has the same tree as the branch head and that head's run was green, the base run only runs its `gate` job and skips the check jobs — that green run is enough, and the branch run is the evidence. A non-trivial merge (the base moved, or a conflict was resolved) has a different tree, so the full CI runs on the base.
 
 ### 10. Close
 - Jira (with the evidence from `final.md`): post the **Final comment** of `comment-templates.md` — ≤ 2 000 characters, tables for the facts, ACs, bugs and follow-ups. Then transition:

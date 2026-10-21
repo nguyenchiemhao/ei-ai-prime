@@ -36,14 +36,31 @@ const taskCalls = (body) =>
   [...body.matchAll(/scripts\/task\.mjs ([a-z:-]+)/g)].map((match) => match[1]);
 const hasTask = (body, ...names) => names.every((name) => taskCalls(body).includes(name));
 
-test("the_workflow_defines_the_five_jobs", () => {
-  assert.deepEqual(Object.keys(allJobs).sort(), [
-    "backend",
-    "checks",
-    "frontend",
-    "stack",
-    "tenant-isolation",
-  ]);
+const CHECK_JOBS = ["backend", "checks", "frontend", "stack", "tenant-isolation"];
+
+test("the_workflow_defines_the_gate_and_the_five_check_jobs", () => {
+  assert.deepEqual(Object.keys(allJobs).sort(), [...CHECK_JOBS, "gate"].sort());
+});
+
+// Owner decision 2026-10-21: a push to the default branch skips the check jobs when it is a merge with
+// the same tree as the merged branch head and that head already passed CI (scripts/ci-gate.mjs).
+test("every_check_job_waits_for_the_gate_and_runs_only_when_it_says_so", () => {
+  for (const name of CHECK_JOBS) {
+    assert.match(allJobs[name], /^ {4}needs: gate$/m, `${name}: needs gate`);
+    assert.match(
+      allJobs[name],
+      /^ {4}if: needs\.gate\.outputs\.should_run == 'true'$/m,
+      `${name}: must run only when the gate says run=true`,
+    );
+  }
+  assert.match(
+    allJobs.gate,
+    /fetch-depth: 2/,
+    "the gate compares the merge with its second parent",
+  );
+  assert.match(allJobs.gate, /run: node scripts\/ci-gate\.mjs/);
+  assert.match(allJobs.gate, /GITHUB_TOKEN: \$\{\{ github\.token \}\}/);
+  assert.match(text, /^permissions:\n {2}contents: read\n {2}actions: read$/m);
 });
 
 // Owner decision 2026-10-14: CI runs on every push to any branch (ticket branches and main), so a
@@ -97,6 +114,7 @@ test("ci_steps_call_the_shared_task_runner", () => {
     /^node scripts\/smoke\.mjs$/,
     /^npm run seed$/,
     /^npm run down$/,
+    /^node scripts\/ci-gate\.mjs$/,
   ];
   for (const [name, body] of Object.entries(allJobs)) {
     for (const command of runLines(body)) {
@@ -128,7 +146,11 @@ test("every_job_has_timeout_minutes_at_most_10", () => {
 });
 
 test("jobs_run_in_parallel_with_dependency_cache", () => {
-  assert.doesNotMatch(text, /^\s+needs:/m, "jobs must not wait for each other");
+  const needs = [...text.matchAll(/^\s+needs: (.+)$/gm)].map((match) => match[1]);
+  assert.ok(
+    needs.every((need) => need === "gate"),
+    "check jobs wait only for the gate, never for each other",
+  );
   assert.match(allJobs.frontend, /cache: npm/);
   assert.match(allJobs.checks, /cache: npm/);
   assert.match(allJobs.backend, /cache: pip/);
