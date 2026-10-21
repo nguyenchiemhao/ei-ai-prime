@@ -75,7 +75,13 @@ describe("routes", () => {
       "fetch",
       vi.fn((input: string) => {
         const body = input.startsWith("/api/workspaces/")
-          ? { id: WS, name: "W", role: "member" }
+          ? {
+              id: WS,
+              name: "W",
+              role: "builder",
+              org_role: null,
+              permissions: ["assistants.manage", "dashboard.view", "workspace.access"],
+            }
           : session(WS);
         return Promise.resolve(new Response(JSON.stringify(body), { status: 200 }));
       }),

@@ -956,7 +956,7 @@ test.describe("EA-24 Model Gateway and version-pinned model catalog", () => {
     ).toEqual(["boolean|NO|false"]);
     // No endpoint URL, key or secret column: builders never enter model endpoint URLs (SSRF).
     expect(COLUMNS.join(",")).not.toMatch(/url|endpoint|key|secret|token/);
-    expect(rows(`select version_num from alembic_version`)).toEqual(["0005"]);
+    expect(rows(`select version_num from alembic_version`)).toEqual(["0006"]);
   });
 
   test("AC7 TC-7-2: the demo Organization has the three manifest models with the contract values", async () => {

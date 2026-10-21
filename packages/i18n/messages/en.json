@@ -45,7 +45,70 @@
         "reviewer": "Reviewer",
         "viewer": "Viewer",
         "member": "Member"
+      },
+      "orgRole": {
+        "org_owner": "Org Owner",
+        "org_admin": "Org Admin"
       }
+    },
+    "members": {
+      "title": "Members & roles",
+      "subtitle": "{{workspace}} workspace. A person can hold a different role in each workspace.",
+      "invite": "Invite member",
+      "tableLabel": "Members",
+      "column": {
+        "member": "Member",
+        "role": "Role in {{workspace}}",
+        "lastActive": "Last active"
+      },
+      "roleFor": "Role for {{name}}",
+      "lastActive": {
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "daysAgo": "{{days}} days ago",
+        "never": "Never"
+      },
+      "status": {
+        "updated": "Role updated.",
+        "invited": "Invitation created for {{email}}."
+      },
+      "error": {
+        "forbidden": "You don't have permission to do this.",
+        "generic": "Something went wrong. Try again."
+      },
+      "matrix": {
+        "title": "What each role can do",
+        "permissionColumn": "Permission",
+        "admin": "Admin",
+        "yes": "Yes",
+        "no": "No",
+        "note": "Highlighted rows are sensitive and kept in separate roles. Admins who need to read conversations assign themselves Reviewer; that change is recorded in the audit log.",
+        "permission": {
+          "knowledge": "Documents, scripts, glossary",
+          "assistants": "Assistants, skills, channels",
+          "playground": "Playground (test drafts, see traces)",
+          "publish": "Publish an assistant",
+          "connectors": "Connectors, secrets, signing keys",
+          "conversations": "Read conversations",
+          "collectionAccess": "Change who can read a collection",
+          "dashboard": "Dashboard"
+        }
+      },
+      "inviteDialog": {
+        "title": "Invite member",
+        "email": "Email",
+        "name": "Name (optional)",
+        "role": "Role",
+        "send": "Send invite",
+        "cancel": "Cancel",
+        "invalidEmail": "Enter a valid email address.",
+        "invalidInput": "Check the email address and the name (up to 200 characters).",
+        "alreadyMember": "This person is already a member of this workspace."
+      }
+    },
+    "forbidden": {
+      "title": "No access",
+      "text": "Your role in this workspace does not include this page. Ask a workspace admin if you need it."
     },
     "notFound": {
       "title": "Page not found",

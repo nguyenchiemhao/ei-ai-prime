@@ -258,7 +258,10 @@ test("AC1 TC-1-2: signed-in visitors of / and /sign-in land on their Dashboard; 
 test("AC1 TC-1-3: a user without a Workspace lands on /no-workspace and can sign out", async ({
   browser,
 }) => {
-  const user = await createReadyUser({ label: "nows", role: "org_admin" });
+  // EA-23: an Org Admin sees every Workspace, so the "no Workspace" user is an ordinary member whose
+  // only Workspace membership was removed.
+  const user = await createReadyUser({ label: "nows", role: "builder", workspaceId: peopleOps });
+  sql(`delete from workspace_memberships where org_id = '${DEMO_ORG}' and user_id = '${user.id}'`);
   await withPage(browser, undefined, async (page, context) => {
     await signInUi(page, user.email, user.password);
     await expect(page).toHaveURL(`${ADMIN}/no-workspace`);
@@ -280,6 +283,31 @@ test("AC1 TC-1-3: a user without a Workspace lands on /no-workspace and can sign
 
     await page.getByRole("button", { name: "Sign out" }).click();
     await expect(page).toHaveURL(`${ADMIN}/sign-in`);
+  });
+});
+
+test("AC1 TC-1-4 (EA-23): an Org Admin without a Workspace role lands on a Workspace and sees all of them with role null", async ({
+  browser,
+}) => {
+  const user = await createReadyUser({ label: "orgadm", role: "org_admin" });
+  const all = rows(`select id from workspaces where org_id = '${DEMO_ORG}'`).sort();
+  const first = rows(
+    `select id from workspaces where org_id = '${DEMO_ORG}' order by created_at, id limit 1`,
+  )[0];
+  await withPage(browser, undefined, async (page, context) => {
+    await signInUi(page, user.email, user.password);
+    await expect(page).toHaveURL(dashboardUrl(first as string));
+    const session = await apiFrom(await context.storageState()).session();
+    const body = session.json as {
+      org_role: string | null;
+      workspaces: { id: string; role: string | null }[];
+      default_workspace_id: string;
+    };
+    expect(body.org_role).toBe("org_admin");
+    expect(body.default_workspace_id).toBe(first);
+    expect(body.workspaces.map((workspace) => workspace.id).sort()).toEqual(all);
+    expect(body.workspaces.every((workspace) => workspace.role === null)).toBe(true);
+    await expect(page.getByTestId("user-menu")).toContainText("Org Admin");
   });
 });
 

@@ -10,6 +10,7 @@ export const WS = "11111111-1111-4111-8111-111111111111";
 export const SESSION = {
   user: { id: "u1", display_name: "Ann", email: "ann@x.test" },
   organization: { id: "o1", name: "Org" },
+  org_role: null,
   workspaces: [{ id: WS, name: "W", role: "member" }],
   default_workspace_id: WS,
 };

@@ -3,9 +3,10 @@
 Every failure raises ``ProvisioningError`` with a message that is safe to print as is.
 """
 
-import re
 import uuid
 from collections.abc import Sequence
+
+from ei_ai.members.emails import parse_email
 
 # Must match the CHECK constraints of migration 0001.
 ORG_ROLES = ("org_owner", "org_admin")
@@ -19,9 +20,7 @@ WORKSPACE_ROLES = (
     "member",
 )
 
-_EMAIL = re.compile(r"[a-z0-9._%+-]+@[a-z0-9-]+(\.[a-z0-9-]+)+")
 _NAME_MAX = 200
-_EMAIL_MIN, _EMAIL_MAX, _LOCAL_MAX = 3, 320, 64
 
 
 class ProvisioningError(Exception):
@@ -53,13 +52,8 @@ def normalise_display_name(raw: str) -> str:
 
 def normalise_email(raw: str) -> str:
     """The trimmed, lowercased email; raises when it is not a plain address."""
-    value = raw.strip().lower()
-    local = value.partition("@")[0]
-    if (
-        not _EMAIL_MIN <= len(value) <= _EMAIL_MAX
-        or len(local) > _LOCAL_MAX
-        or not _EMAIL.fullmatch(value)
-    ):
+    value = parse_email(raw)
+    if value is None:
         raise ProvisioningError("invalid email address")
     return value
 

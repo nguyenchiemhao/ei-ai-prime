@@ -1,48 +1,60 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 import { type ApiResult } from "../api/client";
-import { getWorkspace, type WorkspaceAccess } from "../api/workspaces";
+import { getWorkspace, type WorkspaceInfo } from "../api/workspaces";
 import { useSession } from "../auth/SessionProvider";
 import { AreaPage } from "../pages/AreaPage";
+import { ForbiddenPage } from "../pages/ForbiddenPage";
+import { MembersPage } from "../pages/MembersPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
-import { findArea } from "./navigation";
+import { findArea, visibleAreas } from "./navigation";
 import { Sidebar } from "./Sidebar";
+import { WorkspaceAccessContext } from "./WorkspaceAccessContext";
 import "./shell.css";
 
-interface Check {
+/** The last answer of the API: for which Workspace and area it was asked. */
+interface Answer {
   workspaceId: string;
-  result: ApiResult<WorkspaceAccess>;
+  area: string | undefined;
+  result: ApiResult<WorkspaceInfo>;
 }
 
 /**
- * Frame of every `/w/:workspaceId/:area` page. The Workspace is checked with the API on each
- * change of the id; nothing of it (Sidebar, name, role) renders before a 200.
+ * Frame of every `/w/:workspaceId/:area` page. The caller's access is read from the API on every
+ * change of Workspace or area (and on `refresh`), so a role change shows from the next click.
+ * Nothing of a Workspace (Sidebar, name, role) renders before a 200, and while a new answer is
+ * pending the page of the last answer stays.
  */
 export function AppShell() {
   const { t } = useTranslation();
-  const { refresh } = useSession();
+  const { refresh: refreshSession } = useSession();
   const { workspaceId = "", area } = useParams();
-  const [check, setCheck] = useState<Check | null>(null);
+  const [answer, setAnswer] = useState<Answer | null>(null);
+  const [version, setVersion] = useState(0);
+  const refresh = useCallback(() => setVersion((current) => current + 1), []);
 
   useEffect(() => {
     let cancelled = false;
     void getWorkspace(workspaceId).then((result) => {
       if (cancelled) return;
-      setCheck({ workspaceId, result });
-      if (!result.ok && result.status === 401) void refresh();
+      setAnswer({ workspaceId, area, result });
+      if (!result.ok && result.status === 401) void refreshSession();
     });
     return () => {
       cancelled = true;
     };
-  }, [workspaceId, refresh]);
+  }, [workspaceId, area, version, refreshSession]);
 
-  const known = findArea(area);
-  const result = check?.workspaceId === workspaceId ? check.result : null;
-  if (!result) return null;
-  if (!result.ok) {
-    if (result.status === 404 || result.status === 422) return <NotFoundPage />;
-    if (result.status === 401) return null;
+  const current = answer?.workspaceId === workspaceId ? answer : null;
+  const access = current?.result.ok ? current.result.data : null;
+  const context = useMemo(() => (access ? { access, refresh } : null), [access, refresh]);
+
+  if (!current) return null;
+  if (!current.result.ok) {
+    const { status } = current.result;
+    if (status === 404 || status === 422) return <NotFoundPage />;
+    if (status === 401) return null;
     return (
       <main className="area-page">
         <p className="area-alert" role="alert">
@@ -51,11 +63,21 @@ export function AppShell() {
       </main>
     );
   }
-  if (!known) return <NotFoundPage />;
+  const shown = findArea(current.area);
+  if (!shown || !context) return <NotFoundPage />;
+  const allowed = visibleAreas(context.access.permissions).includes(shown);
   return (
-    <div className="shell">
-      <Sidebar workspace={result.data} area={known.slug} />
-      <AreaPage slug={known.slug} />
-    </div>
+    <WorkspaceAccessContext.Provider value={context}>
+      <div className="shell">
+        <Sidebar workspace={context.access} area={shown.slug} />
+        {!allowed ? (
+          <ForbiddenPage />
+        ) : shown.slug === "members" ? (
+          <MembersPage />
+        ) : (
+          <AreaPage slug={shown.slug} />
+        )}
+      </div>
+    </WorkspaceAccessContext.Provider>
   );
 }

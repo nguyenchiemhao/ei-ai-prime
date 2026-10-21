@@ -1,4 +1,4 @@
-"""One Workspace of the signed-in user (EA-22, contract "API")."""
+"""One Workspace of the signed-in user (EA-22, EA-23 contract "API")."""
 
 import uuid
 from typing import Annotated
@@ -7,8 +7,9 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from ei_ai.api.errors import ErrorCode
-from ei_ai.workspaces.access import require_workspace_member
-from ei_ai.workspaces.memberships import WorkspaceRef
+from ei_ai.rbac.access import WorkspaceAccess
+from ei_ai.rbac.declarations import requires
+from ei_ai.rbac.permissions import Permission
 
 router = APIRouter()
 
@@ -16,7 +17,9 @@ router = APIRouter()
 class WorkspaceInfo(BaseModel):
     id: uuid.UUID
     name: str
-    role: str
+    role: str | None
+    org_role: str | None
+    permissions: list[str]
 
 
 @router.get(
@@ -27,13 +30,20 @@ class WorkspaceInfo(BaseModel):
         422: {"model": ErrorCode, "description": "Malformed Workspace id (invalid_request)"},
         404: {
             "model": ErrorCode,
-            "description": "Unknown, not a member or another Organization (not_found)",
+            "description": "Unknown, not visible to the caller or another Organization (not_found)",
         },
     },
-    summary="A Workspace the signed-in user belongs to",
+    summary="A Workspace the signed-in user can see, with their roles and permissions",
 )
 async def get_workspace(
-    workspace: Annotated[WorkspaceRef, Depends(require_workspace_member)],
+    access: Annotated[WorkspaceAccess, Depends(requires(Permission.WORKSPACE_ACCESS))],
 ) -> WorkspaceInfo:
-    """Membership is checked by the dependency; the answer is the caller's own role."""
-    return WorkspaceInfo(id=workspace.id, name=workspace.name, role=workspace.role)
+    """Visibility is checked by the dependency; the answer is the caller's own roles and the
+    permissions they add up to (the admin UI re-reads it on every area or Workspace change)."""
+    return WorkspaceInfo(
+        id=access.workspace_id,
+        name=access.name,
+        role=access.role,
+        org_role=access.org_role,
+        permissions=sorted(permission.value for permission in access.permissions),
+    )
