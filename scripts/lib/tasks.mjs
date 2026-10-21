@@ -57,6 +57,17 @@ export const tasks = {
     backend: ["pytest", "tests/perf/test_gateway_overhead.py", "-m", "benchmark", "--no-cov", "-s"],
     services: true,
   },
+  // Vietnamese normalisation throughput (EA-28 NFR, >= 1 MB/s); results in backend/src/ei_ai/vn_text/README.md.
+  "backend:bench-vn-text": {
+    backend: [
+      "pytest",
+      "tests/perf/test_vn_text_throughput.py",
+      "-m",
+      "benchmark",
+      "--no-cov",
+      "-s",
+    ],
+  },
 
   "repo:node-checks": { command: ["node", "scripts/run-node-checks.mjs"] },
   "repo:actionlint": { run: actionlint },

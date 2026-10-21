@@ -117,6 +117,7 @@ The Platform Operator onboards a customer from a shell in the API container (the
 | `npm run migrate` | Starts the database if needed and applies the database migrations as the owner role, then runs the schema guard; safe to repeat |
 | `npm run backend -- bench-rls` | The RLS overhead benchmark (100 000 rows, FND-01); not part of `npm run check` |
 | `npm run backend -- bench-gateway` | The Model Gateway overhead benchmark (EA-24 NFR, < 20 ms per call; results in `docs/architecture/model-gateway.md`); not part of `npm run check` |
+| `npm run backend -- bench-vn-text` | The Vietnamese normalisation throughput benchmark (EA-28 NFR, >= 1 MB/s; results and rules in `backend/src/ei_ai/vn_text/README.md`); not part of `npm run check` |
 | `node scripts/run-node-checks.mjs` | Document and repository checks (design tokens, licence review, ADR, EVL-01 data set, packages, scripts); fails when a pattern matches no file or a check runs 0 tests |
 | `npm test` | Frontend tests, Node checks and backend unit tests |
 | `npm run check` | **Everything CI runs**, in five jobs (frontend, backend, checks, tenant-isolation, stack), with PASS/FAIL and the duration of each step. `-- --skip-stack` skips the two jobs that need Docker (tenant-isolation and stack); the stack job starts the stack without the model and stops it at the end. |

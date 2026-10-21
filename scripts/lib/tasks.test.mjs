@@ -30,6 +30,16 @@ test("tasks_pin_the_backend_commands", () => {
     backend: ["pytest", "tests/perf/test_gateway_overhead.py", "-m", "benchmark", "--no-cov", "-s"],
     services: true,
   });
+  assert.deepEqual(tasks["backend:bench-vn-text"], {
+    backend: [
+      "pytest",
+      "tests/perf/test_vn_text_throughput.py",
+      "-m",
+      "benchmark",
+      "--no-cov",
+      "-s",
+    ],
+  });
   assert.deepEqual(tasks["backend:openapi"], {
     backend: ["pytest", "tests/test_openapi_export.py"],
   });
