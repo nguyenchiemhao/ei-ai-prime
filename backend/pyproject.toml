@@ -65,7 +65,7 @@ testpaths = ["tests"]
 markers = [
   "integration: needs the Compose stack (db, valkey); run with -m integration",
   "isolation: tenant-isolation suite (FND-02); run with npm run backend -- test-isolation",
-  "benchmark: overhead measurements (FND-01 RLS, EA-24 gateway); npm run backend -- bench-rls / bench-gateway",
+  "benchmark: overhead measurements (FND-01 RLS, EA-24 gateway, EA-28 vn_text); npm run backend -- bench-rls / bench-gateway / bench-vn-text",
 ]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
