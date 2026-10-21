@@ -106,6 +106,123 @@
         "alreadyMember": "This person is already a member of this workspace."
       }
     },
+    "knowledge": {
+      "title": "Knowledge",
+      "subtitle": "Collections hold your documents. Access is set per collection and enforced before anything reaches the model.",
+      "new": "New collection",
+      "search": "Search collections",
+      "noMatch": "No collections match your search.",
+      "tableLabel": "Collections",
+      "footnote": "Only Workspace Admins can change who can read a collection. Making a collection Public asks for confirmation and is recorded in the audit log.",
+      "empty": {
+        "title": "No collections yet",
+        "text": "Create a collection to start adding documents."
+      },
+      "access": {
+        "public": "Public",
+        "authenticated": "Authenticated",
+        "restricted": "Restricted"
+      },
+      "legend": {
+        "public": "Anyone, including anonymous visitors.",
+        "authenticated": "Any signed-in user of your app.",
+        "restricted": "Only people in one of the listed groups (from the widget token or Members & roles)."
+      },
+      "column": {
+        "collection": "Collection",
+        "access": "Who can read",
+        "dataHandling": "Data handling",
+        "documents": "Documents",
+        "status": "Status",
+        "usedBy": "Used by"
+      },
+      "dataHandling": {
+        "any": "Any allowed model",
+        "local": "Local model only"
+      },
+      "status": {
+        "none": "No documents",
+        "ready": "All ready",
+        "processing": "{{count}} processing",
+        "needsAttention": "{{count}} need attention"
+      },
+      "usedBy": {
+        "none": "Not used yet"
+      },
+      "error": {
+        "forbidden": "You don't have permission to do this.",
+        "nameTaken": {
+          "collection": "A collection with this name already exists.",
+          "folder": "A folder with this name already exists here."
+        },
+        "folderNotEmpty": "Delete its subfolders first.",
+        "folderTooDeep": "Folders can be nested up to 3 levels.",
+        "groupsRequired": "At least one group is required",
+        "invalidGroup": "Group names must be 1–64 characters, without commas; at most 20 groups.",
+        "generic": "Something went wrong. Try again."
+      },
+      "dialog": {
+        "createTitle": "New collection",
+        "editTitle": "Access & settings",
+        "name": "Name",
+        "subtitle": "Subtitle (optional)",
+        "access": "Who can read",
+        "groups": "Groups",
+        "groupsHelp": "Separate groups with commas. People match when their widget token or Members & roles lists one of them.",
+        "localOnly": "Local model only",
+        "localOnlyHelp": "Only a local model may answer from this collection; it cannot be attached to an assistant that uses a cloud model.",
+        "create": "Create collection",
+        "save": "Save",
+        "cancel": "Cancel",
+        "accessLocked": "Only Workspace Admins can change who can read a collection."
+      },
+      "confirmPublic": {
+        "title": "Make this collection Public?",
+        "text": "Anyone, including anonymous visitors, can get answers from its documents. This change is recorded in the audit log.",
+        "confirm": "Make public",
+        "cancel": "Cancel"
+      },
+      "message": {
+        "created": "{{name}} was created.",
+        "saved": "Changes saved.",
+        "deleted": "{{name}} was deleted."
+      },
+      "detail": {
+        "breadcrumbLabel": "Breadcrumb",
+        "settings": "Access & settings",
+        "foldersLabel": "Folders",
+        "newFolder": "New folder",
+        "noFolders": "No folders yet.",
+        "addSubfolder": "Add subfolder to {{name}}",
+        "rename": "Rename {{name}}",
+        "delete": "Delete {{name}}",
+        "documentsTitle": "Documents",
+        "documentsEmpty": "No documents yet."
+      },
+      "folderDialog": {
+        "createTitle": "New folder",
+        "renameTitle": "Rename folder",
+        "name": "Folder name",
+        "create": "Create folder",
+        "save": "Save",
+        "cancel": "Cancel"
+      },
+      "folderDelete": {
+        "title": "Delete folder?",
+        "text": "The folder {{name}} will be deleted.",
+        "confirm": "Delete folder",
+        "cancel": "Cancel"
+      },
+      "deleteCollection": {
+        "label": "Delete collection",
+        "consequence": "Deletes the collection, its folders and everything indexed from it. This cannot be undone.",
+        "button": "Delete collection",
+        "title": "Delete {{name}}?",
+        "input": "Type {{name}} to confirm",
+        "confirm": "Delete collection",
+        "cancel": "Cancel"
+      }
+    },
     "forbidden": {
       "title": "No access",
       "text": "Your role in this workspace does not include this page. Ask a workspace admin if you need it."

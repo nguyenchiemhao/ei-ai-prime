@@ -1,5 +1,6 @@
-import { type FormEvent, type KeyboardEvent, useEffect, useId, useRef, useState } from "react";
+import { type FormEvent, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useDialogKeys } from "../components/useDialogKeys";
 import { ASSIGNABLE_ROLES, type AssignableRole, inviteMember, type Member } from "../api/members";
 
 interface Props {
@@ -61,28 +62,7 @@ export function InviteDialog({ workspaceId, onClose, onInvited, onSessionExpired
     else setError(errorKey(result.status, result.code, email));
   }
 
-  /** Escape closes; Tab stays inside the dialog. */
-  function onKeyDown(event: KeyboardEvent) {
-    if (event.key === "Escape") {
-      event.stopPropagation();
-      onClose();
-      return;
-    }
-    if (event.key !== "Tab" || !dialogRef.current) return;
-    const focusable = Array.from(
-      dialogRef.current.querySelectorAll<HTMLElement>("input, select, button:not([disabled])"),
-    );
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (!first || !last) return;
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
+  const onKeyDown = useDialogKeys(dialogRef, onClose);
 
   return (
     <div className="dialog-backdrop">

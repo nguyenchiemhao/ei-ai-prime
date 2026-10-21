@@ -9,7 +9,7 @@ from datetime import timedelta
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ei_ai.api import auth, csrf, health, members, organization, workspaces
+from ei_ai.api import auth, collections, csrf, health, members, organization, workspaces
 from ei_ai.api.csrf import CsrfMiddleware, origin_of
 from ei_ai.api.no_store import NoStoreAuthMiddleware
 from ei_ai.api.validation import install_validation_handler
@@ -93,6 +93,7 @@ def create_app(
     # Outermost: it also marks the CSRF 403 and the validation 422 of /auth/* as no-store.
     app.add_middleware(NoStoreAuthMiddleware)
     app.include_router(auth.router)
+    app.include_router(collections.router)
     app.include_router(csrf.router)
     app.include_router(health.router)
     app.include_router(members.router)

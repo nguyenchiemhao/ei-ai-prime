@@ -15,6 +15,8 @@ MODULES = (
     "provisioning/rows.py",
     "provisioning/service.py",
     "members/rows.py",
+    "knowledge/rows.py",
+    "knowledge/folder_rows.py",
     "rbac/access.py",
     "auth/set_password.py",
     "audit/events.py",

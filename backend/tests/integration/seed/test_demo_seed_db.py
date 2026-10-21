@@ -28,7 +28,7 @@ pytestmark = pytest.mark.integration
 FIRST_RUN_COUNTS = {
     "admin_sessions": 0,
     "user_credentials": 0,
-    "audit_events": 8,
+    "audit_events": 14,
     "set_password_tokens": 6,
     "workspace_memberships": 6,
     "memberships": 6,
@@ -36,6 +36,8 @@ FIRST_RUN_COUNTS = {
     "users": 6,
     # The three platform models of the manifest (EA-24); the seed writes no audit event for them.
     "model_catalog": 3,
+    "collections": 6,
+    "folders": 0,
     "organizations": 1,
 }
 
@@ -64,6 +66,29 @@ async def _all_rows(engine: AsyncEngine, org_id: uuid.UUID) -> dict[str, list[tu
     return rows
 
 
+async def _collection_rows(engine: AsyncEngine, org_id: uuid.UUID) -> list[tuple[object, ...]]:
+    async with engine.connect() as conn, tenant_transaction(conn, org_id):
+        result = await conn.execute(
+            text(
+                "SELECT name, subtitle, access_level, groups, local_only FROM collections"
+                " WHERE org_id = :org ORDER BY lower(name)"
+            ),
+            {"org": org_id},
+        )
+        return [tuple(row) for row in result]
+
+
+async def _collection_workspaces(
+    engine: AsyncEngine, org_id: uuid.UUID
+) -> list[tuple[object, ...]]:
+    async with engine.connect() as conn, tenant_transaction(conn, org_id):
+        result = await conn.execute(
+            text("SELECT name, workspace_id FROM collections WHERE org_id = :org"),
+            {"org": org_id},
+        )
+        return [tuple(row) for row in result]
+
+
 async def test_seed_twice_on_fresh_manifest_creates_once(
     app_engine: AsyncEngine, variant: DemoManifest
 ) -> None:
@@ -73,7 +98,7 @@ async def test_seed_twice_on_fresh_manifest_creates_once(
 
     assert first.organization_created and first.workspace_created
     assert all(secret is not None for secret in first.member_secrets)
-    assert first.audit_events == 8
+    assert first.audit_events == 14
     assert await count_org_rows(app_engine, variant.organization_id) == FIRST_RUN_COUNTS
     assert not second.organization_created and not second.workspace_created
     assert second.member_secrets == (None,) * 6
@@ -82,7 +107,7 @@ async def test_seed_twice_on_fresh_manifest_creates_once(
     assert await _all_rows(app_engine, variant.organization_id) == after_first
 
 
-async def test_first_seed_writes_8_events_second_writes_0(
+async def test_first_seed_writes_14_events_second_writes_0(
     app_engine: AsyncEngine, variant: DemoManifest
 ) -> None:
     org_id = variant.organization_id
@@ -110,6 +135,13 @@ async def test_first_seed_writes_8_events_second_writes_0(
                 )
             ).scalars()
         )
+        collection_ids = set(
+            (
+                await conn.execute(
+                    text("SELECT id FROM collections WHERE org_id = :org"), {"org": org_id}
+                )
+            ).scalars()
+        )
     await seed_manifest(app_engine, variant)
 
     assert events == sorted(
@@ -117,10 +149,11 @@ async def test_first_seed_writes_8_events_second_writes_0(
             ("platform-operator", "organization.created", "organization"),
             ("platform-operator", "workspace.created", "workspace"),
             *[("platform-operator", "user.invited", "user")] * 6,
+            *[("platform-operator", "collection.created", "collection")] * 6,
         ]
     )
-    assert targets == {org_id, first.workspace_id, *user_ids}
-    assert (await count_org_rows(app_engine, org_id))["audit_events"] == 8
+    assert targets == {org_id, first.workspace_id, *user_ids, *collection_ids}
+    assert (await count_org_rows(app_engine, org_id))["audit_events"] == 14
 
 
 async def test_seed_writes_roles_and_hashed_tokens(
@@ -203,7 +236,56 @@ async def test_seed_adds_only_what_is_missing(
     assert result.audit_events == 1
     counts = await count_org_rows(app_engine, org_id)
     assert counts["users"] == 6
-    assert counts["audit_events"] == 9
+    assert counts["audit_events"] == 15
+
+
+async def test_seed_creates_six_collections_once(
+    app_engine: AsyncEngine, variant: DemoManifest
+) -> None:
+    org_id = variant.organization_id
+
+    first = await seed_manifest(app_engine, variant)
+    rows_after_first = await _collection_rows(app_engine, org_id)
+    second = await seed_manifest(app_engine, variant)
+
+    assert first.collections_created == 6
+    assert second.collections_created == 0
+    assert [row[0] for row in rows_after_first] == [c.name for c in variant.collections]
+    assert rows_after_first[4] == ("Manager Handbook", None, "restricted", ["managers"], True)
+    assert rows_after_first[0] == ("Company & Careers", None, "public", [], False)
+    assert {row[1] for row in await _collection_workspaces(app_engine, org_id)} == {
+        first.workspace_id
+    }
+    assert await _collection_rows(app_engine, org_id) == rows_after_first
+
+
+async def test_seed_keeps_a_renamed_or_changed_collection(
+    app_engine: AsyncEngine, variant: DemoManifest
+) -> None:
+    org_id = variant.organization_id
+    await seed_manifest(app_engine, variant)
+    async with app_engine.connect() as conn, tenant_transaction(conn, org_id):
+        await conn.execute(
+            text(
+                "UPDATE collections SET subtitle = 'Edited', access_level = 'authenticated',"
+                " groups = '{}', local_only = false, name = 'MANAGER HANDBOOK'"
+                " WHERE org_id = :org AND name = 'Manager Handbook'"
+            ),
+            {"org": org_id},
+        )
+        await conn.execute(
+            text("DELETE FROM collections WHERE org_id = :org AND name = 'IT & Security'"),
+            {"org": org_id},
+        )
+    before = await _collection_rows(app_engine, org_id)
+
+    result = await seed_manifest(app_engine, variant)
+
+    assert result.collections_created == 1
+    assert result.audit_events == 1
+    after = await _collection_rows(app_engine, org_id)
+    assert [row for row in after if row[0] != "IT & Security"] == before
+    assert ("MANAGER HANDBOOK", "Edited", "authenticated", [], False) in after
 
 
 async def test_real_manifest_is_idempotent(app_engine: AsyncEngine) -> None:

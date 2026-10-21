@@ -44,6 +44,51 @@ def test_manifest_v2_holds_mekong_devworks_people_ops_and_six_members() -> None:
     ]
 
 
+def test_manifest_holds_the_six_demo_collections() -> None:
+    manifest = load_manifest()
+
+    assert [
+        (c.name, c.subtitle, c.access_level, c.groups, c.local_only) for c in manifest.collections
+    ] == [
+        ("Company & Careers", None, "public", [], False),
+        ("Employee Handbook", None, "authenticated", [], False),
+        ("Engineering Standards", None, "authenticated", [], False),
+        ("IT & Security", None, "authenticated", [], False),
+        ("Manager Handbook", None, "restricted", ["managers"], True),
+        ("Project Falcon", "Client: Japan · under NDA", "restricted", ["project-falcon"], True),
+    ]
+
+
+def test_manifest_restricted_collections_need_groups() -> None:
+    raw = _raw_manifest()
+    raw["collections"][4]["groups"] = []
+
+    with pytest.raises(ValidationError):
+        DemoManifest.model_validate(raw)
+
+
+def test_manifest_unrestricted_collections_have_no_groups() -> None:
+    raw = _raw_manifest()
+    raw["collections"][0]["groups"] = ["managers"]
+
+    with pytest.raises(ValidationError):
+        DemoManifest.model_validate(raw)
+
+
+def test_manifest_collection_names_are_unique_ignoring_case() -> None:
+    raw = _raw_manifest()
+    raw["collections"][1]["name"] = raw["collections"][0]["name"].upper()
+
+    with pytest.raises(ValidationError):
+        DemoManifest.model_validate(raw)
+
+
+def test_summary_counts_created_collections_as_audit_events() -> None:
+    result = SeedResult(WS, False, False, (None,) * 6, collections_created=6)
+
+    assert "  Audit events written: 6" in format_summary(load_manifest(), result, BASE)
+
+
 @pytest.mark.parametrize(
     "roles", [["boss"], ["Builder"], ["builder", "viewer"], ["org_owner", "org_admin"], []]
 )

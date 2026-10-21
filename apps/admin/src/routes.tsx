@@ -60,6 +60,14 @@ export const routes: RouteObject[] = [
           </RequireSession>
         ),
       },
+      {
+        path: PATHS.workspaceItem,
+        element: (
+          <RequireSession>
+            <AppShell />
+          </RequireSession>
+        ),
+      },
       { path: PATHS.notFound, element: <NotFoundPage /> },
     ],
   },

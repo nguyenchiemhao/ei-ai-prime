@@ -158,6 +158,23 @@ describe("AppShell", () => {
     expect(screen.queryByTestId("area-page")).toBeNull();
   });
 
+  it("renders_the_knowledge_page_for_the_knowledge_area", async () => {
+    mockApi({
+      ...signedInApi(),
+      [`GET /workspaces/${WS}/collections`]: () => json(200, { collections: [] }),
+    });
+    renderAt(`/w/${WS}/knowledge`);
+    await screen.findByTestId("knowledge-page");
+    expect(screen.queryByTestId("area-page")).toBeNull();
+  });
+
+  it("unknown_area_item_is_not_found", async () => {
+    mockApi(signedInApi());
+    renderAt(`/w/${WS}/glossary/${UNKNOWN}`);
+    await screen.findByTestId("not-found");
+    expect(screen.queryByTestId("area-page")).toBeNull();
+  });
+
   it("returns_to_not_found_when_the_role_is_revoked_on_the_next_check", async () => {
     let revoked = false;
     mockApi({

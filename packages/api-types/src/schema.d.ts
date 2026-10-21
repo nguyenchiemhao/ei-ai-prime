@@ -226,6 +226,95 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspace_id}/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The collections of a Workspace, by name */
+        get: operations["list_collections_workspaces__workspace_id__collections_get"];
+        put?: never;
+        /** Create a collection (Public also needs the access permission) */
+        post: operations["create_collection_workspaces__workspace_id__collections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/collections/{collection_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One collection with its folders */
+        get: operations["get_collection_workspaces__workspace_id__collections__collection_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete a collection and its folders */
+        delete: operations["delete_collection_workspaces__workspace_id__collections__collection_id__delete"];
+        options?: never;
+        head?: never;
+        /** Change name, subtitle or data handling (local-only off needs access permission) */
+        patch: operations["update_collection_workspaces__workspace_id__collections__collection_id__patch"];
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/collections/{collection_id}/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set who can read a collection */
+        put: operations["change_access_workspaces__workspace_id__collections__collection_id__access_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/collections/{collection_id}/folders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a folder at the top or under a parent (up to 3 levels) */
+        post: operations["create_folder_workspaces__workspace_id__collections__collection_id__folders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/collections/{collection_id}/folders/{folder_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a folder that has no subfolders */
+        delete: operations["delete_folder_workspaces__workspace_id__collections__collection_id__folders__folder_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename a folder */
+        patch: operations["rename_folder_workspaces__workspace_id__collections__collection_id__folders__folder_id__patch"];
+        trace?: never;
+    };
     "/workspaces/{workspace_id}/members": {
         parameters: {
             query?: never;
@@ -270,6 +359,122 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccessChange */
+        AccessChange: {
+            /**
+             * Access Level
+             * @enum {string}
+             */
+            access_level: "public" | "authenticated" | "restricted";
+            /** Groups */
+            groups: string[];
+        };
+        /**
+         * CollectionCreate
+         * @description Only these fields: an ``id``, ``org_id``, ``workspace_id`` or any other field is a 422.
+         */
+        CollectionCreate: {
+            /**
+             * Access Level
+             * @enum {string}
+             */
+            access_level: "public" | "authenticated" | "restricted";
+            /**
+             * Groups
+             * @default []
+             */
+            groups: string[];
+            /**
+             * Local Only
+             * @default false
+             */
+            local_only: boolean;
+            /** Name */
+            name: string;
+            /** Subtitle */
+            subtitle?: string | null;
+        };
+        /** CollectionDetail */
+        CollectionDetail: {
+            /** Access Level */
+            access_level: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            documents: components["schemas"]["DocumentSummary"];
+            /** Folders */
+            folders: components["schemas"]["FolderItem"][];
+            /** Groups */
+            groups: string[];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Local Only */
+            local_only: boolean;
+            /** Name */
+            name: string;
+            /** Subtitle */
+            subtitle: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Used By */
+            used_by: components["schemas"]["UsedBy"][];
+        };
+        /** CollectionItem */
+        CollectionItem: {
+            /** Access Level */
+            access_level: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            documents: components["schemas"]["DocumentSummary"];
+            /** Groups */
+            groups: string[];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Local Only */
+            local_only: boolean;
+            /** Name */
+            name: string;
+            /** Subtitle */
+            subtitle: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Used By */
+            used_by: components["schemas"]["UsedBy"][];
+        };
+        /** CollectionList */
+        CollectionList: {
+            /** Collections */
+            collections: components["schemas"]["CollectionItem"][];
+        };
+        /**
+         * CollectionUpdate
+         * @description At least one of the three fields; the access level is changed on its own route.
+         */
+        CollectionUpdate: {
+            /** Local Only */
+            local_only?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Subtitle */
+            subtitle?: string | null;
+        };
         /** CsrfToken */
         CsrfToken: {
             /** Csrf Token */
@@ -285,10 +490,59 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** DocumentSummary */
+        DocumentSummary: {
+            /**
+             * Needs Attention
+             * @default 0
+             */
+            needs_attention: number;
+            /**
+             * Processing
+             * @default 0
+             */
+            processing: number;
+            /**
+             * Ready
+             * @default 0
+             */
+            ready: number;
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+        };
         /** ErrorCode */
         ErrorCode: {
             /** Detail */
             detail: string;
+        };
+        /** FolderCreate */
+        FolderCreate: {
+            /** Name */
+            name: string;
+            /** Parent Id */
+            parent_id?: string | null;
+        };
+        /** FolderItem */
+        FolderItem: {
+            /** Depth */
+            depth: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Parent Id */
+            parent_id: string | null;
+        };
+        /** FolderRename */
+        FolderRename: {
+            /** Name */
+            name: string;
         };
         /** ForgotRequest */
         ForgotRequest: {
@@ -447,6 +701,16 @@ export interface components {
         SignInResponse: {
             /** Default Workspace Id */
             default_workspace_id: string | null;
+        };
+        /** UsedBy */
+        UsedBy: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
         };
         /** WorkspaceInfo */
         WorkspaceInfo: {
@@ -921,6 +1185,598 @@ export interface operations {
                 };
             };
             /** @description Malformed Workspace id (invalid_request) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+        };
+    };
+    list_collections_workspaces__workspace_id__collections_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionList"];
+                };
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown or invisible Workspace, collection or folder (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Malformed request or an unacceptable value (invalid_request, groups_required, invalid_group, folder_too_deep) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+        };
+    };
+    create_collection_workspaces__workspace_id__collections_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionItem"];
+                };
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown or invisible Workspace, collection or folder (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The name is taken or the folder has subfolders (name_taken, folder_not_empty) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Malformed request or an unacceptable value (invalid_request, groups_required, invalid_group, folder_too_deep) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+        };
+    };
+    get_collection_workspaces__workspace_id__collections__collection_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionDetail"];
+                };
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown or invisible Workspace, collection or folder (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Malformed request or an unacceptable value (invalid_request, groups_required, invalid_group, folder_too_deep) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+        };
+    };
+    delete_collection_workspaces__workspace_id__collections__collection_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown or invisible Workspace, collection or folder (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Malformed request or an unacceptable value (invalid_request, groups_required, invalid_group, folder_too_deep) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+        };
+    };
+    update_collection_workspaces__workspace_id__collections__collection_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionItem"];
+                };
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown or invisible Workspace, collection or folder (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The name is taken or the folder has subfolders (name_taken, folder_not_empty) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Malformed request or an unacceptable value (invalid_request, groups_required, invalid_group, folder_too_deep) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+        };
+    };
+    change_access_workspaces__workspace_id__collections__collection_id__access_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionItem"];
+                };
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown or invisible Workspace, collection or folder (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Malformed request or an unacceptable value (invalid_request, groups_required, invalid_group, folder_too_deep) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+        };
+    };
+    create_folder_workspaces__workspace_id__collections__collection_id__folders_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FolderCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FolderItem"];
+                };
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown or invisible Workspace, collection or folder (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The name is taken or the folder has subfolders (name_taken, folder_not_empty) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Malformed request or an unacceptable value (invalid_request, groups_required, invalid_group, folder_too_deep) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+        };
+    };
+    delete_folder_workspaces__workspace_id__collections__collection_id__folders__folder_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+                folder_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown or invisible Workspace, collection or folder (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The name is taken or the folder has subfolders (name_taken, folder_not_empty) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Malformed request or an unacceptable value (invalid_request, groups_required, invalid_group, folder_too_deep) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+        };
+    };
+    rename_folder_workspaces__workspace_id__collections__collection_id__folders__folder_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+                folder_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FolderRename"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FolderItem"];
+                };
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown or invisible Workspace, collection or folder (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The name is taken or the folder has subfolders (name_taken, folder_not_empty) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Malformed request or an unacceptable value (invalid_request, groups_required, invalid_group, folder_too_deep) */
             422: {
                 headers: {
                     [name: string]: unknown;

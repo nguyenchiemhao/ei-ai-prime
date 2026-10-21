@@ -34,5 +34,40 @@
       "email": "son.hoang@mekongdevworks.example",
       "roles": ["viewer"]
     }
+  ],
+  "collections": [
+    {
+      "name": "Company & Careers",
+      "access_level": "public",
+      "local_only": false
+    },
+    {
+      "name": "Employee Handbook",
+      "access_level": "authenticated",
+      "local_only": false
+    },
+    {
+      "name": "Engineering Standards",
+      "access_level": "authenticated",
+      "local_only": false
+    },
+    {
+      "name": "IT & Security",
+      "access_level": "authenticated",
+      "local_only": false
+    },
+    {
+      "name": "Manager Handbook",
+      "access_level": "restricted",
+      "groups": ["managers"],
+      "local_only": true
+    },
+    {
+      "name": "Project Falcon",
+      "subtitle": "Client: Japan · under NDA",
+      "access_level": "restricted",
+      "groups": ["project-falcon"],
+      "local_only": true
+    }
   ]
 }

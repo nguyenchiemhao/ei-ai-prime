@@ -118,6 +118,8 @@ async def test_create_organization_creates_org_workspace_owner_and_token(
         "workspaces": 1,
         "users": 1,
         "model_catalog": 0,
+        "collections": 0,
+        "folders": 0,
         "organizations": 1,
     }
 

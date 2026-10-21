@@ -151,10 +151,13 @@ function purgeOrg(orgId: string): void {
   expect(orgId).toMatch(new RegExp(`^${UUID}$`));
   // EA-22: sessions and credentials of users (created by sign-in tests) reference users; they go first.
   // EA-24: model_catalog (seeded for the demo Organization, added by `ei-ai model add`) references organizations.
+  // EA-32: folders and collections (collections reference workspaces) go before the workspaces.
   const byOrg = [
     "admin_sessions",
     "user_credentials",
     "model_catalog",
+    "folders",
+    "collections",
     ...TABLES_CHILD_FIRST.filter((t) => t !== "organizations"),
   ].map((table) => `delete from ${table} where org_id = '${orgId}';`);
   sql(`begin; ${byOrg.join(" ")} delete from organizations where id = '${orgId}'; commit;`);
@@ -859,7 +862,7 @@ test.describe("EA-21 Platform Operator CLI and demo seed", () => {
     expect(fresh.stdout).toContain(`Organization: Mekong Devworks (${DEMO_ORG}): created`);
     expect(fresh.stdout).toMatch(new RegExp(`Workspace: People Ops \\(${UUID}\\): created`));
     expect(fresh.stdout).toContain("Members: 6");
-    expect(fresh.stdout).toContain("Audit events written: 8");
+    expect(fresh.stdout).toContain("Audit events written: 14");
     expect(lines(fresh.stdout).filter((line) => line.endsWith(": created"))).toHaveLength(8);
     expect(fresh.stdout).toContain("Set-password links (valid 24 h, shown once):");
 
@@ -879,9 +882,10 @@ test.describe("EA-21 Platform Operator CLI and demo seed", () => {
       ).toBe("1");
     }
 
+    // EA-32: the seed also creates six demo collections, each with a collection.created event.
     const afterFirst = demoCounts();
     expect(afterFirst).toEqual({
-      audit_events: 8,
+      audit_events: 14,
       set_password_tokens: 6,
       workspace_memberships: 6,
       memberships: 6,
@@ -893,7 +897,12 @@ test.describe("EA-21 Platform Operator CLI and demo seed", () => {
       rows(
         `select action || '|' || count(*) from audit_events where org_id = '${DEMO_ORG}' group by action`,
       ).sort(),
-    ).toEqual(["organization.created|1", "user.invited|6", "workspace.created|1"]);
+    ).toEqual([
+      "collection.created|6",
+      "organization.created|1",
+      "user.invited|6",
+      "workspace.created|1",
+    ]);
     expect(rows(`select distinct actor from audit_events where org_id = '${DEMO_ORG}'`)).toEqual([
       "platform-operator",
     ]);

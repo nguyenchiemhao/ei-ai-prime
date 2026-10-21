@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ei_ai.audit.events import USER_INVITED, record_event, record_role_change, user_actor
+from ei_ai.db.constraints import violated_constraint
 from ei_ai.members.emails import parse_email
 from ei_ai.members.rows import (
     MemberRow,
@@ -69,13 +70,6 @@ def _display_name(display_name: str | None, email: str) -> str:
     return name
 
 
-def _violated(error: IntegrityError) -> str | None:
-    """Name of the constraint a database error violated, if the driver reports one."""
-    diag = getattr(error.orig, "diag", None)
-    name: str | None = getattr(diag, "constraint_name", None)
-    return name
-
-
 def _refuse_self_lockout(
     tenant: TenantContext, access: WorkspaceAccess, user_id: uuid.UUID, new_role: str | None
 ) -> None:
@@ -122,7 +116,7 @@ async def _create_user(
                 conn, org_id, address, name, None, (access.workspace_id, role)
             )
     except IntegrityError as error:
-        if _violated(error) == _USER_EMAIL_KEY:
+        if violated_constraint(error) == _USER_EMAIL_KEY:
             return None
         raise
     return user_id
@@ -138,7 +132,7 @@ async def _join(
         async with conn.begin_nested():
             await insert_workspace_member(conn, org_id, access.workspace_id, user_id, role)
     except IntegrityError as error:
-        if _violated(error) == _WORKSPACE_MEMBER_KEY:
+        if violated_constraint(error) == _WORKSPACE_MEMBER_KEY:
             raise AlreadyMember from None
         raise
 

@@ -24,6 +24,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ei_ai.audit.events import (
+    COLLECTION_CREATED,
     ORGANIZATION_CREATED,
     PLATFORM_OPERATOR,
     USER_INVITED,
@@ -33,6 +34,8 @@ from ei_ai.audit.events import (
 from ei_ai.auth.set_password import set_password_link
 from ei_ai.db.engine import run_with_app_engine
 from ei_ai.db.tenant import tenant_transaction
+from ei_ai.knowledge.groups import normalise_groups
+from ei_ai.knowledge.rows import insert_collection, list_collection_rows
 from ei_ai.members.rows import find_user_id, insert_member
 from ei_ai.model_gateway.catalog_rows import ensure_platform_models
 from ei_ai.provisioning.rows import (
@@ -82,6 +85,23 @@ class Member(BaseModel):
         return value
 
 
+class SeedCollection(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    name: str = Field(min_length=1, max_length=200)
+    subtitle: str | None = Field(default=None, min_length=1, max_length=200)
+    access_level: Literal["public", "authenticated", "restricted"]
+    groups: list[str] = []
+    local_only: bool
+
+    @model_validator(mode="after")
+    def groups_match_the_level(self) -> "SeedCollection":
+        """Only a restricted collection has groups, and it has at least one."""
+        if bool(self.groups) != (self.access_level == "restricted"):
+            raise ValueError("groups are required for, and only for, a restricted collection")
+        return self
+
+
 class DemoManifest(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -90,6 +110,7 @@ class DemoManifest(BaseModel):
     organization: str = Field(min_length=1, max_length=200)
     workspace: str = Field(min_length=1, max_length=200)
     members: list[Member] = Field(min_length=1)
+    collections: list[SeedCollection] = []
 
     @model_validator(mode="after")
     def emails_are_unique(self) -> "DemoManifest":
@@ -97,6 +118,14 @@ class DemoManifest(BaseModel):
         emails = [member.email for member in self.members]
         if len(set(emails)) != len(emails):
             raise ValueError("member emails must be unique")
+        return self
+
+    @model_validator(mode="after")
+    def collection_names_are_unique(self) -> "DemoManifest":
+        """No two collections share a name, ignoring case."""
+        names = [collection.name.lower() for collection in self.collections]
+        if len(set(names)) != len(names):
+            raise ValueError("collection names must be unique")
         return self
 
 
@@ -109,12 +138,14 @@ class SeedResult:
     organization_created: bool
     workspace_created: bool
     member_secrets: tuple[str | None, ...]
+    collections_created: int = 0
 
     @property
     def audit_events(self) -> int:
         """Number of audit events this run wrote (one per created object)."""
         created = [self.organization_created, self.workspace_created]
-        return sum(created) + sum(secret is not None for secret in self.member_secrets)
+        members = sum(secret is not None for secret in self.member_secrets)
+        return sum(created) + members + self.collections_created
 
 
 def load_manifest() -> DemoManifest:
@@ -168,6 +199,40 @@ async def _ensure_member(
     return secret
 
 
+async def _ensure_collections(
+    conn: AsyncConnection, manifest: DemoManifest, ws_id: uuid.UUID
+) -> int:
+    """Create the manifest collections missing by name (ignoring case); the number created."""
+    org_id = manifest.organization_id
+    existing = {row.name.lower() for row in await list_collection_rows(conn, org_id, ws_id)}
+    created = 0
+    for item in manifest.collections:
+        if item.name.lower() in existing:
+            continue
+        row = await insert_collection(
+            conn,
+            org_id,
+            ws_id,
+            name=item.name,
+            subtitle=item.subtitle,
+            access_level=item.access_level,
+            groups=normalise_groups(item.groups),
+            local_only=item.local_only,
+        )
+        await record_event(
+            conn,
+            org_id,
+            PLATFORM_OPERATOR,
+            COLLECTION_CREATED,
+            "collection",
+            row.id,
+            workspace_id=ws_id,
+            new_value=item.access_level,
+        )
+        created += 1
+    return created
+
+
 async def seed_manifest(engine: AsyncEngine, manifest: DemoManifest) -> SeedResult:
     """Create what is missing of the manifest in one tenant transaction, with audit events, and
     the platform models of the model catalog (without audit events)."""
@@ -177,6 +242,7 @@ async def seed_manifest(engine: AsyncEngine, manifest: DemoManifest) -> SeedResu
             org_created = await _ensure_organization(conn, manifest)
             ws_id, ws_created = await _ensure_workspace(conn, manifest)
             secrets = [await _ensure_member(conn, org_id, ws_id, m) for m in manifest.members]
+            collections = await _ensure_collections(conn, manifest, ws_id)
             # The platform models (EA-24): no audit event and no output line, so the summary
             # and the audit count stay as they were.
             await ensure_platform_models(conn, org_id)
@@ -187,7 +253,7 @@ async def seed_manifest(engine: AsyncEngine, manifest: DemoManifest) -> SeedResu
             f'an Organization named "{manifest.organization}" already exists with another id',
         )
         raise
-    return SeedResult(ws_id, org_created, ws_created, tuple(secrets))
+    return SeedResult(ws_id, org_created, ws_created, tuple(secrets), collections)
 
 
 def _status(created: bool) -> str:

@@ -380,6 +380,9 @@ test("AC7 TC-7-3: every area is an empty page with the label as heading, title a
         if (slug === "members") {
           // EA-23: Members & roles is a real page now.
           await expect(page.getByTestId("members-page"), label).toBeVisible();
+        } else if (slug === "knowledge") {
+          // EA-32: Knowledge is a real page now.
+          await expect(page.getByTestId("knowledge-page"), label).toBeVisible();
         } else {
           const area = page.getByTestId("area-page");
           await expect(area, label).toHaveAttribute("data-area", slug);
