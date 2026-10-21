@@ -5,6 +5,9 @@ name: CI
 
 # Runs on every push to any branch (owner decision 2026-10-14), so a ticket branch is checked without a
 # pull request; the commit status still shows on any PR for that commit.
+# A push to the default branch skips the five check jobs when it is a merge whose tree equals the merged
+# branch head and that head already passed CI (owner decision 2026-10-21; scripts/ci-gate.mjs). Any other
+# push to the default branch runs them.
 on:
   push:
     branches: ["**"]
@@ -12,13 +15,31 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    outputs:
+      should_run: ${{ steps.decide.outputs.run }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - id: decide
+        run: node scripts/ci-gate.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+
   frontend:
+    needs: gate
+    if: needs.gate.outputs.should_run == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -35,6 +56,8 @@ jobs:
       - run: node scripts/task.mjs frontend:api-types
 
   backend:
+    needs: gate
+    if: needs.gate.outputs.should_run == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -55,6 +78,8 @@ jobs:
       - run: npm run backend -- openapi --native
 
   checks:
+    needs: gate
+    if: needs.gate.outputs.should_run == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -74,6 +99,8 @@ jobs:
   # step. Image pulls and builds run in the step before it, so the cap measures the suite and a slow
   # registry cannot fail the check. It uses the runner's Docker Compose (the stack job proves the minimum).
   tenant-isolation:
+    needs: gate
+    if: needs.gate.outputs.should_run == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -88,6 +115,8 @@ jobs:
         run: npm run down
 
   stack:
+    needs: gate
+    if: needs.gate.outputs.should_run == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
