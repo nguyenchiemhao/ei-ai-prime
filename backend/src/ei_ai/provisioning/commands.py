@@ -17,6 +17,7 @@ from collections.abc import Awaitable, Callable
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ei_ai.auth.set_password import set_password_link
+from ei_ai.crypto.master_key import MasterKey, master_key_from_env
 from ei_ai.db.engine import run_with_app_engine
 from ei_ai.provisioning.service import (
     DEFAULT_WORKSPACE_NAME,
@@ -80,7 +81,7 @@ def add_provisioning_parsers(
     link.add_argument("--email", required=True)
 
 
-def _org_create(args: argparse.Namespace) -> Work:
+def _org_create(args: argparse.Namespace, master: MasterKey) -> Work:
     """The work of ``org create``: Organization, Workspace, Org Owner and the link line."""
 
     async def work(engine: AsyncEngine, base_url: str) -> list[str]:
@@ -91,6 +92,7 @@ def _org_create(args: argparse.Namespace) -> Work:
             owner_email=args.owner,
             owner_name=args.owner_name,
             workspace_name=args.workspace_name,
+            master=master,
         )
         return [
             f"Organization created: {result.org_id} ({result.org_name})",
@@ -157,9 +159,9 @@ def _user_link(args: argparse.Namespace) -> Work:
     return work
 
 
-# (command name, needs ADMIN_BASE_URL, builder of the work)
+# (command name, needs ADMIN_BASE_URL, builder of the work); `org create` is built separately as
+# it also needs the master key.
 _HANDLERS: dict[tuple[str, str], tuple[bool, Callable[[argparse.Namespace], Work]]] = {
-    ("org", "create"): (True, _org_create),
     ("workspace", "create"): (False, _workspace_create),
     ("workspace", "add-member"): (False, _workspace_add_member),
     ("user", "invite"): (True, _user_invite),
@@ -170,15 +172,20 @@ _HANDLERS: dict[tuple[str, str], tuple[bool, Callable[[argparse.Namespace], Work
 def run_provisioning_command(args: argparse.Namespace) -> int:
     """Run one parsed command; returns the exit code (0 done, 1 failed)."""
     command = f"{args.command} {args.action}"
-    needs_link, build = _HANDLERS[(args.command, args.action)]
+    key = (args.command, args.action)
+    creates_org = key == ("org", "create")
+    needs_link = True if creates_org else _HANDLERS[key][0]
     try:
         settings = CliSettings.from_env(os.environ)
         base_url = admin_base_url(os.environ, settings.environment) if needs_link else ""
+        # Only `org create` needs the master key; a missing or invalid one stops before any database
+        # access.
+        master = master_key_from_env(os.environ) if creates_org else None
     except SettingsError as error:
         print(f"configuration error: {error}", file=sys.stderr)
         return 1
     try:
-        work = build(args)
+        work = _org_create(args, master) if master is not None else _HANDLERS[key][1](args)
         lines = asyncio.run(
             run_with_app_engine(settings.database_url, lambda engine: work(engine, base_url))
         )

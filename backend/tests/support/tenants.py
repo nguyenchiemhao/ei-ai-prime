@@ -4,17 +4,24 @@ Never imported by ``src``. Rows are created through the application role in a te
 (exactly like the product), so the fixtures exercise the real policies and grants.
 """
 
+import os
 import secrets
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from datetime import UTC, datetime
 
+import psycopg
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ei_ai.crypto.lifecycle import create_org_key
 from ei_ai.db.tenant import tenant_transaction
+from ei_ai.vectors.partitions import create_vector_partition, drop_vector_partition
+from support.crypto import TEST_MASTER_KEY
 
 # Every table of the schema, children first (the order in which fixture rows can be deleted).
 DELETE_ORDER = (
+    "chunk_embeddings",
     "folders",
     "collections",
     "admin_sessions",
@@ -26,6 +33,7 @@ DELETE_ORDER = (
     "workspaces",
     "users",
     "model_catalog",
+    "organization_keys",
     "organizations",
 )
 
@@ -74,6 +82,8 @@ class OrgRows:
     model_catalog_entry_id: uuid.UUID
     collection_id: uuid.UUID
     folder_id: uuid.UUID
+    organization_key_id: uuid.UUID
+    chunk_embedding_id: uuid.UUID
     # The digest of the fixture model row: random, so each Organization has its own.
     model_digest: str
     label: str
@@ -97,6 +107,8 @@ class OrgRows:
             "model_catalog": self.model_catalog_entry_id,
             "collections": self.collection_id,
             "folders": self.folder_id,
+            "organization_keys": self.organization_key_id,
+            "chunk_embeddings": self.chunk_embedding_id,
         }[table]
 
     @property
@@ -131,6 +143,8 @@ UPDATE_SETS = {
     "model_catalog": ("display_name", "renamed-by-intruder"),
     "collections": ("name", "renamed-by-intruder"),
     "folders": ("name", "renamed-by-intruder"),
+    "organization_keys": ("kek_id", "0" * 16),
+    "chunk_embeddings": ("created_at", datetime(2000, 1, 1, tzinfo=UTC)),
 }
 
 
@@ -148,6 +162,8 @@ async def create_org_rows(engine: AsyncEngine, label: str) -> OrgRows:
         model_catalog_entry_id=uuid.uuid4(),
         collection_id=uuid.uuid4(),
         folder_id=uuid.uuid4(),
+        organization_key_id=uuid.UUID(int=0),  # replaced once the key row exists
+        chunk_embedding_id=uuid.uuid4(),
         model_digest=f"sha256:{secrets.token_hex(32)}",
         label=label,
         suffix=uuid.uuid4().hex[:8],
@@ -274,7 +290,24 @@ async def create_org_rows(engine: AsyncEngine, label: str) -> OrgRows:
                 "name": f"Folder {label} {rows.suffix}",
             },
         )
-    return rows
+        key_id = await create_org_key(conn, rows.org_id, TEST_MASTER_KEY)
+    # The partition needs the owner role and the committed Organization row (R2, R24).
+    with _migrator_connection() as migrator:
+        create_vector_partition(migrator, rows.org_id)
+    async with engine.connect() as conn, tenant_transaction(conn, rows.org_id):
+        await conn.execute(
+            text(
+                "INSERT INTO chunk_embeddings (id, org_id, embedding)"
+                " VALUES (:id, :org, array_fill(0.1::real, ARRAY[1024])::vector)"
+            ),
+            {"id": rows.chunk_embedding_id, "org": rows.org_id},
+        )
+    return replace(rows, organization_key_id=key_id)
+
+
+def _migrator_connection() -> psycopg.Connection:
+    """Owner-role connection (autocommit) for the vector partition commands only."""
+    return psycopg.connect(os.environ["MIGRATION_DATABASE_URL"], autocommit=True)
 
 
 async def count_org_rows(engine: AsyncEngine, org_id: uuid.UUID) -> dict[str, int]:
@@ -299,10 +332,14 @@ async def purge_org_ids(engine: AsyncEngine, *org_ids: uuid.UUID) -> None:
 
     This is the product path: every table has a DELETE grant and the standard policy, so no owner
     privilege is used and row-level security is never altered. The explicit ``org_id`` filter
-    and the policy both apply.
+    and the policy both apply. Afterwards the Organization's vector partition, if any, is dropped
+    over an owner-role connection, so no empty partition is left behind.
     """
     for org_id in org_ids:
         async with engine.connect() as conn, tenant_transaction(conn, org_id):
             for table in DELETE_ORDER:
                 key = tenant_key_column(table)
                 await conn.execute(text(f"DELETE FROM {table} WHERE {key} = :org"), {"org": org_id})
+    with _migrator_connection() as migrator:
+        for org_id in org_ids:
+            drop_vector_partition(migrator, org_id)

@@ -16,6 +16,7 @@ from ei_ai import cli
 from ei_ai.auth.set_password import hash_secret
 from ei_ai.db.engine import to_sqlalchemy_url
 from ei_ai.db.tenant import tenant_transaction
+from support.crypto import TEST_MASTER_KEY
 from support.tenants import purge_org_ids
 
 pytestmark = pytest.mark.integration
@@ -54,6 +55,8 @@ async def _purge(*org_ids: uuid.UUID) -> None:
 @pytest.fixture
 def admin_url_unset(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("ADMIN_BASE_URL", raising=False)
+    monkeypatch.setenv("EI_AI_MASTER_KEY", TEST_MASTER_KEY.key.hex())
+    monkeypatch.delenv("EI_AI_MASTER_KEY_FILE", raising=False)
 
 
 @pytest.mark.usefixtures("admin_url_unset")

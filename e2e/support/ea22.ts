@@ -627,6 +627,8 @@ export function cleanup(): void {
   if (statements.length > 0) sql(`begin; ${statements.join(" ")} commit;`);
 
   const tables = [
+    "chunk_embeddings",
+    "organization_keys",
     "admin_sessions",
     "user_credentials",
     "audit_events",

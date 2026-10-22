@@ -19,6 +19,7 @@ dependencies = [
   "anyio==4.15.1",
   "openai==3.29.0",
   "httpx2==2.15.1",
+  "cryptography==50.0.2",
 ]
 
 [project.optional-dependencies]

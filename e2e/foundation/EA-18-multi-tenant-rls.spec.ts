@@ -17,14 +17,17 @@ const FORGED = "0b9c1c3e-5f0a-4a52-9a53-2c0f1f6f7a11";
 // EA-21 (FND-04) added audit_events and set_password_tokens (migration 0002); EA-22 (FND-05) added
 // admin_sessions and user_credentials, the ei_ai_signin role and the sign_in_lookup policy (head 0004);
 // EA-24 (FND-07) added model_catalog (head 0005); EA-23 (FND-06) added the audit role-change columns (head 0006);
-// EA-32 added collections and folders (head 0007).
+// EA-32 added collections and folders (head 0007); EA-20 added organization_keys and the partitioned
+// chunk_embeddings with one partition per Organization (head 0009).
 const TABLES = [
   "admin_sessions",
   "audit_events",
+  "chunk_embeddings",
   "collections",
   "folders",
   "memberships",
   "model_catalog",
+  "organization_keys",
   "organizations",
   "set_password_tokens",
   "user_credentials",
@@ -32,7 +35,7 @@ const TABLES = [
   "workspace_memberships",
   "workspaces",
 ];
-const REVISION = "0007";
+const REVISION = "0009";
 const STANDARD_EXPRESSION = "NULLIF(current_setting('app.current_org'::text, true), ''::text)";
 
 /** Runs SQL through psql in the db container; returns stdout, stderr and the exit code. */
@@ -57,16 +60,19 @@ test.describe("EA-18 multi-tenant data model with RLS", () => {
     const columns = scalar(
       "postgres",
       `select string_agg(table_name, ',' order by table_name) from information_schema.columns
-       where table_schema='public' and column_name='org_id' and is_nullable='NO' and data_type='uuid'`,
+       where table_schema='public' and column_name='org_id' and is_nullable='NO' and data_type='uuid'
+       and table_name !~ '^chunk_embeddings_[0-9a-f]{32}$'`,
     );
     expect(columns).toBe(
-      "admin_sessions,audit_events,collections,folders,memberships,model_catalog,set_password_tokens,user_credentials,users,workspace_memberships,workspaces",
+      "admin_sessions,audit_events,chunk_embeddings,collections,folders,memberships,model_catalog,organization_keys,set_password_tokens,user_credentials,users,workspace_memberships,workspaces",
     );
 
+    // chunk_embeddings is a partitioned table (relkind 'p'); its per-Organization partitions are not listed.
     const rls = scalar(
       "postgres",
       `select string_agg(relname, ',' order by relname) from pg_class
-       where relnamespace='public'::regnamespace and relkind='r' and relrowsecurity and relforcerowsecurity`,
+       where relnamespace='public'::regnamespace and relkind in ('r','p') and not relispartition
+       and relrowsecurity and relforcerowsecurity`,
     );
     expect(rls).toBe(TABLES.join(","));
 
@@ -75,11 +81,11 @@ test.describe("EA-18 multi-tenant data model with RLS", () => {
       "postgres",
       `select string_agg(relname, ',') from pg_class
        where relnamespace='public'::regnamespace and relkind in ('r','p','v','m')
-       and not (relrowsecurity and relforcerowsecurity)`,
+       and not relispartition and not (relrowsecurity and relforcerowsecurity)`,
     );
     expect(others).toBe("alembic_version");
 
-    // 11 policies: one standard FOR ALL policy per table for every role, plus the one exception
+    // 15 policies (14 tables + 1): one standard FOR ALL policy per table for every role, plus the one exception
     // `sign_in_lookup` (EA-22): FOR SELECT, only for ei_ai_signin, USING (true), no WITH CHECK.
     const policies = psql(
       "postgres",
@@ -263,7 +269,7 @@ rollback;
        where grantee='ei_ai_app' and table_schema='public'`,
     );
     expect(privileges).toBe("DELETE,INSERT,SELECT,UPDATE");
-    // ... on each of the 12 tables, and on nothing else.
+    // ... on each of the 14 tables, and on nothing else.
     const perTable = psql(
       "postgres",
       `select table_name || ':' || string_agg(privilege_type, ',' order by privilege_type)

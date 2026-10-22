@@ -66,7 +66,10 @@ const COLUMNS = [
 ];
 
 // Children first (model_catalog and audit_events reference organizations).
+// EA-20: organization_keys and chunk_embeddings reference organizations as well.
 const PURGE_TABLES = [
+  "chunk_embeddings",
+  "organization_keys",
   "audit_events",
   "model_catalog",
   "admin_sessions",

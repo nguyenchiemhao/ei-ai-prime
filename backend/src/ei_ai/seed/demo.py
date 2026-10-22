@@ -18,6 +18,8 @@ from collections.abc import Callable, Mapping, Sequence
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ei_ai.crypto.lifecycle import ensure_org_key
+from ei_ai.crypto.master_key import MasterKey, master_key_from_env
 from ei_ai.db.engine import run_with_app_engine
 from ei_ai.db.tenant import tenant_transaction
 from ei_ai.model_gateway.catalog_rows import ensure_platform_models
@@ -43,14 +45,19 @@ class SeedRefused(Exception):
     """The demo seed must not run in this environment."""
 
 
-async def seed_manifest(engine: AsyncEngine, manifest: DemoManifest, password: str) -> SeedResult:
+async def seed_manifest(
+    engine: AsyncEngine, manifest: DemoManifest, password: str, *, master: MasterKey
+) -> SeedResult:
     """Create what is missing of one manifest in its own tenant transaction, with audit events,
-    and the platform models of the model catalog (without audit events)."""
+    the Organization data key and the platform models of the model catalog (the last two without
+    audit events)."""
     org_id = manifest.organization_id
     try:
         async with engine.connect() as conn, tenant_transaction(conn, org_id):
             run = SeedRun(conn, org_id)
             org_created = await ensure_organization(run, manifest)
+            # The data key (EA-20): added to an Organization seeded before, never recreated.
+            await ensure_org_key(conn, org_id, master)
             workspaces = await ensure_workspaces(run, manifest)
             members = [await ensure_member(run, workspaces, m) for m in manifest.members]
             applied = [
@@ -79,21 +86,30 @@ async def seed_manifest(engine: AsyncEngine, manifest: DemoManifest, password: s
     )
 
 
-async def _seed_all(engine: AsyncEngine, manifests: Sequence[DemoManifest], password: str) -> str:
+async def _seed_all(
+    engine: AsyncEngine, manifests: Sequence[DemoManifest], password: str, master: MasterKey
+) -> str:
     """Seed the manifests in order; the summary of every Organization."""
-    summaries = [format_summary(m, await seed_manifest(engine, m, password)) for m in manifests]
+    summaries = [
+        format_summary(m, await seed_manifest(engine, m, password, master=master))
+        for m in manifests
+    ]
     return "\n".join(summaries)
 
 
 def load_demo_data(env: Mapping[str, str], manifests: tuple[DemoManifest, ...]) -> str:
     """Read the settings and the seed password, load the manifests and return the summary.
 
-    Raises ``SettingsError`` before any database access when a setting is missing or invalid.
+    Raises ``SettingsError`` before any database access when a setting or the master key is
+    missing or invalid.
     """
     settings = CliSettings.from_env(env)
     password = seed_password(env)
+    master = master_key_from_env(env)
     return asyncio.run(
-        run_with_app_engine(settings.database_url, lambda e: _seed_all(e, manifests, password))
+        run_with_app_engine(
+            settings.database_url, lambda e: _seed_all(e, manifests, password, master)
+        )
     )
 
 

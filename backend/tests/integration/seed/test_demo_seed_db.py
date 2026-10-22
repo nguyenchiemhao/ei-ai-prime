@@ -28,6 +28,7 @@ from ei_ai.provisioning.rows import insert_organization, insert_workspace
 from ei_ai.provisioning.validation import ProvisioningError
 from ei_ai.seed.demo import DemoManifest, SeedResult, seed_manifest
 from ei_ai.seed.manifest import SeedFolder, load_manifests
+from support.crypto import TEST_MASTER_KEY
 from support.seed import TEST_SEED_PASSWORD, demo_seed_password
 from support.sign_in import in_tenant
 from support.tenants import (
@@ -40,6 +41,7 @@ from support.tenants import (
 pytestmark = pytest.mark.integration
 
 MEKONG_COUNTS = {
+    "chunk_embeddings": 0,
     "folders": 33,
     "collections": 8,
     "admin_sessions": 0,
@@ -52,9 +54,11 @@ MEKONG_COUNTS = {
     "users": 10,
     # The three platform models of the manifest (EA-24); the seed writes no audit event for them.
     "model_catalog": 3,
+    "organization_keys": 1,
     "organizations": 1,
 }
 SONG_HAN_COUNTS = {
+    "chunk_embeddings": 0,
     "folders": 3,
     "collections": 1,
     "admin_sessions": 0,
@@ -66,6 +70,7 @@ SONG_HAN_COUNTS = {
     "workspaces": 1,
     "users": 2,
     "model_catalog": 3,
+    "organization_keys": 1,
     "organizations": 1,
 }
 MEKONG_ACTIONS = {
@@ -147,7 +152,10 @@ def _expected_paths(manifest: DemoManifest) -> set[tuple[str, str, int]]:
 
 
 async def _seed_all(engine: AsyncEngine, manifests: tuple[DemoManifest, ...]) -> list[SeedResult]:
-    return [await seed_manifest(engine, m, TEST_SEED_PASSWORD) for m in manifests]
+    return [
+        await seed_manifest(engine, m, TEST_SEED_PASSWORD, master=TEST_MASTER_KEY)
+        for m in manifests
+    ]
 
 
 async def test_fresh_seed_writes_the_expected_rows_and_events(
@@ -232,7 +240,7 @@ async def test_folders_are_created_once_with_depth(
         "UPDATE folders SET name = 'Perks' WHERE org_id = :org AND name = 'Benefits'",
     )
 
-    result = await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD)
+    result = await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD, master=TEST_MASTER_KEY)
 
     assert paths == _expected_paths(mekong)
     assert len(paths) == 33
@@ -308,7 +316,7 @@ async def test_v2_seeded_database_is_upgraded_without_changing_rows(
     before = await _all_rows(app_engine, org_id)
     actions_before = await _actions(app_engine, org_id)
 
-    result = await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD)
+    result = await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD, master=TEST_MASTER_KEY)
 
     after = await _all_rows(app_engine, org_id)
     for table, rows in before.items():
@@ -367,7 +375,7 @@ async def test_recreated_workspace_gets_the_existing_members_back(
 ) -> None:
     mekong = variants[0]
     org_id = mekong.organization_id
-    first = await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD)
+    first = await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD, master=TEST_MASTER_KEY)
     await in_tenant(
         app_engine,
         org_id,
@@ -376,7 +384,7 @@ async def test_recreated_workspace_gets_the_existing_members_back(
     )
     actions_before = await _actions(app_engine, org_id)
 
-    result = await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD)
+    result = await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD, master=TEST_MASTER_KEY)
 
     assert [(name, created) for name, _, created in result.workspaces] == [
         ("People Ops", True),
@@ -440,9 +448,9 @@ async def test_one_org_failure_leaves_the_other_org_untouched(
     mekong, song_han = variants
     taken = song_han.model_copy(update={"organization": two_orgs.a.names.organization.upper()})
 
-    await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD)
+    await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD, master=TEST_MASTER_KEY)
     with pytest.raises(ProvisioningError) as error:
-        await seed_manifest(app_engine, taken, TEST_SEED_PASSWORD)
+        await seed_manifest(app_engine, taken, TEST_SEED_PASSWORD, master=TEST_MASTER_KEY)
 
     assert str(error.value) == (
         f'an Organization named "{taken.organization}" already exists with another id'
@@ -461,7 +469,7 @@ async def test_seed_keeps_a_renamed_or_changed_collection(
 ) -> None:
     mekong = variants[0]
     org_id = mekong.organization_id
-    await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD)
+    await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD, master=TEST_MASTER_KEY)
     await in_tenant(
         app_engine,
         org_id,
@@ -484,7 +492,7 @@ async def test_seed_keeps_a_renamed_or_changed_collection(
     )
     before = [tuple(row) for row in await in_tenant(app_engine, org_id, sql)]
 
-    result = await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD)
+    result = await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD, master=TEST_MASTER_KEY)
 
     assert result.collections_created == 1
     assert result.folders_created == 3
@@ -500,7 +508,7 @@ async def test_seed_adds_only_a_missing_member(
 ) -> None:
     mekong = variants[0]
     org_id = mekong.organization_id
-    await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD)
+    await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD, master=TEST_MASTER_KEY)
     son = "(SELECT id FROM users WHERE org_id = :org AND email = :email)"
     params = {"email": mekong.members[5].email}
     for table in ("user_credentials", "workspace_memberships", "memberships"):
@@ -514,7 +522,7 @@ async def test_seed_adds_only_a_missing_member(
         app_engine, org_id, f"DELETE FROM users WHERE org_id = :org AND id IN {son}", params
     )
 
-    result = await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD)
+    result = await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD, master=TEST_MASTER_KEY)
 
     assert result.members_created == (False,) * 5 + (True,) + (False,) * 4
     assert result.passwords_applied == 1
@@ -526,9 +534,9 @@ async def test_seed_adds_only_a_missing_member(
 async def test_real_manifests_are_idempotent(app_engine: AsyncEngine) -> None:
     password = demo_seed_password()
     for manifest in load_manifests():
-        await seed_manifest(app_engine, manifest, password)
+        await seed_manifest(app_engine, manifest, password, master=TEST_MASTER_KEY)
         after_first = await _all_rows(app_engine, manifest.organization_id)
-        second = await seed_manifest(app_engine, manifest, password)
+        second = await seed_manifest(app_engine, manifest, password, master=TEST_MASTER_KEY)
 
         assert second.audit_events == 0
         assert await _all_rows(app_engine, manifest.organization_id) == after_first

@@ -18,6 +18,7 @@ from ei_ai.provisioning.service import (
     IssuedLink,
 )
 from ei_ai.provisioning.validation import ProvisioningError
+from support.crypto import TEST_MASTER_KEY
 
 ORG = uuid.UUID("0192a000-0000-7000-8000-000000000001")
 WS = uuid.UUID("0192a000-0000-7000-8000-000000000002")
@@ -40,6 +41,8 @@ def local_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("EI_AI_ENV", "local")
     monkeypatch.setenv("DATABASE_URL", f"postgresql://ei_ai_app:{DB_PASSWORD}@db:5432/ei_ai")
     monkeypatch.setenv("VALKEY_URL", "redis://valkey:6379/0")
+    monkeypatch.setenv("EI_AI_MASTER_KEY", TEST_MASTER_KEY.key.hex())
+    monkeypatch.delenv("EI_AI_MASTER_KEY_FILE", raising=False)
     monkeypatch.delenv("ADMIN_BASE_URL", raising=False)
 
 
@@ -107,6 +110,7 @@ def test_org_create_passes_name_and_owner_through(
             "owner_email": "linh.tran@mekongdevworks.example",
             "owner_name": None,
             "workspace_name": "Default",
+            "master": TEST_MASTER_KEY,
         }
     ]
 
@@ -601,3 +605,45 @@ def test_commands_do_not_need_valkey_url(
         f"{LINK}\n",
         "",
     )
+
+
+@pytest.mark.usefixtures("no_database")
+@pytest.mark.parametrize(
+    ("env", "message"),
+    [
+        ({}, "EI_AI_MASTER_KEY or EI_AI_MASTER_KEY_FILE is required"),
+        (
+            {"EI_AI_MASTER_KEY": "abc"},
+            "EI_AI_MASTER_KEY must be 64 hexadecimal characters",
+        ),
+        (
+            {"EI_AI_MASTER_KEY": "a" * 64, "EI_AI_MASTER_KEY_FILE": "/run/secrets/key"},
+            "set only one of EI_AI_MASTER_KEY and EI_AI_MASTER_KEY_FILE",
+        ),
+    ],
+)
+def test_org_create_needs_a_valid_master_key_before_any_database_access(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    env: dict[str, str],
+    message: str,
+) -> None:
+    monkeypatch.delenv("EI_AI_MASTER_KEY")
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
+
+    code, out, err = _run(AC1_ARGV, capsys)
+
+    assert (code, out) == (1, "")
+    assert err == f"configuration error: {message}\n"
+
+
+def test_other_commands_do_not_read_the_master_key(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.delenv("EI_AI_MASTER_KEY")
+    _fake(monkeypatch, "create_workspace", CreatedWorkspace(WS, "Engineering"))
+
+    code, _, err = _run(["workspace", "create", "--org", str(ORG), "--name", "Engineering"], capsys)
+
+    assert (code, err) == (0, "")

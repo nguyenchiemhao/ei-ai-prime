@@ -21,6 +21,7 @@ from ei_ai.model_gateway.refs import ModelRef
 from ei_ai.model_gateway.results import ChatMessage, TextDelta
 from ei_ai.seed.demo import DemoManifest, seed_manifest
 from ei_ai.settings import ModelSettings
+from support.crypto import TEST_MASTER_KEY
 from support.fake_model_server import FakeModelServer, running_fake_model_server
 from support.seed import TEST_SEED_PASSWORD, variant_manifests
 from support.tenants import FIXTURE_MODEL_ID, FIXTURE_MODEL_VERSION, TwoOrgs, purge_org_ids
@@ -82,7 +83,7 @@ async def _block_events(engine: AsyncEngine, org: uuid.UUID) -> list[tuple[Any, 
 async def seeded(app_engine: AsyncEngine) -> AsyncIterator[DemoManifest]:
     """The demo manifest seeded into a random Organization; purged afterwards."""
     manifest = variant_manifests()[0]
-    await seed_manifest(app_engine, manifest, TEST_SEED_PASSWORD)
+    await seed_manifest(app_engine, manifest, TEST_SEED_PASSWORD, master=TEST_MASTER_KEY)
     try:
         yield manifest
     finally:

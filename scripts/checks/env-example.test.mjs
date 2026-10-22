@@ -22,8 +22,8 @@ test("env_example_has_no_secret_values", () => {
     ([name]) => SECRET_NAME.test(name) && name !== DOCUMENTED_NAME,
   )) {
     assert.ok(
-      value === "__GENERATED__" || value === "",
-      `${name} must be __GENERATED__ or empty in .env.example`,
+      value === "__GENERATED__" || value === "__GENERATED_KEY__" || value === "",
+      `${name} must be a generated placeholder or empty in .env.example`,
     );
   }
   for (const name of [
@@ -63,5 +63,12 @@ test("no_env_file_is_tracked_except_the_example", () => {
   assert.deepEqual(
     envFiles.filter((file) => file !== ".env.example"),
     [],
+  );
+});
+
+test("master_key_is_a_generated_key", () => {
+  assert.ok(
+    assignments.some(([n, v]) => n === "EI_AI_MASTER_KEY" && v === "__GENERATED_KEY__"),
+    "EI_AI_MASTER_KEY=__GENERATED_KEY__ is missing",
   );
 });

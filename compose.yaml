@@ -91,6 +91,8 @@ services:
       # ei_ai.auth.directory to find the Organization of an email at sign-in.
       SIGNIN_DATABASE_URL: postgresql://ei_ai_signin:${SIGNIN_DB_PASSWORD:?run npm run up to create .env}@db:5432/ei_ai
       VALKEY_URL: redis://valkey:6379/0
+      # Key-encryption key of the per-Organization data keys (EA-20); only api and backend-tools get it.
+      EI_AI_MASTER_KEY: ${EI_AI_MASTER_KEY:?run npm run up to create .env}
       # Base of the one-time set-password links printed by the Platform Operator CLI (FND-04);
       # follows the admin host port (ADMIN_PORT in .env, default 3000).
       ADMIN_BASE_URL: http://localhost:${ADMIN_PORT:-3000}
@@ -165,6 +167,8 @@ services:
       # Sign-in lookup role: the API settings need it; the proof tests connect with it.
       SIGNIN_DATABASE_URL: postgresql://ei_ai_signin:${SIGNIN_DB_PASSWORD:?run npm run up to create .env}@db:5432/ei_ai
       VALKEY_URL: redis://valkey:6379/0
+      # Master key: the CLI and seed integration tests read it (EA-20).
+      EI_AI_MASTER_KEY: ${EI_AI_MASTER_KEY:?run npm run up to create .env}
       MODEL_LOCAL_BASE_URL: http://model:8080/v1
 
   # One-shot database migration: "ei-ai db upgrade" (Alembic to head, then the schema guard). Not started

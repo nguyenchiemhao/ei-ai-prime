@@ -57,6 +57,18 @@ export const tasks = {
     backend: ["pytest", "tests/perf/test_gateway_overhead.py", "-m", "benchmark", "--no-cov", "-s"],
     services: true,
   },
+  // Per-Organization file encryption throughput (EA-20 NFR, 50 MiB < 1.5 s); results in docs/architecture/key-management.md.
+  "backend:bench-crypto": {
+    backend: [
+      "pytest",
+      "tests/perf/test_file_crypto_throughput.py",
+      "-m",
+      "benchmark",
+      "--no-cov",
+      "-s",
+    ],
+    services: true,
+  },
   // Vietnamese normalisation throughput (EA-28 NFR, >= 1 MB/s); results in backend/src/ei_ai/vn_text/README.md.
   "backend:bench-vn-text": {
     backend: [

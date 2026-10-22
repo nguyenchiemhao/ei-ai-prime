@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 
 from ei_ai import cli
@@ -5,6 +7,7 @@ from ei_ai.db.migrations.roles import MigrationRoleError
 from ei_ai.db.schema_guard import Violation
 from ei_ai.provisioning.validation import ProvisioningError
 from ei_ai.seed.demo import DemoManifest
+from ei_ai.vectors.partitions import OrganizationNotFound
 
 ENV = {
     "DATABASE_URL": "postgresql://ei_ai_app:s3cret-pw@db:5432/ei_ai",
@@ -267,3 +270,97 @@ def test_db_upgrade_prints_the_message_of_a_refused_migration_role(
     captured = capsys.readouterr()
     assert "ei_ai_migrator" in captured.err
     assert "s3cret-pw" not in captured.out + captured.err
+
+
+ORG_ID = "0193a0c4-7d2e-7c1a-9b3f-2a4d5e6f7a8b"
+
+
+@pytest.mark.parametrize("argv", [["--org", "not-a-uuid"], [], ["--org", f"{ORG_ID}'; drop --"]])
+def test_vector_partition_rejects_bad_uuid_with_exit_2(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], argv: list[str]
+) -> None:
+    _set_migration_env(monkeypatch)
+    calls: list[object] = []
+    monkeypatch.setattr(cli, "ensure_vector_partition", lambda url, org: calls.append(org))
+
+    with pytest.raises(SystemExit) as exit_info:
+        cli.main(["db", "vector-partition", *argv])
+
+    assert exit_info.value.code == 2
+    assert calls == []
+    assert capsys.readouterr().out == ""
+
+
+def test_vector_partition_prints_created_and_present(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _set_migration_env(monkeypatch)
+    results = iter([True, False])
+    calls: list[tuple[str, object]] = []
+
+    def ensure(url: str, org: object) -> bool:
+        calls.append((url, org))
+        return next(results)
+
+    monkeypatch.setattr(cli, "ensure_vector_partition", ensure)
+
+    assert cli.main(["db", "vector-partition", "--org", ORG_ID]) == 0
+    assert capsys.readouterr().out == f"vector partition created: {ORG_ID}\n"
+    assert cli.main(["db", "vector-partition", "--org", ORG_ID.upper()]) == 0
+    captured = capsys.readouterr()
+    assert captured.out == f"vector partition already present: {ORG_ID}\n"
+    assert captured.err == ""
+    assert calls == [(MIGRATION_URL, uuid.UUID(ORG_ID))] * 2
+
+
+def test_vector_partition_unknown_org_exits_1(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _set_migration_env(monkeypatch)
+
+    def unknown(url: str, org: object) -> bool:
+        raise OrganizationNotFound()
+
+    monkeypatch.setattr(cli, "ensure_vector_partition", unknown)
+
+    assert cli.main(["db", "vector-partition", "--org", ORG_ID]) == 1
+    captured = capsys.readouterr()
+    assert (captured.out, captured.err) == ("", "error: Organization not found\n")
+
+
+def test_vector_partition_prints_a_refused_role(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _set_migration_env(monkeypatch)
+    message = "migrations must run as the owner role ei_ai_migrator"
+
+    def refused(url: str, org: object) -> bool:
+        raise MigrationRoleError(message)
+
+    monkeypatch.setattr(cli, "ensure_vector_partition", refused)
+
+    assert cli.main(["db", "vector-partition", "--org", ORG_ID]) == 1
+    assert capsys.readouterr().err == f"db vector-partition refused: {message}\n"
+
+
+def test_vector_partition_failure_prints_the_exception_class_only(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _set_migration_env(monkeypatch)
+
+    def unreachable(url: str, org: object) -> bool:
+        raise ConnectionError(f"cannot reach {url}")
+
+    monkeypatch.setattr(cli, "ensure_vector_partition", unreachable)
+
+    assert cli.main(["db", "vector-partition", "--org", ORG_ID]) == 1
+    captured = capsys.readouterr()
+    assert captured.err == "db vector-partition failed (ConnectionError)\n"
+    assert "s3cret-pw" not in captured.out + captured.err
+
+
+def test_vector_partition_needs_the_migration_url(
+    clean_env: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert cli.main(["db", "vector-partition", "--org", ORG_ID]) == 1
+    assert capsys.readouterr().err == ("configuration error: MIGRATION_DATABASE_URL is required\n")

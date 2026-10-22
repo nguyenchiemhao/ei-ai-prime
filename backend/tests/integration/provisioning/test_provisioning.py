@@ -25,6 +25,7 @@ from ei_ai.provisioning.service import (
     issue_link,
 )
 from ei_ai.provisioning.validation import ProvisioningError
+from support.crypto import TEST_MASTER_KEY
 from support.tenants import (
     DELETE_ORDER,
     TwoOrgs,
@@ -73,6 +74,7 @@ async def _new_org(
         engine,
         name=kwargs.pop("name", f"Prov {sfx}"),
         owner_email=kwargs.pop("owner_email", f"Owner.{sfx}@Example.com"),
+        master=TEST_MASTER_KEY,
         **kwargs,
     )
     created.append(result.org_id)
@@ -109,6 +111,7 @@ async def test_create_organization_creates_org_workspace_owner_and_token(
         "SELECT workspace_id, user_id, role FROM workspace_memberships WHERE org_id = :org",
     ) == [(result.workspace_id, result.owner_id, "workspace_admin")]
     assert await count_org_rows(app_engine, org) == {
+        "chunk_embeddings": 0,
         "admin_sessions": 0,
         "user_credentials": 0,
         "audit_events": 5,
@@ -118,6 +121,7 @@ async def test_create_organization_creates_org_workspace_owner_and_token(
         "workspaces": 1,
         "users": 1,
         "model_catalog": 0,
+        "organization_keys": 1,
         "collections": 0,
         "folders": 0,
         "organizations": 1,
@@ -184,7 +188,9 @@ async def test_duplicate_name_case_and_space_insensitive(
     with pytest.MonkeyPatch.context() as patch:
         patch.setattr(service, "new_org_id", spy)
         with pytest.raises(ProvisioningError) as error:
-            await create_organization(app_engine, name=f" x {sfx} ", owner_email="o@example.com")
+            await create_organization(
+                app_engine, name=f" x {sfx} ", owner_email="o@example.com", master=TEST_MASTER_KEY
+            )
 
     assert str(error.value) == "an Organization with this name already exists"
     assert await count_org_rows(app_engine, captured[0]) == dict.fromkeys(DELETE_ORDER, 0)
@@ -198,15 +204,35 @@ async def test_invalid_input_never_touches_the_database(app_engine: AsyncEngine)
 
     engine: Any = _NoEngine()
     cases = [
-        (create_organization(engine, name=" ", owner_email="o@example.com"), "Organization name"),
-        (create_organization(engine, name="Valid", owner_email="not-an-email"), "invalid email"),
         (
-            create_organization(engine, name="Valid", owner_email="o@example.com", owner_name=""),
+            create_organization(
+                engine, name=" ", owner_email="o@example.com", master=TEST_MASTER_KEY
+            ),
+            "Organization name",
+        ),
+        (
+            create_organization(
+                engine, name="Valid", owner_email="not-an-email", master=TEST_MASTER_KEY
+            ),
+            "invalid email",
+        ),
+        (
+            create_organization(
+                engine,
+                name="Valid",
+                owner_email="o@example.com",
+                owner_name="",
+                master=TEST_MASTER_KEY,
+            ),
             "display name",
         ),
         (
             create_organization(
-                engine, name="Valid", owner_email="o@example.com", workspace_name=" "
+                engine,
+                name="Valid",
+                owner_email="o@example.com",
+                workspace_name=" ",
+                master=TEST_MASTER_KEY,
             ),
             "Workspace name",
         ),
@@ -266,7 +292,10 @@ async def test_failure_after_inserts_rolls_back_everything(
         patch.setattr(service, "record_event", failing_third)
         with pytest.raises(RuntimeError):
             await create_organization(
-                app_engine, name=f"Rollback {_suffix()}", owner_email="o@example.com"
+                app_engine,
+                name=f"Rollback {_suffix()}",
+                owner_email="o@example.com",
+                master=TEST_MASTER_KEY,
             )
 
     assert calls == 3

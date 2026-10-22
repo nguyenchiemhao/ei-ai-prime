@@ -19,6 +19,7 @@ from ei_ai.db.tenant import tenant_transaction
 from ei_ai.seed.demo import DemoManifest, SeedResult, seed_manifest
 from ei_ai.seed.manifest import SYSADMIN_EMAIL, load_manifests
 from ei_ai.seed.summary import format_summary
+from support.crypto import TEST_MASTER_KEY
 from support.seed import TEST_SEED_PASSWORD
 from support.sign_in import give_password, in_tenant, request_headers
 from support.tenants import DELETE_ORDER, count_org_rows
@@ -29,7 +30,10 @@ SHORT_PASSWORD = "Short@12"
 
 
 async def _seed_all(engine: AsyncEngine, manifests: tuple[DemoManifest, ...]) -> list[SeedResult]:
-    return [await seed_manifest(engine, m, TEST_SEED_PASSWORD) for m in manifests]
+    return [
+        await seed_manifest(engine, m, TEST_SEED_PASSWORD, master=TEST_MASTER_KEY)
+        for m in manifests
+    ]
 
 
 def _email(manifest: DemoManifest, name: str) -> str:
@@ -84,12 +88,12 @@ async def test_changed_password_is_kept(
 ) -> None:
     mekong = variants[0]
     org_id = mekong.organization_id
-    await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD)
+    await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD, master=TEST_MASTER_KEY)
     linh = _email(mekong, "Linh Tran")
     await give_password(app_engine, org_id, await _user_id(app_engine, org_id, linh))
     changed = await _hashes(app_engine, org_id)
 
-    result = await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD)
+    result = await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD, master=TEST_MASTER_KEY)
 
     assert await _hashes(app_engine, org_id) == changed
     assert not await verify_password(changed[linh], TEST_SEED_PASSWORD)
@@ -210,7 +214,7 @@ async def test_policy_still_rejects_the_short_seed_password(
 ) -> None:
     mekong = variants[0]
     org_id = mekong.organization_id
-    await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD)
+    await seed_manifest(app_engine, mekong, TEST_SEED_PASSWORD, master=TEST_MASTER_KEY)
     user_id = await _user_id(app_engine, org_id, _email(mekong, "Minh Pham"))
     async with app_engine.connect() as conn, tenant_transaction(conn, org_id):
         secret = await issue_token(conn, org_id, user_id)
