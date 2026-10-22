@@ -31,6 +31,7 @@ function modelDefaults() {
     "APP_DB_PASSWORD",
     "MIGRATION_DB_PASSWORD",
     "SIGNIN_DB_PASSWORD",
+    "EI_AI_MASTER_KEY",
   ];
   fs.writeFileSync(file, dummy.map((name) => `${name}=dummy`).join("\n") + "\n");
   const env = { ...process.env };

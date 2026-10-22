@@ -20,6 +20,8 @@ def _rows(label: str) -> OrgRows:
         model_catalog_entry_id=uuid.uuid4(),
         collection_id=uuid.uuid4(),
         folder_id=uuid.uuid4(),
+        organization_key_id=uuid.uuid4(),
+        chunk_embedding_id=uuid.uuid4(),
         model_digest=f"sha256:{'0' * 64}",
         label=label,
         suffix=uuid.uuid4().hex[:8],

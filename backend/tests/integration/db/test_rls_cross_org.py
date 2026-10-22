@@ -64,6 +64,14 @@ FORGED_INSERTS = {
         "INSERT INTO folders (org_id, collection_id, name, depth)"
         " VALUES (:other_org, :other_collection, 'forged', 1)"
     ),
+    "organization_keys": (
+        "INSERT INTO organization_keys (org_id, wrapped_key, kek_id)"
+        " VALUES (:other_org, decode(repeat('00', 60), 'hex'), '0000000000000000')"
+    ),
+    "chunk_embeddings": (
+        "INSERT INTO chunk_embeddings (org_id, embedding)"
+        " VALUES (:other_org, array_fill(0.1::real, ARRAY[1024])::vector)"
+    ),
 }
 
 

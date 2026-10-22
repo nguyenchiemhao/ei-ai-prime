@@ -13,6 +13,7 @@ from support.tenants import DELETE_ORDER
 SRC = Path(__file__).resolve().parents[2] / "src" / "ei_ai"
 MODULES = (
     "provisioning/rows.py",
+    "crypto/key_rows.py",
     "provisioning/service.py",
     "members/rows.py",
     "knowledge/rows.py",

@@ -16,6 +16,7 @@ const DUMMY = {
   APP_DB_PASSWORD: "dummy-app-pw",
   MIGRATION_DB_PASSWORD: "dummy-migrator-pw",
   SIGNIN_DB_PASSWORD: "dummy-signin-pw",
+  EI_AI_MASTER_KEY: "ab".repeat(32),
 };
 // One-shot tool services: not started by "up", so no healthcheck.
 const ONE_SHOT = ["backend-tools", "migrate"];
@@ -304,4 +305,20 @@ test("a_model_that_never_loads_fails_the_wait_within_twelve_minutes", () => {
     worstCase <= 12 * 60,
     `npm run up could wait ${Math.round(worstCase / 60)} minutes for a broken model`,
   );
+});
+
+test("master_key_only_on_api_and_backend_tools", () => {
+  for (const name of ["api", "backend-tools"]) {
+    assert.equal(
+      services[name].environment.EI_AI_MASTER_KEY,
+      DUMMY.EI_AI_MASTER_KEY,
+      `${name} must get the interpolated master key`,
+    );
+  }
+  for (const name of ["db", "migrate", "valkey", "model", "admin", "widget"]) {
+    assert.ok(
+      !("EI_AI_MASTER_KEY" in (services[name].environment ?? {})),
+      `${name} must not get the master key`,
+    );
+  }
 });

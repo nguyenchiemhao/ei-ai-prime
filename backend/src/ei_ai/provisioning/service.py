@@ -25,6 +25,8 @@ from ei_ai.audit.events import (
     record_role_change,
 )
 from ei_ai.auth.set_password import issue_token
+from ei_ai.crypto.lifecycle import create_org_key
+from ei_ai.crypto.master_key import MasterKey
 from ei_ai.db.constraints import violated_constraint
 from ei_ai.db.tenant import tenant_transaction
 from ei_ai.members.rows import find_user_id, insert_member, insert_workspace_member
@@ -113,6 +115,8 @@ async def create_organization(
     owner_email: str,
     owner_name: str | None = None,
     workspace_name: str = DEFAULT_WORKSPACE_NAME,
+    *,
+    master: MasterKey,
 ) -> CreatedOrganization:
     """An Organization, its default Workspace and its Org Owner (also Workspace Admin), with a
     set-password token and five audit events (the three creations and the two role grants)."""
@@ -124,6 +128,7 @@ async def create_organization(
     try:
         async with engine.connect() as conn, tenant_transaction(conn, org_id):
             await insert_organization(conn, org_id, org_name)
+            await create_org_key(conn, org_id, master)
             ws_id = await insert_workspace(conn, org_id, ws_name)
             owner_id, secret = await insert_member(
                 conn, org_id, email, display_name, "org_owner", (ws_id, "workspace_admin")

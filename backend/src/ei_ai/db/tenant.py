@@ -11,6 +11,10 @@ import psycopg
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, AsyncSession
 
+# What tenant-plane SQL helpers run on: the connection of a tenant transaction, or the session of
+# a route or job (both already inside the tenant's transaction).
+TenantExecutor = AsyncConnection | AsyncSession
+
 
 async def _driver_is_idle(conn: AsyncConnection) -> bool:
     raw = await conn.get_raw_connection()

@@ -328,6 +328,8 @@ export const EXPECTED_ROWS: Record<OrgKey, Record<string, number>> = {
     collections: 8,
     folders: 33,
     model_catalog: 3,
+    organization_keys: 1,
+    chunk_embeddings: 0,
     audit_events: 78,
   },
   songhan: {
@@ -341,6 +343,8 @@ export const EXPECTED_ROWS: Record<OrgKey, Record<string, number>> = {
     collections: 1,
     folders: 3,
     model_catalog: 3,
+    organization_keys: 1,
+    chunk_embeddings: 0,
     audit_events: 13,
   },
 };
@@ -480,6 +484,8 @@ export function serviceLogs(service: string): string {
 // ---------------------------------------------------------------------------------------------
 
 const PURGE_ORDER = [
+  "chunk_embeddings",
+  "organization_keys",
   "admin_sessions",
   "user_credentials",
   "set_password_tokens",
@@ -494,6 +500,8 @@ const PURGE_ORDER = [
 ];
 export const COUNT_TABLES = [
   "organizations",
+  "organization_keys",
+  "chunk_embeddings",
   "workspaces",
   "users",
   "memberships",
@@ -509,6 +517,7 @@ export const COUNT_TABLES = [
 /** Deletes both demo Organizations and everything under them, children first (RLS is never altered). */
 export function purgeDemoOrgs(): void {
   const statements = ORG_IDS.flatMap((id) => [
+    `drop table if exists chunk_embeddings_${id.replace(/-/g, "")};`,
     ...PURGE_ORDER.map((table) => `delete from ${table} where org_id = '${id}';`),
     `delete from organizations where id = '${id}';`,
   ]);

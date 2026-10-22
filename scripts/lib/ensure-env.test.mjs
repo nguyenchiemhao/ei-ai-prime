@@ -9,6 +9,7 @@ const EXAMPLE = [
   "# comment with __GENERATED__ in it stays untouched on comment lines",
   "POSTGRES_PASSWORD=__GENERATED__",
   "APP_DB_PASSWORD=__GENERATED__",
+  "EI_AI_MASTER_KEY=__GENERATED_KEY__",
   "LLM_ALIAS=",
   "",
 ].join("\n");
@@ -86,7 +87,7 @@ test("ensure_env_adds_only_the_variable_that_is_missing", () => {
 });
 
 test("ensure_env_keeps_an_existing_env_file_untouched", () => {
-  const original = "POSTGRES_PASSWORD=mine\nAPP_DB_PASSWORD=mine2\n";
+  const original = "POSTGRES_PASSWORD=mine\nAPP_DB_PASSWORD=mine2\nEI_AI_MASTER_KEY=mine3\n";
   const root = project({ ".env": original });
 
   assert.equal(ensureEnv(root), "kept");
@@ -130,4 +131,23 @@ test("env_file_value_parses_like_compose", () => {
   assert.equal(envFileValue(root, "HASH_NO_SPACE"), "a#b");
   assert.equal(envFileValue(root, "DUP"), "last");
   assert.equal(envFileValue(root, "SPACED"), "3400");
+});
+
+test("generates_a_64_hex_master_key", () => {
+  const created = project();
+  assert.equal(ensureEnv(created), "created");
+  const values = parse(fs.readFileSync(path.join(created, ".env"), "utf8"));
+  assert.match(values.EI_AI_MASTER_KEY, /^[0-9a-f]{64}$/);
+  assert.match(values.POSTGRES_PASSWORD, /^[0-9a-f]{32}$/, "__GENERATED__ stays 32 hex");
+
+  const appended = project({ ".env": "POSTGRES_PASSWORD=mine\nAPP_DB_PASSWORD=mine2\n" });
+  assert.equal(ensureEnv(appended), "updated");
+  const added = parse(fs.readFileSync(path.join(appended, ".env"), "utf8"));
+  assert.match(added.EI_AI_MASTER_KEY, /^[0-9a-f]{64}$/);
+  assert.equal(added.POSTGRES_PASSWORD, "mine");
+
+  const kept = "EI_AI_MASTER_KEY=existing\nPOSTGRES_PASSWORD=a\nAPP_DB_PASSWORD=b\n";
+  const existing = project({ ".env": kept });
+  assert.equal(ensureEnv(existing), "kept");
+  assert.equal(fs.readFileSync(path.join(existing, ".env"), "utf8"), kept);
 });

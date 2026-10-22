@@ -25,6 +25,8 @@ const TABLES_CHILD_FIRST = [
   "memberships",
   "users",
   "workspaces",
+  "chunk_embeddings",
+  "organization_keys",
   "organizations",
 ];
 
@@ -150,6 +152,8 @@ function purgeOrg(orgId: string): void {
   // EA-22: sessions and credentials of users (created by sign-in tests) reference users; they go first.
   // EA-24: model_catalog (seeded for the demo Organization, added by `ei-ai model add`) references organizations.
   // EA-32: folders and collections (collections reference workspaces) go before the workspaces.
+  // EA-20: organization_keys and chunk_embeddings (and any per-Organization partition) go before organizations.
+  sql(`drop table if exists chunk_embeddings_${orgId.replace(/-/g, "")}`);
   const byOrg = [
     "admin_sessions",
     "user_credentials",
@@ -273,6 +277,8 @@ test.describe("EA-21 Platform Operator CLI and demo seed", () => {
         memberships: 1,
         users: 1,
         workspaces: 1,
+        organization_keys: 1,
+        chunk_embeddings: 0,
         organizations: 1,
       });
       expect(rows(`select id || '|' || name from organizations where id = '${org}'`)).toEqual([
@@ -939,6 +945,8 @@ test.describe("EA-21 Platform Operator CLI and demo seed", () => {
       memberships: 10,
       users: 10,
       workspaces: 2,
+      organization_keys: 1,
+      chunk_embeddings: 0,
       organizations: 1,
     });
     expect(songHanCounts()).toEqual({
@@ -948,6 +956,8 @@ test.describe("EA-21 Platform Operator CLI and demo seed", () => {
       memberships: 2,
       users: 2,
       workspaces: 1,
+      organization_keys: 1,
+      chunk_embeddings: 0,
       organizations: 1,
     });
     expect(orgTableCount("user_credentials", DEMO_ORG)).toBe(10);

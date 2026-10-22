@@ -5,6 +5,7 @@ from typing import Any
 import pytest
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ei_ai.crypto.master_key import MasterKey
 from ei_ai.seed import demo
 from ei_ai.seed.demo import (
     DemoManifest,
@@ -16,6 +17,7 @@ from ei_ai.seed.demo import (
 from ei_ai.seed.manifest import load_manifests
 from ei_ai.seed.summary import format_summary
 from ei_ai.settings import SettingsError, seed_password
+from support.crypto import TEST_MASTER_KEY
 
 MEKONG_ID = "0192a000-0000-7000-8000-00000000ea21"
 SONG_HAN_ID = "0192a000-0000-7000-8000-00000000ea94"
@@ -23,7 +25,11 @@ PEOPLE_OPS = uuid.UUID("0192a000-0000-7000-8000-0000000000aa")
 ENGINEERING = uuid.UUID("0192a000-0000-7000-8000-0000000000bb")
 CUSTOMER_CARE = uuid.UUID("0192a000-0000-7000-8000-0000000000cc")
 TEST_PASSWORD = "Seed-Test-Value-1"
-ENV = {"EI_AI_ENV": "test", "DATABASE_URL": "postgresql://ei_ai_app:pw@db:5432/ei_ai"}
+ENV = {
+    "EI_AI_ENV": "test",
+    "DATABASE_URL": "postgresql://ei_ai_app:pw@db:5432/ei_ai",
+    "EI_AI_MASTER_KEY": TEST_MASTER_KEY.key.hex(),
+}
 
 
 def _mekong_result(created: bool) -> SeedResult:
@@ -136,7 +142,10 @@ def test_load_demo_data_needs_no_admin_base_url(monkeypatch: pytest.MonkeyPatch)
     seeded: list[tuple[str, str]] = []
     results = {MEKONG_ID: _mekong_result(True), SONG_HAN_ID: _song_han_result(True)}
 
-    async def fake_seed(engine: AsyncEngine, manifest: DemoManifest, password: str) -> SeedResult:
+    async def fake_seed(
+        engine: AsyncEngine, manifest: DemoManifest, password: str, *, master: MasterKey
+    ) -> SeedResult:
+        assert master == TEST_MASTER_KEY
         seeded.append((manifest.organization, password))
         return results[str(manifest.organization_id)]
 
@@ -220,3 +229,18 @@ def test_summary_never_contains_links_or_tokens() -> None:
     assert "set-password" not in output.lower()
     assert "#token=" not in output
     assert "$argon2" not in output
+
+
+def test_load_demo_data_reads_the_master_key_before_the_database(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def no_database(*args: object) -> None:
+        raise AssertionError("the master key must be read before any database access")
+
+    monkeypatch.setattr(demo, "run_with_app_engine", no_database)
+    env = {**ENV, "EI_AI_SEED_PASSWORD": TEST_PASSWORD, "EI_AI_MASTER_KEY": "abc"}
+
+    with pytest.raises(SettingsError) as error:
+        load_demo_data(env, load_manifests())
+
+    assert str(error.value) == "EI_AI_MASTER_KEY must be 64 hexadecimal characters"

@@ -1,4 +1,5 @@
-// Prepares .env from .env.example: every `NAME=__GENERATED__` line gets 32 random hex characters.
+// Prepares .env from .env.example: every `NAME=__GENERATED__` line gets 32 random hex characters and every
+// `NAME=__GENERATED_KEY__` line (the master key) gets 64.
 //  - no .env: it is created from the example;
 //  - an .env without some of those variables (for example one that only holds MODEL_CACHE_VOLUME):
 //    the missing generated variables are appended; existing lines and values are never changed
@@ -8,7 +9,7 @@ import { randomBytes } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
-const PLACEHOLDER = /^([A-Z][A-Z0-9_]*)=__GENERATED__$/;
+const PLACEHOLDER = /^([A-Z][A-Z0-9_]*)=(__GENERATED__|__GENERATED_KEY__)$/;
 const ASSIGNMENT = /^([A-Z][A-Z0-9_]*)=/;
 
 // A .env line as Compose reads it: optional spaces around `=`, a quoted value, or an unquoted value
@@ -16,8 +17,9 @@ const ASSIGNMENT = /^([A-Z][A-Z0-9_]*)=/;
 const DOTENV_LINE =
   /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|(.*?))(?:\s+#.*)?\s*$/;
 
-/** Generates the value of one __GENERATED__ variable (32 random hex characters). */
-const generate = () => randomBytes(16).toString("hex");
+/** Generates the value of one placeholder: 32 hex for __GENERATED__, 64 hex (a 256-bit key) for __GENERATED_KEY__. */
+const generate = (placeholder) =>
+  randomBytes(placeholder === "__GENERATED_KEY__" ? 32 : 16).toString("hex");
 
 /**
  * Value of `name` in `<root>/<file>` (default `.env`), parsed like Compose (quotes, inline comments, the last duplicate
@@ -44,7 +46,7 @@ export function ensureEnv(root) {
   if (!fs.existsSync(target)) {
     const lines = exampleLines.map((line) => {
       const match = line.match(PLACEHOLDER);
-      return match ? `${match[1]}=${generate()}` : line;
+      return match ? `${match[1]}=${generate(match[2])}` : line;
     });
     fs.writeFileSync(target, lines.join("\n"), { mode: 0o600 });
     return "created";
@@ -59,11 +61,11 @@ export function ensureEnv(root) {
       .filter(Boolean),
   );
   const missing = exampleLines
-    .map((line) => line.match(PLACEHOLDER)?.[1])
-    .filter((name) => name && !present.has(name));
+    .map((line) => line.match(PLACEHOLDER))
+    .filter((match) => match && !present.has(match[1]));
   if (missing.length === 0) return "kept";
   const separator = existing === "" || existing.endsWith("\n") ? "" : "\n";
-  const added = missing.map((name) => `${name}=${generate()}\n`).join("");
+  const added = missing.map((match) => `${match[1]}=${generate(match[2])}\n`).join("");
   fs.appendFileSync(target, separator + added);
   return "updated";
 }
