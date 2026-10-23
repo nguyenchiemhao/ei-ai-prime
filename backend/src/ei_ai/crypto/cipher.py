@@ -40,7 +40,7 @@ class OrgCipher:
         return unwrap_data_key(self._master, tenant.org_id, row.wrapped_key)
 
     async def encrypt(
-        self, session: TenantExecutor, tenant: TenantContext | JobContext, data: bytes
+        self, session: TenantExecutor, tenant: TenantContext | JobContext, data: bytes | bytearray
     ) -> bytes:
         dek = await self._data_key(session, tenant)
         return await to_thread.run_sync(partial(seal, dek, tenant.org_id, data))

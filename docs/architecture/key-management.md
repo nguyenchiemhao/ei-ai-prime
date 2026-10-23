@@ -1,6 +1,6 @@
 # Key management and the vector namespace
 
-EA-20 (FND-03). Each Organization has its own data key. Original files are stored encrypted with it, and each Organization's vectors live in their own partition (D46, ADR-001 section 3.3). This document is the operating guide. No route encrypts yet: the first callers are KB-02 (upload) and WGT-08 (conversations).
+EA-20 (FND-03). Each Organization has its own data key. Original files are stored encrypted with it, and each Organization's vectors live in their own partition (D46, ADR-001 section 3.3). This document is the operating guide. KB-02 uploads (EA-33) are the first caller: every uploaded original goes through the encrypted file store. WGT-08 (conversations) follows.
 
 ## Master key (KEK)
 
@@ -45,7 +45,7 @@ EA-20 (FND-03). Each Organization has its own data key. Original files are store
 
 - `OrgFileStore(root, cipher)` (`backend/src/ei_ai/storage/files.py`) with `put`, `get` and `delete`. Layout `<root>/<org_id>/<file_id>.bin`: Organization directory mode 0700, file mode 0600, each file is the plaintext plus 32 bytes. The file id is a random UUID made by the store, and paths are built only from `uuid.UUID` objects, so nothing can traverse.
 - `put` encrypts, writes to a temporary file, fsyncs and renames, so no half-written file has a final name. `get` of an unknown id, or of another Organization's id, raises the same `FileNotFound` (no existence oracle). A foreign blob placed in the directory raises `DecryptionFailed`. Crypto and file I/O run in a worker thread.
-- The root is a constructor argument. No service has a file-store directory or volume yet: KB-02 adds `EI_AI_FILE_STORE_DIR` and the `api` volume with the upload route.
+- The root is a constructor argument. The `api` service builds the store at startup from `FILE_STORAGE_ROOT` (default `/var/lib/ei-ai/files`, the `kb-files` volume) and the master key; a missing or malformed master key aborts startup with an error that names the variable only. KB-02 (EA-33) records the file id in `documents.file_id` and reads it only from the Organization's own row.
 - There is no tool that decrypts a customer file from the operator shell (R21, D6: operators do not see customer data). AC2, AC3 and AC5 are shown by the backend integration suites (`tests/integration/storage`, `tests/integration/crypto`).
 
 ## Vector namespace

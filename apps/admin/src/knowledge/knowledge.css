@@ -348,3 +348,188 @@
   cursor: default;
   opacity: 0.5;
 }
+
+/* Collection detail: folders column beside the drop zone and documents. */
+.knowledge-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ei-space-3);
+  align-items: center;
+}
+
+.collection-body {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: var(--ei-space-5);
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .collection-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.collection-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ei-space-5);
+}
+
+.folder-select {
+  display: flex;
+  flex: 1;
+  gap: var(--ei-space-3);
+  align-items: center;
+  justify-content: space-between;
+  min-height: 24px;
+  padding: var(--ei-space-1) var(--ei-space-2);
+  border: 0;
+  border-radius: var(--ei-radius-md);
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.folder-select[aria-current="true"] {
+  background: var(--ei-color-accent-tint);
+}
+
+.folder-select:focus-visible {
+  outline: 2px solid var(--ei-color-accent-default);
+  outline-offset: 2px;
+}
+
+.all-documents {
+  border-bottom: 1px solid var(--ei-color-border-divider);
+  border-radius: 0;
+}
+
+.folder-count {
+  font-size: var(--ei-font-size-md);
+  color: var(--ei-color-text-muted);
+}
+
+/* One-line dashed banner: heading and hint on the left, Browse on the right (artboard). */
+.drop-zone {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ei-space-3);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--ei-space-4);
+  background: var(--ei-color-surface-card);
+  border: 2px dashed var(--ei-color-border-strong);
+  border-radius: var(--ei-radius-xl);
+}
+
+.drop-zone-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ei-space-1);
+  min-width: 0;
+}
+
+.drop-zone[data-dragging="true"] {
+  background: var(--ei-color-accent-tint-subtle);
+  border-color: var(--ei-color-accent-default);
+}
+
+.drop-zone-title {
+  margin: 0;
+  font-size: var(--ei-font-size-base);
+  font-weight: var(--ei-font-weight-medium);
+}
+
+.drop-zone-hint {
+  margin: 0;
+  font-size: var(--ei-font-size-md);
+  color: var(--ei-color-text-muted);
+}
+
+/* The upload lines and rejections take the whole width below the banner line. */
+.upload-list {
+  flex-basis: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ei-font-size-md);
+  color: var(--ei-color-text-secondary);
+}
+
+.upload-rejections {
+  flex-basis: 100%;
+}
+
+.upload-rejections p {
+  margin: 0;
+}
+
+.documents-table td {
+  vertical-align: top;
+}
+
+.document-nowrap {
+  white-space: nowrap;
+}
+
+.document-status[data-status="ready"] {
+  color: var(--ei-color-status-success-text);
+}
+
+.document-status[data-status="processing"] {
+  color: var(--ei-color-accent-default);
+}
+
+.document-status[data-status="not_supported"],
+.document-status[data-status="failed"] {
+  color: var(--ei-color-status-warning-strong);
+  font-weight: var(--ei-font-weight-medium);
+}
+
+.document-progress {
+  width: 140px;
+  max-width: 100%;
+  height: 6px;
+  margin-top: var(--ei-space-1-5);
+  overflow: hidden;
+  background: var(--ei-color-surface-muted);
+  border-radius: var(--ei-radius-xs);
+}
+
+.document-progress > div {
+  height: 100%;
+  background: var(--ei-color-accent-default);
+}
+
+/* Failed and Not supported rows carry the warning tint of the artboard. */
+.document-row[data-status="not_supported"],
+.document-row[data-status="failed"] {
+  background: var(--ei-color-surface-sensitive-row);
+}
+
+.document-reason {
+  margin: var(--ei-space-1) 0 0;
+  font-size: var(--ei-font-size-sm);
+  color: var(--ei-color-status-warning-deep);
+}
+
+.dialog-wide {
+  max-width: 720px;
+}
+
+.preview-text {
+  box-sizing: border-box;
+  max-height: 50vh;
+  margin: 0;
+  padding: var(--ei-space-3);
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: inherit;
+  font-size: var(--ei-font-size-base);
+  background: var(--ei-color-surface-sensitive-row);
+  border-radius: var(--ei-radius-md);
+}

@@ -14,8 +14,14 @@ afterEach(() => {
 const BASE = `/workspaces/${WS}/collections`;
 const DETAIL = `GET ${BASE}/c1`;
 
-function folder(id: string, name: string, depth: number, parentId: string | null): FolderItem {
-  return { id, name, depth, parent_id: parentId };
+function folder(
+  id: string,
+  name: string,
+  depth: number,
+  parentId: string | null,
+  documentCount = 0,
+): FolderItem {
+  return { id, name, depth, parent_id: parentId, document_count: documentCount };
 }
 
 const FOLDERS: FolderItem[] = [
@@ -41,6 +47,18 @@ function makeDetail(extra: Partial<CollectionDetail> = {}): CollectionDetail {
   };
 }
 
+const DOCUMENT_LIST = `GET ${BASE}/c1/documents`;
+
+// Answers every document list request that the test did not stub with an empty list.
+function withEmptyDocumentLists(handlers: Parameters<typeof mockApi>[0]) {
+  return new Proxy(handlers, {
+    get: (target, key) =>
+      typeof key === "string" && !(key in target) && key.startsWith(DOCUMENT_LIST)
+        ? () => json(200, { documents: [] })
+        : target[key as string],
+  });
+}
+
 async function open(
   handlers: Parameters<typeof mockApi>[0] = {},
   detail: CollectionDetail = makeDetail(),
@@ -49,11 +67,13 @@ async function open(
     ...MULTI_SESSION,
     workspaces: [{ id: WS, name: "People Ops", role: "workspace_admin" }],
   };
-  const api = mockApi({
-    ...signedInApi(session),
-    [DETAIL]: () => json(200, detail),
-    ...handlers,
-  });
+  const api = mockApi(
+    withEmptyDocumentLists({
+      ...signedInApi(session),
+      [DETAIL]: () => json(200, detail),
+      ...handlers,
+    }),
+  );
   const router = renderAt(`/w/${WS}/knowledge/c1`);
   await screen.findByTestId("collection-detail");
   return { api, router };
@@ -85,7 +105,9 @@ describe("CollectionDetailPage", () => {
     expect(
       within(rows[0] as HTMLElement).getByRole("button", { name: "Delete Policies" }),
     ).toBeTruthy();
-    expect(screen.getByTestId("documents-placeholder").textContent).toBe("No documents yet.");
+    expect((await screen.findByTestId("documents-empty")).textContent).toBe(
+      "No documents in this folder yet.",
+    );
     expect(screen.getByTestId("delete-collection-row").textContent).toContain(
       "Deletes the collection, its folders and everything indexed from it. This cannot be undone.",
     );
@@ -166,7 +188,7 @@ describe("CollectionDetailPage", () => {
     expect(within(dialog).getByRole("heading", { name: "Delete folder?" })).toBeTruthy();
     fireEvent.click(within(dialog).getByRole("button", { name: "Delete folder" }));
     const alert = await within(dialog).findByRole("alert");
-    expect(alert.textContent).toBe("Delete its subfolders first.");
+    expect(alert.textContent).toBe("Remove its subfolders and documents first.");
     expect(screen.getAllByTestId("folder-row")).toHaveLength(3);
   });
 
@@ -306,5 +328,253 @@ describe("CollectionDetailPage", () => {
     fireEvent.click(within(dialog).getByTestId("confirm-delete-collection"));
     const alert = await within(dialog).findByRole("alert");
     expect(alert.textContent).toBe("You don't have permission to do this.");
+  });
+
+  it("renders_folder_list_with_counts_and_drop_zone", async () => {
+    const folders = [folder("f1", "Policies", 1, null, 2), folder("f4", "Benefits", 1, null, 3)];
+    await open({}, makeDetail({ folders }));
+    const all = screen.getByTestId("all-documents");
+    expect(all.textContent).toContain("All documents");
+    expect(within(all).getByTestId("folder-count").textContent).toBe("5");
+    const rows = screen.getAllByTestId("folder-row");
+    expect(rows.map((row) => within(row).getByTestId("folder-select").textContent)).toEqual([
+      "Benefits3",
+      "Policies2",
+    ]);
+    expect(within(rows[0] as HTMLElement).getByTestId("folder-count").textContent).toBe("3");
+    expect(screen.getByRole("heading", { name: "Drop files into Benefits" })).toBeTruthy();
+    expect(screen.getByTestId("drop-zone").textContent).toContain(
+      "PDF with text, DOCX, MD, TXT · up to 50 MB each",
+    );
+    expect(screen.getByRole("button", { name: "Upload files" })).toBeTruthy();
+    expect(await screen.findByTestId("documents-empty")).toBeTruthy();
+  });
+
+  it("selects_first_top_level_folder_by_default", async () => {
+    await open();
+    const current = (name: string) =>
+      within(folderRow(name)).getByTestId("folder-select").getAttribute("aria-current");
+    expect(current("Policies")).toBe("true");
+    expect(screen.getByTestId("all-documents").getAttribute("aria-current")).toBeNull();
+    expect(screen.getByTestId("upload-files")).toHaveProperty("disabled", false);
+  });
+
+  it("selects_all_documents_when_there_is_no_folder", async () => {
+    await open({}, makeDetail({ folders: [] }));
+    expect(screen.getByTestId("all-documents").getAttribute("aria-current")).toBe("true");
+    expect(screen.getByTestId("drop-zone").textContent).toContain(
+      "Choose a folder to upload files.",
+    );
+    expect(screen.queryByTestId("browse-files")).toBeNull();
+    expect(screen.getByTestId("upload-files")).toHaveProperty("disabled", true);
+  });
+
+  it("selecting_a_folder_sets_aria_current", async () => {
+    await open();
+    const current = (name: string) =>
+      within(folderRow(name)).getByTestId("folder-select").getAttribute("aria-current");
+    fireEvent.click(within(folderRow("Q1")).getByTestId("folder-select"));
+    expect(current("Q1")).toBe("true");
+    expect(current("Policies")).toBeNull();
+    expect(screen.getByRole("heading", { name: "Drop files into Q1" })).toBeTruthy();
+    fireEvent.click(screen.getByTestId("all-documents"));
+    expect(screen.getByTestId("all-documents").getAttribute("aria-current")).toBe("true");
+    expect(current("Q1")).toBeNull();
+    expect(current("Policies")).toBeNull();
+    expect(screen.getByTestId("upload-files")).toHaveProperty("disabled", true);
+  });
+
+  it("upload_files_button_opens_picker", async () => {
+    await open();
+    const input = screen.getByTestId("file-input") as HTMLInputElement;
+    const click = vi.spyOn(input, "click");
+    fireEvent.click(screen.getByTestId("upload-files"));
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(input.getAttribute("accept")).toBe(".pdf,.docx,.md,.txt");
+    expect(input.multiple).toBe(true);
+  });
+
+  it("refreshes_folder_counts_after_an_upload", async () => {
+    let uploaded = false;
+    const after = [folder("f1", "Policies", 1, null, 1), ...FOLDERS.slice(1)];
+    await open({
+      [DETAIL]: () => json(200, makeDetail(uploaded ? { folders: after } : {})),
+      [`POST ${BASE}/c1/folders/f1/documents`]: () => {
+        uploaded = true;
+        return json(201, { id: "d1" });
+      },
+    });
+    fireEvent.change(screen.getByTestId("file-input"), {
+      target: { files: [new File(["x"], "a.txt")] },
+    });
+    const total = () =>
+      within(screen.getByTestId("all-documents")).getByTestId("folder-count").textContent;
+    await waitFor(() => expect(total()).toBe("1"));
+  });
+
+  describe("documents", () => {
+    const LIST = `GET ${BASE}/c1/documents?folder_id=f1`;
+    const documentItem = (extra: Record<string, unknown> = {}) => ({
+      id: "d1",
+      folder_id: "f1",
+      name: "Overtime Policy 2026.pdf",
+      format: "pdf",
+      size_bytes: 14_336,
+      status: "ready",
+      progress: null,
+      reason: null,
+      page_count: 3,
+      uploaded_by: { id: "u1", display_name: "Thao Nguyen" },
+      created_at: "2026-10-02T09:00:00Z",
+      updated_at: "2026-10-02T09:00:00Z",
+      ...extra,
+    });
+
+    it("shows_the_all_documents_empty_message", async () => {
+      await open({}, makeDetail({ folders: [] }));
+      expect((await screen.findByTestId("documents-empty")).textContent).toBe("No documents yet.");
+    });
+
+    it("polling_stops_when_nothing_is_processing", async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      try {
+        const answers = [documentItem({ status: "processing", progress: 40 }), documentItem()];
+        let calls = 0;
+        await open({
+          [LIST]: () => {
+            calls += 1;
+            return json(200, { documents: [answers.shift() ?? documentItem()] });
+          },
+        });
+        await waitFor(() =>
+          expect(screen.getByTestId("document-status").textContent).toBe("Processing · 40%"),
+        );
+        await vi.advanceTimersByTimeAsync(2000);
+        await waitFor(() =>
+          expect(screen.getByTestId("document-status").textContent).toBe("Ready · 3 pages"),
+        );
+        const settled = calls;
+        await vi.advanceTimersByTimeAsync(10_000);
+        expect(calls).toBe(settled);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("preview_dialog_shows_text_and_truncation_note", async () => {
+      await open({
+        [LIST]: () => json(200, { documents: [documentItem()] }),
+        [`GET ${BASE}/c1/documents/d1/text`]: () =>
+          json(200, { text: "Line one\nLine two", truncated: true, total_characters: 250_000 }),
+      });
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Preview text of Overtime Policy 2026.pdf" }),
+      );
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByRole("heading").textContent).toBe("Overtime Policy 2026.pdf");
+      expect((await within(dialog).findByTestId("preview-text-content")).textContent).toBe(
+        "Line one\nLine two",
+      );
+      expect(within(dialog).getByTestId("preview-truncated").textContent).toBe(
+        "Showing the first 100,000 characters.",
+      );
+      fireEvent.keyDown(dialog, { key: "Escape" });
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+
+    it("removing_a_document_refreshes_the_list_and_the_folder_counts", async () => {
+      let removed = false;
+      const failed = documentItem({ status: "failed", reason: "corrupt_file", page_count: null });
+      const folders = (count: number) => [folder("f1", "Policies", 1, null, count)];
+      const { api } = await open({
+        [DETAIL]: () => json(200, makeDetail({ folders: folders(removed ? 0 : 1) })),
+        [LIST]: () => json(200, { documents: removed ? [] : [failed] }),
+        [`DELETE ${BASE}/c1/documents/d1`]: () => {
+          removed = true;
+          return new Response(null, { status: 204 });
+        },
+      });
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Remove Overtime Policy 2026.pdf" }),
+      );
+      fireEvent.click(await screen.findByTestId("confirm-remove-document"));
+      expect((await screen.findByRole("status")).textContent).toBe(
+        "Overtime Policy 2026.pdf was removed.",
+      );
+      expect(await screen.findByTestId("documents-empty")).toBeTruthy();
+      expect(screen.queryByTestId("remove-document-dialog")).toBeNull();
+      const total = () =>
+        within(screen.getByTestId("all-documents")).getByTestId("folder-count").textContent;
+      await waitFor(() => expect(total()).toBe("0"));
+      expect(callsTo(api, `DELETE ${BASE}/c1/documents/d1`)).toHaveLength(1);
+    });
+
+    it("reloads_the_list_after_an_upload", async () => {
+      let uploaded = false;
+      const queued = documentItem({ status: "queued", page_count: null });
+      await open({
+        [LIST]: () => json(200, { documents: uploaded ? [queued] : [] }),
+        [`POST ${BASE}/c1/folders/f1/documents`]: () => {
+          uploaded = true;
+          return json(201, { id: "d1" });
+        },
+      });
+      await screen.findByTestId("documents-empty");
+      fireEvent.change(screen.getByTestId("file-input"), {
+        target: { files: [new File(["x"], "a.txt")] },
+      });
+      expect((await screen.findByTestId("document-status")).textContent).toBe("Queued");
+    });
+
+    it("recovers_the_list_and_the_folder_counts_after_502s_during_an_upload", async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      try {
+        let phase: "before" | "down" | "up" = "before";
+        let downAnswers = 0;
+        const queued = documentItem({ status: "queued", page_count: null });
+        const counted = [folder("f1", "Policies", 1, null, 1), ...FOLDERS.slice(1)];
+        await open({
+          [DETAIL]: () =>
+            phase === "down"
+              ? json(502, { detail: "bad_gateway" })
+              : json(200, makeDetail(phase === "up" ? { folders: counted } : {})),
+          [LIST]: () => {
+            if (phase === "before") return json(200, { documents: [] });
+            if (phase === "down" && (downAnswers += 1) <= 2) return json(502, {});
+            phase = "up";
+            return json(200, { documents: [queued] });
+          },
+          [`POST ${BASE}/c1/folders/f1/documents`]: () => {
+            phase = "down"; // the API restarts right after it accepted the file
+            return json(201, { id: "d1" });
+          },
+        });
+        await screen.findByTestId("documents-empty");
+        fireEvent.change(screen.getByTestId("file-input"), {
+          target: { files: [new File(["x"], "a.txt")] },
+        });
+        await screen.findByText("Something went wrong. Try again.");
+        await vi.advanceTimersByTimeAsync(2000);
+        await vi.advanceTimersByTimeAsync(2000);
+        expect((await screen.findByTestId("document-status")).textContent).toBe("Queued");
+        expect(screen.queryByText("Something went wrong. Try again.")).toBeNull();
+        const total = () =>
+          within(screen.getByTestId("all-documents")).getByTestId("folder-count").textContent;
+        await waitFor(() => expect(total()).toBe("1"));
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("shows_no_empty_message_next_to_a_load_error", async () => {
+      await open({ [LIST]: () => json(500, { detail: "boom" }) });
+      expect(
+        (await screen.findByText("Something went wrong. Try again.")).getAttribute("role"),
+      ).toBe("alert");
+      expect(screen.queryByTestId("documents-empty")).toBeNull();
+      fireEvent.click(within(folderRow("2026")).getByTestId("folder-select"));
+      expect(await screen.findByTestId("documents-empty")).toBeTruthy();
+      expect(screen.queryByText("Something went wrong. Try again.")).toBeNull();
+    });
   });
 });

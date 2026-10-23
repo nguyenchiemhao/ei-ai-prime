@@ -497,7 +497,14 @@ test("AC3: the seeded collections have folders as on the CollectionDetail artboa
         const full = await detail(admin[org], workspaceId, item.id);
         expect(folderPaths(full), `${spec.name}: folders`).toEqual(sorted(spec.folders));
         for (const folder of full.folders) {
-          expect(Object.keys(folder).sort()).toEqual(["depth", "id", "name", "parent_id"]);
+          expect(Object.keys(folder).sort()).toEqual([
+            "depth",
+            "document_count",
+            "id",
+            "name",
+            "parent_id",
+          ]);
+          expect(folder.document_count, `${folder.name}: seed holds no documents`).toBe(0);
           expect(folder.depth, `${spec.name} / ${folder.name}`).toBeGreaterThanOrEqual(1);
           expect(folder.depth).toBeLessThanOrEqual(3);
           expect(folder.parent_id === null, `${folder.name}: root has no parent`).toBe(

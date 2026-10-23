@@ -7,15 +7,18 @@ a subtitle or a group must not reach a log (D52).
 """
 
 import uuid
+from collections.abc import Sequence
+from dataclasses import replace
 from datetime import datetime
 from typing import Annotated, Any, Literal, NoReturn
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ei_ai.api.deps import TenantSession
-from ei_ai.api.errors import ErrorCode
-from ei_ai.knowledge import folders, service
+from ei_ai.api.errors import ErrorCode, raise_mapped
+from ei_ai.knowledge import documents, folders, service
 from ei_ai.knowledge.errors import (
     CollectionNotFound,
     FolderNotEmpty,
@@ -27,7 +30,13 @@ from ei_ai.knowledge.errors import (
     NameTaken,
 )
 from ei_ai.knowledge.folder_rows import FolderRow
-from ei_ai.knowledge.rows import CollectionRow
+from ei_ai.knowledge.ingestion.status import shown_status
+from ei_ai.knowledge.rows import (
+    CollectionRow,
+    DocumentCounts,
+    document_counts,
+    list_queued_documents,
+)
 from ei_ai.rbac.access import WorkspaceAccess
 from ei_ai.rbac.declarations import requires
 from ei_ai.rbac.permissions import Permission
@@ -128,6 +137,7 @@ class FolderItem(BaseModel):
     name: str
     parent_id: uuid.UUID | None
     depth: int
+    document_count: int
 
 
 class CollectionList(BaseModel):
@@ -138,8 +148,42 @@ class CollectionDetail(CollectionItem):
     folders: list[FolderItem]
 
 
-def _item(row: CollectionRow) -> CollectionItem:
-    """The response of one collection; documents and agents are not tracked yet (all empty)."""
+async def _counts(
+    conn: AsyncConnection, request: Request, tenant: TenantContext, ids: Sequence[uuid.UUID]
+) -> dict[uuid.UUID, DocumentCounts]:
+    """The document counts of collections, one aggregate, with the stored ``queued`` rows
+    classified like the document table: one no job holds any more (interrupted) needs
+    attention instead of counting as processing."""
+    counts = await document_counts(conn, tenant.org_id, ids)
+    state = request.app.state
+    now = state.clock()
+    for queued in await list_queued_documents(conn, tenant.org_id, ids):
+        shown = shown_status(
+            "queued", None, queued.updated_at, state.progress_board.read(tenant, queued.id), now
+        )
+        if shown.status == "failed":
+            current = counts[queued.collection_id]
+            counts[queued.collection_id] = replace(
+                current,
+                processing=current.processing - 1,
+                needs_attention=current.needs_attention + 1,
+            )
+    return counts
+
+
+async def _items(
+    conn: AsyncConnection,
+    request: Request,
+    tenant: TenantContext,
+    rows: Sequence[CollectionRow],
+) -> list[CollectionItem]:
+    """The responses of collections, with their document counts."""
+    counts = await _counts(conn, request, tenant, [row.id for row in rows])
+    return [_item(row, counts.get(row.id, DocumentCounts())) for row in rows]
+
+
+def _item(row: CollectionRow, counts: DocumentCounts) -> CollectionItem:
+    """The response of one collection; agents are not tracked yet (``used_by`` is empty)."""
     return CollectionItem(
         id=row.id,
         name=row.name,
@@ -147,7 +191,12 @@ def _item(row: CollectionRow) -> CollectionItem:
         access_level=row.access_level,
         groups=list(row.groups),
         local_only=row.local_only,
-        documents=DocumentSummary(),
+        documents=DocumentSummary(
+            total=counts.total,
+            ready=counts.ready,
+            processing=counts.processing,
+            needs_attention=counts.needs_attention,
+        ),
         used_by=[],
         created_at=row.created_at,
         updated_at=row.updated_at,
@@ -155,15 +204,18 @@ def _item(row: CollectionRow) -> CollectionItem:
 
 
 def _folder_item(row: FolderRow) -> FolderItem:
-    return FolderItem(id=row.id, name=row.name, parent_id=row.parent_id, depth=row.depth)
+    return FolderItem(
+        id=row.id,
+        name=row.name,
+        parent_id=row.parent_id,
+        depth=row.depth,
+        document_count=row.document_count,
+    )
 
 
 def _raise_mapped(error: Exception) -> NoReturn:
     """Raise the HTTP error of a knowledge error (code only); anything else is re-raised."""
-    for kind, status, code in _ERRORS:
-        if isinstance(error, kind):
-            raise HTTPException(status_code=status, detail=code) from None
-    raise error
+    raise_mapped(error, _ERRORS)
 
 
 _UNAUTHENTICATED = {"model": ErrorCode, "description": "No live session (unauthenticated)"}
@@ -179,7 +231,8 @@ _INVALID = {
 }
 _CONFLICT = {
     "model": ErrorCode,
-    "description": "The name is taken or the folder has subfolders (name_taken, folder_not_empty)",
+    "description": "The name is taken or the folder has subfolders or documents (name_taken,"
+    " folder_not_empty)",
 }
 _COMMON: dict[int | str, dict[str, Any]] = {
     401: _UNAUTHENTICATED,
@@ -202,10 +255,11 @@ _BASE = "/workspaces/{workspace_id}/collections"
     summary="The collections of a Workspace, by name",
 )
 async def list_collections(
-    tenant: Tenant, access: ManageAccess, session: TenantSession
+    request: Request, tenant: Tenant, access: ManageAccess, session: TenantSession
 ) -> CollectionList:
-    rows = await service.list_collections(await session.connection(), tenant, access)
-    return CollectionList(collections=[_item(row) for row in rows])
+    conn = await session.connection()
+    rows = await service.list_collections(conn, tenant, access)
+    return CollectionList(collections=await _items(conn, request, tenant, rows))
 
 
 @router.post(
@@ -216,11 +270,16 @@ async def list_collections(
     summary="Create a collection (Public also needs the access permission)",
 )
 async def create_collection(
-    body: CollectionCreate, tenant: Tenant, access: ManageAccess, session: TenantSession
+    body: CollectionCreate,
+    request: Request,
+    tenant: Tenant,
+    access: ManageAccess,
+    session: TenantSession,
 ) -> CollectionItem:
+    conn = await session.connection()
     try:
         row = await service.create_collection(
-            await session.connection(),
+            conn,
             tenant,
             access,
             name=body.name,
@@ -231,7 +290,7 @@ async def create_collection(
         )
     except Exception as error:
         _raise_mapped(error)
-    return _item(row)
+    return (await _items(conn, request, tenant, [row]))[0]
 
 
 @router.get(
@@ -241,7 +300,11 @@ async def create_collection(
     summary="One collection with its folders",
 )
 async def get_collection(
-    collection_id: uuid.UUID, tenant: Tenant, access: ManageAccess, session: TenantSession
+    collection_id: uuid.UUID,
+    request: Request,
+    tenant: Tenant,
+    access: ManageAccess,
+    session: TenantSession,
 ) -> CollectionDetail:
     conn = await session.connection()
     try:
@@ -249,8 +312,9 @@ async def get_collection(
         folder_rows = await folders.list_folders(conn, tenant, access, collection_id)
     except Exception as error:
         _raise_mapped(error)
+    item = (await _items(conn, request, tenant, [row]))[0]
     return CollectionDetail(
-        **_item(row).model_dump(), folders=[_folder_item(folder) for folder in folder_rows]
+        **item.model_dump(), folders=[_folder_item(folder) for folder in folder_rows]
     )
 
 
@@ -263,13 +327,15 @@ async def get_collection(
 async def update_collection(
     collection_id: uuid.UUID,
     body: CollectionUpdate,
+    request: Request,
     tenant: Tenant,
     access: ManageAccess,
     session: TenantSession,
 ) -> CollectionItem:
+    conn = await session.connection()
     try:
         row = await service.update_collection(
-            await session.connection(),
+            conn,
             tenant,
             access,
             collection_id,
@@ -277,7 +343,7 @@ async def update_collection(
         )
     except Exception as error:
         _raise_mapped(error)
-    return _item(row)
+    return (await _items(conn, request, tenant, [row]))[0]
 
 
 @router.put(
@@ -289,13 +355,15 @@ async def update_collection(
 async def change_access(
     collection_id: uuid.UUID,
     body: AccessChange,
+    request: Request,
     tenant: Tenant,
     access: AccessManage,
     session: TenantSession,
 ) -> CollectionItem:
+    conn = await session.connection()
     try:
         row = await service.change_access(
-            await session.connection(),
+            conn,
             tenant,
             access,
             collection_id,
@@ -304,7 +372,7 @@ async def change_access(
         )
     except Exception as error:
         _raise_mapped(error)
-    return _item(row)
+    return (await _items(conn, request, tenant, [row]))[0]
 
 
 @router.delete(
@@ -312,15 +380,26 @@ async def change_access(
     status_code=204,
     response_class=Response,
     responses=_COMMON,
-    summary="Delete a collection and its folders",
+    summary="Delete a collection with its folders, documents and stored originals",
 )
 async def delete_collection(
-    collection_id: uuid.UUID, tenant: Tenant, access: ManageAccess, session: TenantSession
+    collection_id: uuid.UUID,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    tenant: Tenant,
+    access: ManageAccess,
+    session: TenantSession,
 ) -> Response:
     try:
-        await service.delete_collection(await session.connection(), tenant, access, collection_id)
+        file_ids = await service.delete_collection(
+            await session.connection(), tenant, access, collection_id
+        )
     except Exception as error:
         _raise_mapped(error)
+    # Background tasks run after the response, so after the transaction has committed.
+    background_tasks.add_task(
+        documents.delete_originals, request.app.state.file_store, tenant, file_ids
+    )
     return Response(status_code=204)
 
 
@@ -380,7 +459,7 @@ async def rename_folder(
     status_code=204,
     response_class=Response,
     responses={**_COMMON, 409: _CONFLICT},
-    summary="Delete a folder that has no subfolders",
+    summary="Delete a folder that has no subfolders and no documents",
 )
 async def delete_folder(
     collection_id: uuid.UUID,

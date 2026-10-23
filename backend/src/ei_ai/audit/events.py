@@ -32,8 +32,12 @@ COLLECTION_DELETED = "collection.deleted"
 FOLDER_CREATED = "folder.created"
 FOLDER_RENAMED = "folder.renamed"
 FOLDER_DELETED = "folder.deleted"
+DOCUMENT_UPLOADED = "document.uploaded"
+DOCUMENT_REMOVED = "document.removed"
 
-TargetType = Literal["organization", "workspace", "user", "model", "collection", "folder"]
+TargetType = Literal[
+    "organization", "workspace", "user", "model", "collection", "folder", "document"
+]
 
 
 def user_actor(user_id: uuid.UUID) -> str:

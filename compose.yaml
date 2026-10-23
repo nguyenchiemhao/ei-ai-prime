@@ -101,6 +101,10 @@ services:
       # Model Gateway (EA-24): the local llama.cpp server on the internal network (no egress proxy).
       # No EGRESS_PROXY_URL yet (FND-10): cloud model calls are refused (CLOUD_NOT_CONFIGURED).
       MODEL_LOCAL_BASE_URL: http://model:8080/v1
+      # Encrypted originals (EA-20 OrgFileStore) of uploaded documents (EA-33), one directory per Organization.
+      FILE_STORAGE_ROOT: /var/lib/ei-ai/files
+    volumes:
+      - kb-files:/var/lib/ei-ai/files
     depends_on:
       db:
         condition: service_healthy
@@ -113,7 +117,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
-    mem_limit: 512m
+    # A 50 MB upload is buffered in memory and parsed in this process (EA-33).
+    mem_limit: 1g
     # An OOM kill under the limit must not leave the API down.
     restart: unless-stopped
 
@@ -197,6 +202,7 @@ services:
 
 volumes:
   db-data:
+  kb-files:
   # Shared across projects on purpose (the model is ~2.5 GB). Never delete it with `down -v`.
   # Reuse a cached model: MODEL_CACHE_VOLUME=ei-ai-stack-spike_model-cache in .env.
   model-cache:

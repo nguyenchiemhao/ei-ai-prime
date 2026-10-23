@@ -70,8 +70,13 @@ async def _call(
         params += [(name, str(forged.org_id)) for name in ORG_QUERY_PARAMS]
     build_body = None if isinstance(case, PublicRoute) else case.body
     body = build_body(body_rows) if build_body is not None else None
+    content = None
+    build_content = case.content if isinstance(case, ResourceRoute) else None
+    if build_content is not None:
+        content, content_headers = build_content(body_rows)
+        headers.update(content_headers)
     return await client.request(
-        case.method, url, headers=headers, params=urlencode(params), json=body
+        case.method, url, headers=headers, params=urlencode(params), json=body, content=content
     )
 
 

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { signIn } from "./auth";
-import { apiRequest, clearCsrfToken } from "./client";
+import { apiRequest, apiUpload, clearCsrfToken } from "./client";
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), { status });
@@ -128,5 +128,77 @@ describe("apiRequest", () => {
     fetchMock.mockRejectedValueOnce(new TypeError("offline"));
 
     expect(await apiRequest("GET", "/x")).toEqual({ ok: false, status: 0, code: "network" });
+  });
+});
+
+describe("apiUpload", () => {
+  it("posts_the_raw_body_with_the_given_headers_and_the_csrf_token", async () => {
+    const body = new Blob(["abc"]);
+    fetchMock
+      .mockResolvedValueOnce(json(200, { csrf_token: "tok" }))
+      .mockResolvedValueOnce(json(201, { id: "d1" }));
+
+    const result = await apiUpload("/up", body, { "X-File-Name": "a.txt" });
+
+    expect(result).toEqual({ ok: true, data: { id: "d1" } });
+    expect(callArg(1, 0)).toBe("/api/up");
+    const init = callArg(1, 1) as { method: string; body: Blob };
+    expect(init.method).toBe("POST");
+    expect(init.body).toBe(body);
+    expect(headersOf(1)).toEqual({ "X-File-Name": "a.txt", "X-CSRF-Token": "tok" });
+  });
+
+  it("shares_one_csrf_token_request_between_concurrent_uploads", async () => {
+    let tokens = 0;
+    fetchMock.mockImplementation((url: string) => {
+      if (url === "/api/auth/csrf") {
+        tokens += 1;
+        return Promise.resolve(json(200, { csrf_token: `tok-${tokens}` }));
+      }
+      return Promise.resolve(json(201, { id: url }));
+    });
+
+    const results = await Promise.all(
+      [1, 2, 3, 4, 5].map((n) => apiUpload(`/up/${n}`, new Blob(["x"]), {})),
+    );
+
+    expect(results.every((result) => result.ok)).toBe(true);
+    const urls = fetchMock.mock.calls.map((call) => (call as unknown[])[0]);
+    expect(urls.filter((url) => url === "/api/auth/csrf")).toHaveLength(1);
+    const posts = fetchMock.mock.calls
+      .map((_, index) => index)
+      .filter((index) => callArg(index, 0) !== "/api/auth/csrf");
+    expect(posts).toHaveLength(5);
+    expect(posts.map((index) => headersOf(index)["X-CSRF-Token"])).toEqual(Array(5).fill("tok-1"));
+  });
+
+  it("does_not_cache_a_token_that_arrives_after_clear", async () => {
+    let release: (response: Response) => void = () => undefined;
+    fetchMock
+      .mockReturnValueOnce(new Promise<Response>((resolve) => (release = resolve)))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(json(200, { csrf_token: "fresh" }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    const first = apiRequest("POST", "/a");
+    clearCsrfToken();
+    release(json(200, { csrf_token: "stale" }));
+    await first;
+    await apiRequest("POST", "/b");
+
+    expect(callArg(2, 0)).toBe("/api/auth/csrf");
+    expect(headersOf(3)["X-CSRF-Token"]).toBe("fresh");
+  });
+
+  it("maps_an_error_response_to_status_and_code", async () => {
+    fetchMock
+      .mockResolvedValueOnce(json(200, { csrf_token: "t" }))
+      .mockResolvedValueOnce(json(415, { detail: "unsupported_format" }));
+
+    expect(await apiUpload("/up", new Blob(["x"]), {})).toEqual({
+      ok: false,
+      status: 415,
+      code: "unsupported_format",
+    });
   });
 });

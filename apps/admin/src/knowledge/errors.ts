@@ -26,3 +26,16 @@ export function knowledgeErrorKey(
   }
   return "admin.knowledge.error.generic";
 }
+
+const UPLOAD_REJECTION_KEYS: Record<string, string> = {
+  unsupported_format: "admin.knowledge.documents.reject.unsupported",
+  file_too_large: "admin.knowledge.documents.reject.tooLarge",
+  empty_file: "admin.knowledge.documents.reject.empty",
+  storage_quota_exceeded: "admin.knowledge.documents.reject.quotaFull",
+  invalid_file_name: "admin.knowledge.documents.reject.invalidName",
+};
+
+/** The i18n key of the line for a file that was not uploaded (client check or server code). */
+export function uploadRejectionKey(code: string): string {
+  return UPLOAD_REJECTION_KEYS[code] ?? "admin.knowledge.documents.reject.generic";
+}

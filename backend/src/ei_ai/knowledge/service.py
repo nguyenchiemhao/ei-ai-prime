@@ -25,6 +25,7 @@ from ei_ai.audit.events import (
     user_actor,
 )
 from ei_ai.db.constraints import violated_constraint
+from ei_ai.knowledge.document_rows import list_document_file_ids
 from ei_ai.knowledge.errors import (
     CollectionNotFound,
     GroupsRequired,
@@ -272,11 +273,17 @@ async def change_access(
 
 async def delete_collection(
     conn: AsyncConnection, tenant: TenantContext, access: WorkspaceAccess, collection_id: uuid.UUID
-) -> None:
-    """Delete a collection and, with it, its folders."""
+) -> list[uuid.UUID]:
+    """Delete a collection and, with it, its folders, documents and chunks.
+
+    Returns the file ids of the stored originals of the deleted documents; the caller deletes
+    them once the transaction has committed.
+    """
     ensure(access.permissions, Permission.KNOWLEDGE_MANAGE)
     current = await _locked(conn, tenant, access, collection_id)
+    file_ids = await list_document_file_ids(conn, tenant.org_id, collection_id)
     await delete_collection_row(conn, tenant.org_id, access.workspace_id, collection_id)
     await _event(
         conn, tenant, access, collection_id, COLLECTION_DELETED, current.access_level, None
     )
+    return file_ids

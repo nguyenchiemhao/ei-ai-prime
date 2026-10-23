@@ -15,19 +15,22 @@ from dataclasses import dataclass, field
 from support.tenants import OrgRows
 
 BodyBuilder = Callable[[OrgRows], dict[str, object]]
+ContentBuilder = Callable[[OrgRows], tuple[bytes, dict[str, str]]]
 
 
 @dataclass(frozen=True)
 class ResourceRoute:
     """``resources`` maps every path parameter, and every id query parameter, to the fixture
     table whose row id it takes (``OrgRows.row_id``). ``body`` builds the JSON body from the
-    fixture rows whose ids it should carry."""
+    fixture rows whose ids it should carry. ``content`` is for routes with a raw body: it builds
+    the bytes and the headers to send (instead of ``body``)."""
 
     method: str
     path: str
     resources: Mapping[str, str]
     body: BodyBuilder | None = None
     ok_status: int = 200
+    content: ContentBuilder | None = None
 
 
 @dataclass(frozen=True)

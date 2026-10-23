@@ -155,7 +155,7 @@
           "collection": "Đã có bộ sưu tập với tên này.",
           "folder": "Đã có thư mục với tên này ở đây."
         },
-        "folderNotEmpty": "Hãy xóa các thư mục con trước.",
+        "folderNotEmpty": "Hãy xóa các thư mục con và tài liệu của thư mục trước.",
         "folderTooDeep": "Thư mục chỉ lồng được tối đa 3 cấp.",
         "groupsRequired": "Cần ít nhất một nhóm",
         "invalidGroup": "Tên nhóm dài 1–64 ký tự, không chứa dấu phẩy; tối đa 20 nhóm.",
@@ -198,6 +198,68 @@
         "delete": "Xóa {{name}}",
         "documentsTitle": "Tài liệu",
         "documentsEmpty": "Chưa có tài liệu nào."
+      },
+      "documents": {
+        "uploadFiles": "Tải tệp lên",
+        "allDocuments": "Tất cả tài liệu",
+        "dropTitle": "Thả tệp vào {{name}}",
+        "dropHint": "PDF có văn bản, DOCX, MD, TXT · tối đa 50 MB mỗi tệp",
+        "browse": "Chọn tệp",
+        "browseLabel": "Chọn tệp",
+        "chooseFolder": "Hãy chọn một thư mục để tải tệp lên.",
+        "uploading": "Đang tải lên…",
+        "folderEmpty": "Chưa có tài liệu nào trong thư mục này.",
+        "table": {
+          "label": "Tài liệu",
+          "document": "Tài liệu",
+          "status": "Trạng thái",
+          "size": "Dung lượng",
+          "updated": "Cập nhật",
+          "actions": "Thao tác"
+        },
+        "status": {
+          "queued": "Đang chờ",
+          "processing": "Đang xử lý · {{percent}}%",
+          "ready": "Sẵn sàng · {{count}} trang",
+          "readyOne": "Sẵn sàng · 1 trang",
+          "notSupported": "Không hỗ trợ",
+          "failed": "Thất bại"
+        },
+        "reason": {
+          "scanned_pdf": "PDF dạng ảnh quét, không có văn bản. Tính năng nhận dạng chữ (OCR) dự kiến ở bản phát hành sau.",
+          "corrupt_file": "Không đọc được tệp. Tệp có thể bị hỏng.",
+          "password_protected": "Tệp được bảo vệ bằng mật khẩu.",
+          "no_text": "Tệp không chứa văn bản.",
+          "unreadable_encoding": "Không nhận dạng được bảng mã văn bản. Hãy lưu tệp dưới dạng UTF-8 rồi tải lên lại.",
+          "file_too_complex": "Tệp quá phức tạp để xử lý.",
+          "processing_error": "Đã xảy ra lỗi khi xử lý tệp.",
+          "interrupted": "Quá trình xử lý bị gián đoạn. Hãy xóa tệp và tải lên lại."
+        },
+        "previewText": "Xem trước văn bản",
+        "previewLabel": "Xem trước văn bản của {{name}}",
+        "remove": "Xóa",
+        "removeLabel": "Xóa {{name}}",
+        "preview": {
+          "loading": "Đang tải văn bản…",
+          "close": "Đóng",
+          "truncated": "Đang hiển thị 100.000 ký tự đầu tiên.",
+          "error": "Không tải được văn bản. Hãy thử lại."
+        },
+        "removeDialog": {
+          "title": "Xóa {{name}}?",
+          "text": "Tệp và văn bản đã trích xuất sẽ bị xóa.",
+          "confirm": "Xóa",
+          "cancel": "Hủy",
+          "removed": "Đã xóa {{name}}."
+        },
+        "reject": {
+          "unsupported": "{{name}} chưa được tải lên: định dạng này không được hỗ trợ. Định dạng hỗ trợ: PDF có văn bản, DOCX, MD, TXT.",
+          "tooLarge": "{{name}} chưa được tải lên: tệp tối đa 50 MB.",
+          "empty": "{{name}} chưa được tải lên: tệp trống.",
+          "quotaFull": "{{name}} chưa được tải lên: dung lượng lưu trữ của tổ chức đã đầy (1 GB).",
+          "invalidName": "{{name}} chưa được tải lên: tên tệp không hợp lệ.",
+          "generic": "{{name}} chưa được tải lên. Hãy thử lại."
+        }
       },
       "folderDialog": {
         "createTitle": "Thư mục mới",

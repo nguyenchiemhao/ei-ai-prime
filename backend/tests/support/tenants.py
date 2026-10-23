@@ -22,6 +22,8 @@ from support.crypto import TEST_MASTER_KEY
 # Every table of the schema, children first (the order in which fixture rows can be deleted).
 DELETE_ORDER = (
     "chunk_embeddings",
+    "document_chunks",
+    "documents",
     "folders",
     "collections",
     "admin_sessions",
@@ -84,6 +86,10 @@ class OrgRows:
     folder_id: uuid.UUID
     organization_key_id: uuid.UUID
     chunk_embedding_id: uuid.UUID
+    # A second, empty folder: the folder DELETE isolation case needs one that holds no document.
+    empty_folder_id: uuid.UUID
+    document_id: uuid.UUID
+    chunk_id: uuid.UUID
     # The digest of the fixture model row: random, so each Organization has its own.
     model_digest: str
     label: str
@@ -109,6 +115,9 @@ class OrgRows:
             "folders": self.folder_id,
             "organization_keys": self.organization_key_id,
             "chunk_embeddings": self.chunk_embedding_id,
+            "empty_folders": self.empty_folder_id,
+            "documents": self.document_id,
+            "document_chunks": self.chunk_id,
         }[table]
 
     @property
@@ -120,6 +129,7 @@ class OrgRows:
         and the names. Any of them in a response for another Organization is a leak."""
         names = self.names
         ids = {str(self.row_id(table)) for table in DELETE_ORDER}
+        ids.add(str(self.empty_folder_id))
         return frozenset({*ids, self.email, names.organization, names.workspace, names.user})
 
 
@@ -145,6 +155,8 @@ UPDATE_SETS = {
     "folders": ("name", "renamed-by-intruder"),
     "organization_keys": ("kek_id", "0" * 16),
     "chunk_embeddings": ("created_at", datetime(2000, 1, 1, tzinfo=UTC)),
+    "documents": ("name", "renamed-by-intruder"),
+    "document_chunks": ("text", "renamed-by-intruder"),
 }
 
 
@@ -164,6 +176,9 @@ async def create_org_rows(engine: AsyncEngine, label: str) -> OrgRows:
         folder_id=uuid.uuid4(),
         organization_key_id=uuid.UUID(int=0),  # replaced once the key row exists
         chunk_embedding_id=uuid.uuid4(),
+        empty_folder_id=uuid.uuid4(),
+        document_id=uuid.uuid4(),
+        chunk_id=uuid.uuid4(),
         model_digest=f"sha256:{secrets.token_hex(32)}",
         label=label,
         suffix=uuid.uuid4().hex[:8],
@@ -289,6 +304,43 @@ async def create_org_rows(engine: AsyncEngine, label: str) -> OrgRows:
                 "collection": rows.collection_id,
                 "name": f"Folder {label} {rows.suffix}",
             },
+        )
+        await conn.execute(
+            text(
+                "INSERT INTO folders (id, org_id, collection_id, name, depth)"
+                " VALUES (:id, :org, :collection, :name, 1)"
+            ),
+            {
+                "id": rows.empty_folder_id,
+                "org": rows.org_id,
+                "collection": rows.collection_id,
+                "name": f"Empty folder {label} {rows.suffix}",
+            },
+        )
+        await conn.execute(
+            text(
+                "INSERT INTO documents (id, org_id, collection_id, folder_id, name, format,"
+                " size_bytes, status, page_count, chunk_count, extracted_text, uploaded_by,"
+                " file_id)"
+                " VALUES (:id, :org, :collection, :folder, :name, 'txt', 100, 'ready', 1, 1,"
+                " 'qa', :user, gen_random_uuid())"
+            ),
+            {
+                "id": rows.document_id,
+                "org": rows.org_id,
+                "collection": rows.collection_id,
+                "folder": rows.folder_id,
+                "name": f"Document {label} {rows.suffix}",
+                "user": rows.user_id,
+            },
+        )
+        await conn.execute(
+            text(
+                "INSERT INTO document_chunks (id, org_id, document_id, ordinal, text,"
+                " char_start, char_end, token_estimate)"
+                " VALUES (:id, :org, :document, 0, 'qa', 0, 2, 1)"
+            ),
+            {"id": rows.chunk_id, "org": rows.org_id, "document": rows.document_id},
         )
         key_id = await create_org_key(conn, rows.org_id, TEST_MASTER_KEY)
     # The partition needs the owner role and the committed Organization row (R2, R24).

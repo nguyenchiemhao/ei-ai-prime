@@ -110,7 +110,7 @@ Vocabulary used in the tables:
 | PyJWT | 2.15.1 | MIT | Channel tokens (HS256), F4, WGT-01 | yes | Low: permissive | approved | | | https://pypi.org/project/PyJWT/2.15.1/ |
 | argon2-cffi | 25.1.0 | MIT | Admin password hashing, FND-05 | yes | Low: permissive | approved | | | https://pypi.org/project/argon2-cffi/25.1.0/ |
 | AnyIO | 4.15.1 | MIT | Worker threads and the capacity limiter for password hashing, FND-05 (already a FastAPI dependency, pinned since imported directly) | yes | Low: permissive | approved | | | https://pypi.org/project/anyio/4.15.1/ |
-| cryptography | 50.0.2 | Apache-2.0 OR BSD-3-Clause | Envelope encryption, F2, FND-03 | yes | Low: permissive | approved | | | https://pypi.org/project/cryptography/50.0.2/ |
+| cryptography | 50.0.2 | Apache-2.0 OR BSD-3-Clause | Envelope encryption, F2, FND-03; PDF AES decryption under pypdf, KB-02 | yes | Low: permissive | approved | | | https://pypi.org/project/cryptography/50.0.2/ |
 | Smokescreen | 0.1.0 | MIT | Egress proxy, F14, FND-10 | yes | Low: permissive | approved | | | https://github.com/stripe/smokescreen/blob/master/LICENSE.txt |
 | Squid | 7.7 | GPL-2.0-only | Egress proxy option | no | Strong copyleft: GPL program, large surface | not approved | Smokescreen | | https://github.com/squid-cache/squid/blob/master/COPYING |
 | DOMPurify | 3.4.17 | MPL-2.0 OR Apache-2.0 | Widget output sanitising, F6, WGT-05 | yes | Low: permissive choice of licence | approved | | Use under Apache-2.0 | https://registry.npmjs.org/dompurify/3.4.17 |
@@ -210,7 +210,7 @@ Handed to SET-03 (tooling) and MVP-10 (legal sign-off):
 
 Components with verdict `approved` or `approved with conditions` (conditions in section 2):
 
-- File parsing: pypdf, pdfplumber (with pdfminer.six and pypdfium2), python-docx (with lxml), openpyxl, markdown-it-py, charset-normalizer.
+- File parsing: pypdf (with cryptography), pdfplumber (with pdfminer.six and pypdfium2), python-docx (with lxml), openpyxl, markdown-it-py, charset-normalizer.
 - Chunking helpers (optional, the chunker is our own): langchain-text-splitters, semchunk, tokenizers.
 - Models: Qwen3-4B-Instruct-2507, Qwen3-8B, Qwen3-14B, Phi-4-mini-instruct, bge-m3, bge-reranker-v2-m3, Qwen3-Embedding-0.6B, Qwen3-Reranker-0.6B.
 - Data: PostgreSQL 16, pgvector, PostgreSQL full-text search and pg_trgm, psycopg 3 (conditions), SQLAlchemy, Alembic, Procrastinate, Valkey with redis-py. Fallbacks: Qdrant, OpenSearch, SeaweedFS, asyncpg.

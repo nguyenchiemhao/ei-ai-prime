@@ -8,6 +8,7 @@ from urllib.parse import urlsplit, urlunsplit
 from ei_ai.auth.passwords import MAX_LENGTH as MAX_PASSWORD_LENGTH
 
 ENVIRONMENTS = ("local", "test", "production")
+DEFAULT_FILE_STORAGE_ROOT = "/var/lib/ei-ai/files"
 
 
 class SettingsError(ValueError):
@@ -40,6 +41,9 @@ class Settings:
     trust_proxy_headers: bool = False
     auth_rate_limit_per_minute: int = 30
     session_idle_timeout_seconds: int = 43200
+    # Root of the encrypted originals (EA-20 `OrgFileStore`) of uploaded documents (EA-33);
+    # one directory per Organization.
+    file_storage_root: str = DEFAULT_FILE_STORAGE_ROOT
 
     @classmethod
     def from_env(cls, env: Mapping[str, str]) -> "Settings":
@@ -53,6 +57,7 @@ class Settings:
             trust_proxy_headers=_boolean(env, "TRUST_PROXY_HEADERS", default=False),
             auth_rate_limit_per_minute=_positive_int(env, "AUTH_RATE_LIMIT_PER_MINUTE", 30),
             session_idle_timeout_seconds=_positive_int(env, "SESSION_IDLE_TIMEOUT_SECONDS", 43200),
+            file_storage_root=env.get("FILE_STORAGE_ROOT") or DEFAULT_FILE_STORAGE_ROOT,
         )
 
     def __repr__(self) -> str:

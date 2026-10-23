@@ -62,6 +62,16 @@ def test_environment_defaults_to_production_when_unset() -> None:
     assert Settings.from_env(env).environment == "production"
 
 
+def test_file_storage_root_defaults_and_can_be_overridden() -> None:
+    default = "/var/lib/ei-ai/files"
+
+    assert Settings.from_env(VALID).file_storage_root == default
+    assert Settings.from_env({**VALID, "FILE_STORAGE_ROOT": ""}).file_storage_root == default
+    assert Settings.from_env({**VALID, "FILE_STORAGE_ROOT": "/data/x"}).file_storage_root == (
+        "/data/x"
+    )
+
+
 def test_repr_masks_password() -> None:
     text = repr(Settings.from_env(VALID))
 

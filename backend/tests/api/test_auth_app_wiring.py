@@ -13,6 +13,7 @@ from ei_ai.auth.directory import SignInDirectory
 from ei_ai.auth.session_verifier import SessionCookieVerifier
 from ei_ai.main import create_app
 from ei_ai.readiness import Readiness
+from support.crypto import TEST_MASTER_KEY
 
 TOKEN = "t0ken-value"
 CSRF = {"Cookie": f"{CSRF_COOKIE}={TOKEN}", CSRF_HEADER: TOKEN}
@@ -70,6 +71,8 @@ def auth_env(monkeypatch: pytest.MonkeyPatch) -> pytest.MonkeyPatch:
         "AUTH_RATE_LIMIT_PER_MINUTE": "2",
         "SESSION_IDLE_TIMEOUT_SECONDS": "120",
         "TRUST_PROXY_HEADERS": "true",
+        # The lifespan builds the encrypted file store of originals (EA-33), which needs the key.
+        "EI_AI_MASTER_KEY": TEST_MASTER_KEY.key.hex(),
     }.items():
         monkeypatch.setenv(name, value)
     return monkeypatch

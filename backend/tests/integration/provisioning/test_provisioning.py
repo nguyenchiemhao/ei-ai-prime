@@ -124,6 +124,8 @@ async def test_create_organization_creates_org_workspace_owner_and_token(
         "organization_keys": 1,
         "collections": 0,
         "folders": 0,
+        "documents": 0,
+        "document_chunks": 0,
         "organizations": 1,
     }
 
