@@ -1,6 +1,7 @@
 """EA-20 vector namespace, without a database: input validation of ``nearest`` and the partition
 name, which is derived from a ``uuid.UUID`` object only."""
 
+import inspect
 import math
 import uuid
 from typing import Any
@@ -57,12 +58,12 @@ def _with(index: int, value: float) -> list[float]:
 )
 async def test_nearest_validates_dimensions_k_and_finiteness(query: list[float], k: int) -> None:
     with pytest.raises(ValueError):
-        await nearest(_NoDatabase(), TENANT, query, k, model=MODEL)  # type: ignore[arg-type]
+        await nearest(_NoDatabase(), TENANT, query, k, model=MODEL, where=None)  # type: ignore[arg-type]
 
 
 async def test_nearest_needs_the_verified_context() -> None:
     with pytest.raises(TypeError):
-        await nearest(_NoDatabase(), TENANT.org_id, VALID, 5, model=MODEL)  # type: ignore[arg-type]
+        await nearest(_NoDatabase(), TENANT.org_id, VALID, 5, model=MODEL, where=None)  # type: ignore[arg-type]
 
 
 def test_the_constants_match_the_spec() -> None:
@@ -84,11 +85,34 @@ def test_the_constants_match_the_spec() -> None:
 
 
 def test_vector_filter_is_frozen_and_checks_levels() -> None:
-    assert VectorFilter() == VectorFilter(None, (), ())
+    assert VectorFilter() == VectorFilter(None, (), (), ())
     with pytest.raises(ValueError):
         VectorFilter(access_levels=("public", "admin"))
     with pytest.raises(AttributeError):
         VectorFilter().groups = ("x",)  # type: ignore[misc]
+
+
+def test_vector_filter_folders_need_a_collection_list() -> None:
+    folder = uuid.uuid4()
+    with pytest.raises(ValueError, match="collection_ids must not be None when folder_ids"):
+        VectorFilter(folder_ids=(folder,))
+    assert VectorFilter(collection_ids=(), folder_ids=(folder,)).folder_ids == (folder,)
+
+
+def test_nearest_sql_scope_and_access_clauses() -> None:
+    assert (
+        " AND (CAST(:collections AS uuid[]) IS NULL"
+        " OR collection_id = ANY(CAST(:collections AS uuid[]))"
+        " OR folder_id = ANY(CAST(:folders AS uuid[])))"
+    ) in NEAREST_SQL
+    assert (
+        " AND (NOT :filtered OR access_level = ANY(CAST(:levels AS text[]))"
+        " OR groups && CAST(:groups AS text[]))"
+    ) in NEAREST_SQL
+
+
+def test_nearest_requires_where() -> None:
+    assert inspect.signature(nearest).parameters["where"].default is inspect.Parameter.empty
 
 
 def test_partition_name_is_derived_from_the_uuid() -> None:

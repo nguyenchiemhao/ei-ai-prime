@@ -174,6 +174,16 @@ test("api_and_backend_tools_get_the_platform_embedding_model", () => {
     assert.equal(moved[name].environment.EMBEDDING_MODEL_REF, "other@v2");
 });
 
+test("api_and_backend_tools_get_the_rerank_setting_empty_by_default", () => {
+  for (const name of ["api", "backend-tools"])
+    assert.equal(services[name].environment.RERANK_MODEL_REF, "");
+  const set = JSON.parse(
+    config({ ...DUMMY, RERANK_MODEL_REF: "bge-reranker-v2-m3@2026.10" }).stdout,
+  ).services;
+  for (const name of ["api", "backend-tools"])
+    assert.equal(set[name].environment.RERANK_MODEL_REF, "bge-reranker-v2-m3@2026.10");
+});
+
 test("embedding_pin_ignores_chat_overrides", () => {
   const sha = "0".repeat(64);
   const moved = JSON.parse(

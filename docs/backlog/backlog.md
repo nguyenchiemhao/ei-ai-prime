@@ -200,8 +200,8 @@ Cut or move after M5 while keeping the three parts of the D3 positioning: KB-03 
 ### 5.4 Demo-first thin slice (owner, 2026-10-23)
 
 To reach a demo sooner (console Chat page, D67), the owner paused security hardening and runs this order:
-KB-02 (EA-33) → KB-04 vectors (EA-35) → KB-05 (EA-36) → KB-06 + EVL-03 (EA-37, EA-17) → WGT-13 + WGT-12
-console Chat (EA-90, EA-88) → PIPE-03 + simple matcher (EA-53) → SKL-04 + reduced SKL-03 (EA-63, EA-66) →
+KB-02 (EA-33) → KB-04 vectors (EA-35) → KB-05 (EA-36) → KB-06 + EVL-03 (EA-37, EA-17) → FND-13 member groups
+(EA-89, so console users can read Restricted collections) → WGT-13 + WGT-12 console Chat (EA-90, EA-88) → PIPE-03 + simple matcher (EA-53) → SKL-04 + reduced SKL-03 (EA-63, EA-66) →
 optional WGT-01/02/10 with one fixed HS256 key.
 
 **To finish after the demo** (do not lose these):
@@ -214,6 +214,8 @@ optional WGT-01/02/10 with one fixed HS256 key.
 | Full widget JWT, anonymous mode, encrypted conversations | EA-42, EA-43, EA-47 (WGT-03/04/08) | paused; demo uses the console session or one fixed HS256 key |
 | Gate / rate limit, Response Guard | EA-51, EA-58 (PIPE-01/08) | paused |
 | ADM-04/05, JEV-*, MVP-* | — | paused |
+| Reranker server, AC6 hit@3, 800 ms p95 | EA-36 follow-up | rerank stage is built; no `--reranking` server runs (RAM); measure with EVL-02 |
+| AC1 with the real EVL-03 questions | EA-36 follow-up, after EA-17 | 10 permission questions are a test fixture today |
 | Shortcuts taken in the demo slice | each ticket's final Jira comment ("Follow-up") | e.g. KB-05 must always pass a permission filter to `nearest` |
 
 ## 6. Self-check

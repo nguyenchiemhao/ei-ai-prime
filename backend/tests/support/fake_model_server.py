@@ -7,7 +7,8 @@ through real HTTP without any real network. Each test scripts the replies:
 - ``models_replies`` / ``replies``: per-request ``Reply`` queues for ``/v1/models`` and for the
   completion, embedding and rerank endpoints; an empty queue answers with ``Reply()``;
 - ``dimensions``: the size of every embedding (``[0.5, <position in the request>, -0.25]``, cut
-  or padded with zeros).
+  or padded with zeros);
+- ``rerank_results``: scripted (index, score) pairs for the rerank endpoint.
 
 Never imported by ``src``.
 """
@@ -71,6 +72,8 @@ class FakeModelServer:
     requests: list[Recorded] = field(default_factory=list)
     base_url: str = ""
     dimensions: int = 3
+    # (document index, score) pairs the rerank endpoint answers with; None: all, in order.
+    rerank_results: list[tuple[int, float]] | None = None
 
     def paths(self) -> list[str]:
         return [request.path for request in self.requests]
@@ -166,6 +169,8 @@ class FakeModelServer:
             {"index": index, "relevance_score": round(1.0 - index * 0.25, 2)}
             for index, _ in enumerate(body["documents"])
         ]
+        if self.rerank_results is not None:
+            scores = [{"index": i, "relevance_score": s} for i, s in self.rerank_results]
         top_n = body.get("top_n") or len(scores)
         return JSONResponse(
             {

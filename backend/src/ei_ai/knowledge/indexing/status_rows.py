@@ -1,4 +1,5 @@
-"""Counts behind ``ei-ai index status`` (EA-35), read inside the caller's tenant transaction.
+"""Rows behind ``ei-ai index status`` and ``index search`` (EA-35), read in the caller's tenant
+transaction.
 
 Every statement carries the explicit Organization filter on top of row-level security (D46) and
 reads the parent ``chunk_embeddings``, never a partition.
@@ -92,3 +93,11 @@ async def chunk_ordinals(
         {"org": org_id, "ids": chunk_ids},
     )
     return {row.id: row.ordinal for row in result}
+
+
+async def org_collection_ids(conn: TenantExecutor, org_id: uuid.UUID) -> tuple[uuid.UUID, ...]:
+    """The ids of the Organization's own collections (the operator search scope)."""
+    result = await conn.execute(
+        text("SELECT id FROM collections WHERE org_id = :org ORDER BY id"), {"org": org_id}
+    )
+    return tuple(row.id for row in result)

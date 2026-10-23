@@ -130,6 +130,8 @@ services:
       MODEL_EMBEDDING_BASE_URL: http://embedding:8080/v1
       # Embedding model of indexing and search (EA-35): a local embedding entry of the manifest.
       EMBEDDING_MODEL_REF: ${EMBEDDING_MODEL_REF:-bge-m3@2026.10}
+      # Rerank model of retrieval (EA-36): empty = rerank off, vector order only.
+      RERANK_MODEL_REF: ${RERANK_MODEL_REF:-}
       # Encrypted originals (EA-20 OrgFileStore) of uploaded documents (EA-33), one directory per Organization.
       FILE_STORAGE_ROOT: /var/lib/ei-ai/files
     volumes:
@@ -207,6 +209,7 @@ services:
       MODEL_EMBEDDING_BASE_URL: http://embedding:8080/v1
       # Embedding model of indexing and search (EA-35): a local embedding entry of the manifest.
       EMBEDDING_MODEL_REF: ${EMBEDDING_MODEL_REF:-bge-m3@2026.10}
+      RERANK_MODEL_REF: ${RERANK_MODEL_REF:-}
 
   # One-shot database migration: "ei-ai db upgrade" (Alembic to head, then the schema guard). Not started
   # by "up" itself: npm run up / npm run migrate / test-integration run it explicitly after db is healthy.
