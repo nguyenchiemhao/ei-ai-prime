@@ -78,7 +78,7 @@ class OrgFileStore:
         return self._root / str(tenant.org_id)
 
     async def put(
-        self, session: TenantExecutor, tenant: TenantContext | JobContext, data: bytes
+        self, session: TenantExecutor, tenant: TenantContext | JobContext, data: bytes | bytearray
     ) -> uuid.UUID:
         _check_tenant(tenant)
         file_id = uuid.uuid4()

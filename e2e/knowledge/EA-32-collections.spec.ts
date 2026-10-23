@@ -1331,7 +1331,7 @@ test("AC8 TC-8-3: the collection detail has the breadcrumb, title, badge, data h
     await expect(page.getByTestId("folders-panel")).toBeVisible();
     await expect(page.getByTestId("new-folder")).toHaveText("New folder");
     await expect(panel).toContainText("No folders yet.");
-    await expect(page.getByTestId("documents-placeholder")).toHaveText("No documents yet.");
+    await expect(page.getByTestId("documents-empty")).toHaveText("No documents yet.");
     const danger = page.getByTestId("delete-collection-row");
     await expect(danger).toContainText("Delete collection");
     await expect(danger).toContainText(COPY.deleteLine);

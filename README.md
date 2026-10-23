@@ -194,6 +194,8 @@ Add one line to `ROUTE_CASES` in `backend/tests/integration/isolation/cases.py`,
 
 Every case also checks that the other Organization's rows **and Valkey keys** (`org:<other>:*`, values included) are unchanged afterwards and that none of its data landed in the caller's own rows (a route that copies across Organizations), that logs, headers and body hold nothing of it, that a call without credentials answers 401, and that an authenticated route depends on `require_tenant`. `body` builds the JSON body from the fixture rows (`OrgRows`); `ok_status` is the success status of the route (for example 201 for a create). The body builder runs for every request of the check (warm-up, cross call, positive control, anonymous call), so a create route with a unique constraint needs a body that differs per call, for example `body=lambda rows: {"name": f"ws-{uuid4()}"}`. The suite fails when a request model declares `id` (the database generates ids) or any field that names an Organization (`org_id`, `orgId`, `X-Tenant-Id`, ...). Answer an id of another Organization exactly like an unknown id (404 `{"detail": "not_found"}` is recommended) and never put ids in error bodies.
 
+**Routes with a raw body** (a file upload): give the `ResourceRoute` a `content` builder, `content=lambda rows: (b"qa text", {"X-File-Name": "qa-iso.txt", "Content-Type": "application/octet-stream"})`. The suite sends those bytes with those headers (`content=`) instead of a JSON `body`, in every request of the check, and `ok_status` is the success status (201 for an upload). Fixture ids still go through `resources`; an id query parameter of a list route (`?folder_id=`) is declared there too. The test app stores originals in a temporary directory and replaces the ingestion runner with a recording fake (`RecordingRunner` in `tests/support/isolation/client.py`), so no background job changes rows between the snapshots of a check. The header that carries the file name is data, never an Organization field: keep it out of any path.
+
 ### Adding a table
 
 A new table needs `org_id`, the standard policy and grants (see `docs/architecture/data-model.md`). Also add it to the fixtures: `create_org_rows`, `OrgRows` and `DELETE_ORDER` in `backend/tests/support/tenants.py`, so the cross-Organization tests, the snapshots and the cleanup include it.
@@ -235,12 +237,12 @@ Hard limits in `compose.yaml` (the model server is the large one) and what Docke
 | `model` | 6g | 3.4-4.7 GiB (varies with the page cache) |
 | `db` | 1g | 68 MiB |
 | `valkey` | 256m | 18 MiB |
-| `api` | 512m | 52 MiB |
+| `api` | 1g | 52 MiB (before document uploads, EA-33) |
 | `admin` | 64m | 11 MiB |
 | `widget` | 64m | 12 MiB |
 | `migrate` | 256m | one-shot, exits after migrating (not started by `up`) |
 
-The limits add up to about 7.9 GB, more than the 6.7-7.2 GB that Docker Desktop gives WSL2 by default; the measured use is lower (see Prerequisites for `.wslconfig`).
+The limits add up to about 8.4 GB, more than the 6.7-7.2 GB that Docker Desktop gives WSL2 by default; the measured use is lower (see Prerequisites for `.wslconfig`).
 
 ## Troubleshooting
 

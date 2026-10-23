@@ -6,3 +6,5 @@ one must be imported here (``import ei_ai.<area>.jobs  # noqa: F401``): the work
 tenant-isolation suite both import ``ei_ai.jobs``, which is how the suite sees the kind and
 demands its ``JobCase``. A handler module that nothing imports is invisible to both.
 """
+
+import ei_ai.knowledge.ingestion.job  # noqa: F401

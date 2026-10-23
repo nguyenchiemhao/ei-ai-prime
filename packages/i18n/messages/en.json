@@ -155,7 +155,7 @@
           "collection": "A collection with this name already exists.",
           "folder": "A folder with this name already exists here."
         },
-        "folderNotEmpty": "Delete its subfolders first.",
+        "folderNotEmpty": "Remove its subfolders and documents first.",
         "folderTooDeep": "Folders can be nested up to 3 levels.",
         "groupsRequired": "At least one group is required",
         "invalidGroup": "Group names must be 1–64 characters, without commas; at most 20 groups.",
@@ -198,6 +198,68 @@
         "delete": "Delete {{name}}",
         "documentsTitle": "Documents",
         "documentsEmpty": "No documents yet."
+      },
+      "documents": {
+        "uploadFiles": "Upload files",
+        "allDocuments": "All documents",
+        "dropTitle": "Drop files into {{name}}",
+        "dropHint": "PDF with text, DOCX, MD, TXT · up to 50 MB each",
+        "browse": "Browse",
+        "browseLabel": "Browse files",
+        "chooseFolder": "Choose a folder to upload files.",
+        "uploading": "Uploading…",
+        "folderEmpty": "No documents in this folder yet.",
+        "table": {
+          "label": "Documents",
+          "document": "Document",
+          "status": "Status",
+          "size": "Size",
+          "updated": "Updated",
+          "actions": "Actions"
+        },
+        "status": {
+          "queued": "Queued",
+          "processing": "Processing · {{percent}}%",
+          "ready": "Ready · {{count}} pages",
+          "readyOne": "Ready · 1 page",
+          "notSupported": "Not supported",
+          "failed": "Failed"
+        },
+        "reason": {
+          "scanned_pdf": "Scanned PDF without text. Text recognition (OCR) is planned for a later release.",
+          "corrupt_file": "The file could not be read. It may be damaged.",
+          "password_protected": "The file is password-protected.",
+          "no_text": "The file contains no text.",
+          "unreadable_encoding": "The text encoding could not be recognised. Save the file as UTF-8 and upload it again.",
+          "file_too_complex": "The file is too complex to process.",
+          "processing_error": "Something went wrong while processing the file.",
+          "interrupted": "Processing was interrupted. Remove the file and upload it again."
+        },
+        "previewText": "Preview text",
+        "previewLabel": "Preview text of {{name}}",
+        "remove": "Remove",
+        "removeLabel": "Remove {{name}}",
+        "preview": {
+          "loading": "Loading text…",
+          "close": "Close",
+          "truncated": "Showing the first 100,000 characters.",
+          "error": "The text could not be loaded. Try again."
+        },
+        "removeDialog": {
+          "title": "Remove {{name}}?",
+          "text": "The file and its extracted text are deleted.",
+          "confirm": "Remove",
+          "cancel": "Cancel",
+          "removed": "{{name}} was removed."
+        },
+        "reject": {
+          "unsupported": "{{name}} was not uploaded: this format is not supported. Supported formats: PDF with text, DOCX, MD, TXT.",
+          "tooLarge": "{{name}} was not uploaded: files can be up to 50 MB.",
+          "empty": "{{name}} was not uploaded: the file is empty.",
+          "quotaFull": "{{name}} was not uploaded: your organization's storage is full (1 GB).",
+          "invalidName": "{{name}} was not uploaded: the file name is not valid.",
+          "generic": "{{name}} was not uploaded. Try again."
+        }
       },
       "folderDialog": {
         "createTitle": "New folder",

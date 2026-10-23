@@ -652,7 +652,9 @@ const sessions = new Map<string, ApiSession>();
 /** A signed-in API session per account, signed in once and reused (sign-ins are rate limited). */
 export async function sessionFor(email: string, password = seedPassword()): Promise<ApiSession> {
   const cached = sessions.get(email);
-  if (cached) return cached;
+  // A spec earlier in the same worker may have ended this session (sign-out, password change):
+  // reuse the cached one only while the server still accepts it.
+  if (cached && (await cached.send("GET", "/api/auth/session")).status !== 401) return cached;
   const api = new ApiSession();
   const result = await api.signIn(email, password);
   expect(result.status, `sign-in of ${email}: ${result.text}`).toBe(200);
@@ -676,7 +678,13 @@ export function collectionsPath(workspaceId: string): string {
   return `/api/workspaces/${workspaceId}/collections`;
 }
 
-export type FolderItem = { id: string; name: string; parent_id: string | null; depth: number };
+export type FolderItem = {
+  id: string;
+  name: string;
+  parent_id: string | null;
+  depth: number;
+  document_count: number;
+};
 export type CollectionItem = {
   id: string;
   name: string;

@@ -42,6 +42,8 @@ pytestmark = pytest.mark.integration
 
 MEKONG_COUNTS = {
     "chunk_embeddings": 0,
+    "document_chunks": 0,
+    "documents": 0,
     "folders": 33,
     "collections": 8,
     "admin_sessions": 0,
@@ -59,6 +61,8 @@ MEKONG_COUNTS = {
 }
 SONG_HAN_COUNTS = {
     "chunk_embeddings": 0,
+    "document_chunks": 0,
+    "documents": 0,
     "folders": 3,
     "collections": 1,
     "admin_sessions": 0,

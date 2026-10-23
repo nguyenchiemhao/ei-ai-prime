@@ -72,6 +72,15 @@ FORGED_INSERTS = {
         "INSERT INTO chunk_embeddings (org_id, embedding)"
         " VALUES (:other_org, array_fill(0.1::real, ARRAY[1024])::vector)"
     ),
+    "documents": (
+        "INSERT INTO documents (org_id, collection_id, folder_id, name, format, size_bytes,"
+        " status, file_id) VALUES (:other_org, :other_collection, :other_folder, 'forged',"
+        " 'txt', 1, 'queued', gen_random_uuid())"
+    ),
+    "document_chunks": (
+        "INSERT INTO document_chunks (org_id, document_id, ordinal, text, char_start, char_end,"
+        " token_estimate) VALUES (:other_org, :other_document, 0, 'forged', 0, 1, 1)"
+    ),
 }
 
 
@@ -104,7 +113,10 @@ async def test_query_without_app_filter_returns_only_own_rows(
     async with app_engine.connect() as conn, tenant_transaction(conn, two_orgs.a.org_id):
         ids = (await conn.execute(text(f"SELECT id FROM {table}"))).scalars().all()
 
-    assert ids == [two_orgs.a.row_id(table)]
+    expected = [two_orgs.a.row_id(table)]
+    if table == "folders":
+        expected.append(two_orgs.a.empty_folder_id)
+    assert sorted(ids) == sorted(expected)
 
 
 @pytest.mark.parametrize("table", TABLES)
@@ -155,6 +167,8 @@ async def test_insert_for_other_org_is_rejected_42501(
         "other_org": two_orgs.b.org_id,
         "other_ws": two_orgs.b.workspace_id,
         "other_collection": two_orgs.b.collection_id,
+        "other_folder": two_orgs.b.folder_id,
+        "other_document": two_orgs.b.document_id,
         "own_user": two_orgs.a.user_id,
     }
     params = {k: v for k, v in params.items() if f":{k}" in sql}

@@ -19,6 +19,15 @@ class FolderRow:
     parent_id: uuid.UUID | None
     name: str
     depth: int
+    document_count: int = 0
+
+
+# The documents directly in the folder, counted within the same organization and collection.
+_COUNT = (
+    "(SELECT count(*) FROM documents d WHERE d.org_id = folders.org_id"
+    " AND d.collection_id = folders.collection_id AND d.folder_id = folders.id)"
+)
+_COLUMNS = f"id, collection_id, parent_id, name, depth, {_COUNT} AS document_count"
 
 
 def _to_row(row: Any) -> FolderRow:
@@ -31,7 +40,7 @@ async def list_folder_rows(
     """The folders of one collection, by depth, then by name ignoring case."""
     result = await conn.execute(
         text(
-            "SELECT id, collection_id, parent_id, name, depth FROM folders"
+            f"SELECT {_COLUMNS} FROM folders"
             " WHERE org_id = :org AND collection_id = :collection"
             " ORDER BY depth, lower(name), id"
         ),
@@ -53,7 +62,7 @@ async def find_folder_row(
     if for_update:
         result = await conn.execute(
             text(
-                "SELECT id, collection_id, parent_id, name, depth FROM folders"
+                f"SELECT {_COLUMNS} FROM folders"
                 " WHERE org_id = :org AND collection_id = :collection AND id = :id FOR UPDATE"
             ),
             {"org": org_id, "collection": collection_id, "id": folder_id},
@@ -61,7 +70,7 @@ async def find_folder_row(
     else:
         result = await conn.execute(
             text(
-                "SELECT id, collection_id, parent_id, name, depth FROM folders"
+                f"SELECT {_COLUMNS} FROM folders"
                 " WHERE org_id = :org AND collection_id = :collection AND id = :id"
             ),
             {"org": org_id, "collection": collection_id, "id": folder_id},
@@ -84,7 +93,7 @@ async def insert_folder(
         text(
             "INSERT INTO folders (org_id, collection_id, parent_id, name, depth)"
             " VALUES (:org, :collection, :parent, :name, :depth)"
-            " RETURNING id, collection_id, parent_id, name, depth"
+            f" RETURNING {_COLUMNS}"
         ),
         {
             "org": org_id,
@@ -109,7 +118,7 @@ async def rename_folder_row(
         text(
             "UPDATE folders SET name = :name"
             " WHERE org_id = :org AND collection_id = :collection AND id = :id"
-            " RETURNING id, collection_id, parent_id, name, depth"
+            f" RETURNING {_COLUMNS}"
         ),
         {"org": org_id, "collection": collection_id, "id": folder_id, "name": name},
     )
@@ -124,6 +133,20 @@ async def has_subfolders(
         text(
             "SELECT EXISTS (SELECT 1 FROM folders"
             " WHERE org_id = :org AND collection_id = :collection AND parent_id = :id)"
+        ),
+        {"org": org_id, "collection": collection_id, "id": folder_id},
+    )
+    return bool(result.scalar_one())
+
+
+async def has_documents(
+    conn: AsyncConnection, org_id: uuid.UUID, collection_id: uuid.UUID, folder_id: uuid.UUID
+) -> bool:
+    """Whether the folder directly holds at least one document."""
+    result = await conn.execute(
+        text(
+            "SELECT EXISTS (SELECT 1 FROM documents"
+            " WHERE org_id = :org AND collection_id = :collection AND folder_id = :id)"
         ),
         {"org": org_id, "collection": collection_id, "id": folder_id},
     )

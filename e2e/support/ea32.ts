@@ -62,7 +62,7 @@ export const COPY = {
   forbidden: "You don't have permission to do this.",
   collectionTaken: "A collection with this name already exists.",
   folderTaken: "A folder with this name already exists here.",
-  folderNotEmpty: "Delete its subfolders first.",
+  folderNotEmpty: "Remove its subfolders and documents first.",
   folderTooDeep: "Folders can be nested up to 3 levels.",
   invalidGroup: "Group names must be 1–64 characters, without commas; at most 20 groups.",
   generic: "Something went wrong. Try again.",
@@ -146,7 +146,7 @@ export const ITEM_KEYS = [
   "updated_at",
   "used_by",
 ];
-export const FOLDER_KEYS = ["depth", "id", "name", "parent_id"];
+export const FOLDER_KEYS = ["depth", "document_count", "id", "name", "parent_id"];
 
 export function collectionsPath(workspaceId: string): string {
   return `/api/workspaces/${workspaceId}/collections`;

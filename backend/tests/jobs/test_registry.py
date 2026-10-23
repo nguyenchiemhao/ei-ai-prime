@@ -51,8 +51,8 @@ def test_an_unknown_kind_names_only_the_kind() -> None:
         JobRegistry().handler("no.such.job")
 
 
-def test_the_production_registry_starts_empty() -> None:
-    assert JOBS.kinds() == ()
+def test_the_production_registry_holds_document_ingestion() -> None:
+    assert JOBS.kinds() == ("knowledge.document.ingest",)
 
 
 async def test_the_runner_resolves_the_handler_before_opening_anything() -> None:

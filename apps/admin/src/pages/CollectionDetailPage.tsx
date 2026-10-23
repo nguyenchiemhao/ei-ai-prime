@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router";
 import {
@@ -13,8 +13,10 @@ import { usePageTitle } from "../components/usePageTitle";
 import { AccessBadge } from "../knowledge/AccessBadge";
 import { CollectionDialog } from "../knowledge/CollectionDialog";
 import { DeleteCollectionDialog } from "../knowledge/DeleteCollectionDialog";
-import { FoldersPanel } from "../knowledge/FoldersPanel";
+import { DocumentsPanel } from "../knowledge/DocumentsPanel";
+import { ALL_DOCUMENTS, FoldersPanel } from "../knowledge/FoldersPanel";
 import { knowledgeErrorKey } from "../knowledge/errors";
+import { orderAsTree } from "../knowledge/folderTree";
 import { areaPath } from "../shell/navigation";
 import { useWorkspaceAccess } from "../shell/WorkspaceAccessContext";
 import { NotFoundPage } from "./NotFoundPage";
@@ -30,7 +32,7 @@ const EDIT_MODE = "edit";
 
 /**
  * Knowledge, collection detail (CollectionDetail artboard): access and settings, the folder tree
- * and the delete action. Documents come with KB-02; only a placeholder shows here.
+ * with document counts, the upload drop zone, the document table and the delete action.
  */
 export function CollectionDetailPage() {
   const { t } = useTranslation();
@@ -47,6 +49,8 @@ export function CollectionDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [sending, setSending] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   usePageTitle(detail?.name ?? t("admin.knowledge.title"));
 
   useEffect(() => {
@@ -76,6 +80,14 @@ export function CollectionDetailPage() {
     const result = await getCollection(access.id, itemId);
     if (result.ok) setDetail(result.data);
     else if (result.status === NOT_FOUND) setNotFound(true);
+  }
+
+  // Reloads the collection to refresh the folder counts after files were uploaded.
+  async function refreshFolders() {
+    const result = await getCollection(access.id, itemId);
+    if (result.ok) {
+      setDetail((current) => (current ? { ...current, folders: result.data.folders } : current));
+    }
   }
 
   // Applies the saved collection, keeping the folders, and reports it.
@@ -116,6 +128,10 @@ export function CollectionDetailPage() {
     );
   }
 
+  const selectedFolder = detail.folders.find((item) => item.id === selectedId);
+  const defaultFolder = selectedId === ALL_DOCUMENTS ? undefined : orderAsTree(detail.folders)[0];
+  const folder = selectedFolder ?? defaultFolder ?? null;
+
   return (
     <main
       className="area-page knowledge-page"
@@ -142,39 +158,62 @@ export function CollectionDetailPage() {
             </span>
           </div>
         </div>
-        <button
-          type="button"
-          className="button-secondary"
-          data-testid="collection-settings"
-          onClick={() => {
-            setStatus(null);
-            setEditing(true);
-          }}
-        >
-          {t("admin.knowledge.detail.settings")}
-        </button>
+        <div className="knowledge-header-actions">
+          <button
+            type="button"
+            className="button-secondary"
+            data-testid="collection-settings"
+            onClick={() => {
+              setStatus(null);
+              setEditing(true);
+            }}
+          >
+            {t("admin.knowledge.detail.settings")}
+          </button>
+          <button
+            type="button"
+            className="button-primary"
+            data-testid="upload-files"
+            disabled={!folder}
+            title={folder ? undefined : t("admin.knowledge.documents.chooseFolder")}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {t("admin.knowledge.documents.uploadFiles")}
+          </button>
+        </div>
       </header>
       {status ? (
         <p className="knowledge-status" role="status" data-testid="knowledge-status">
           {status}
         </p>
       ) : null}
-      <FoldersPanel
-        workspaceId={access.id}
-        collectionId={detail.id}
-        folders={detail.folders}
-        onChange={(folders) =>
-          setDetail((current) => (current ? { ...current, folders } : current))
-        }
-        onSessionExpired={onSessionExpired}
-        onNotFound={() => void onFolderNotFound()}
-      />
-      <section className="members-card">
-        <h2 className="members-card-title">{t("admin.knowledge.detail.documentsTitle")}</h2>
-        <p className="folders-empty" data-testid="documents-placeholder">
-          {t("admin.knowledge.detail.documentsEmpty")}
-        </p>
-      </section>
+      <div className="collection-body">
+        <FoldersPanel
+          workspaceId={access.id}
+          collectionId={detail.id}
+          folders={detail.folders}
+          selectedId={folder?.id ?? ALL_DOCUMENTS}
+          onSelect={setSelectedId}
+          onChange={(folders) =>
+            setDetail((current) => (current ? { ...current, folders } : current))
+          }
+          onSessionExpired={onSessionExpired}
+          onNotFound={() => void onFolderNotFound()}
+        />
+        <div className="collection-main">
+          <DocumentsPanel
+            workspaceId={access.id}
+            collectionId={detail.id}
+            folder={folder}
+            inputRef={fileInputRef}
+            onChanged={() => void refreshFolders()}
+            onRemoved={(name) =>
+              setStatus(t("admin.knowledge.documents.removeDialog.removed", { name }))
+            }
+            onSessionExpired={onSessionExpired}
+          />
+        </div>
+      </div>
       <section className="danger-row" data-testid="delete-collection-row">
         <div>
           <h2 className="danger-label">{t("admin.knowledge.deleteCollection.label")}</h2>

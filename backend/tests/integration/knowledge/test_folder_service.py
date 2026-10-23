@@ -20,7 +20,7 @@ from ei_ai.rbac.access import PermissionDenied
 from support.rbac.orgs import RoleOrg
 from support.sign_in import in_tenant
 
-from .conftest import MakeOrg, run_as
+from .conftest import MakeOrg, add_document, run_as
 
 pytestmark = pytest.mark.integration
 
@@ -196,6 +196,47 @@ async def test_delete_with_children_is_refused(app_engine: AsyncEngine, make_org
         await _delete(app_engine, org, collection_id, parent.id)
     await _delete(app_engine, org, collection_id, child.id)
     await _delete(app_engine, org, collection_id, parent.id)
+
+
+async def test_folder_with_documents_cannot_be_deleted(
+    app_engine: AsyncEngine, make_org: MakeOrg
+) -> None:
+    org = await make_org()
+    collection_id = await _collection(app_engine, org)
+    folder = await _folder(app_engine, org, collection_id, "Policies")
+    document_id = await add_document(app_engine, org, collection_id, folder.id)
+
+    with pytest.raises(FolderNotEmpty):
+        await _delete(app_engine, org, collection_id, folder.id)
+    await in_tenant(
+        app_engine,
+        org.org_id,
+        "DELETE FROM documents WHERE org_id = :org AND id = :id",
+        {"id": document_id},
+    )
+    await _delete(app_engine, org, collection_id, folder.id)
+
+    assert len(await _audit(app_engine, org, folder.id)) == 2
+
+
+async def test_folder_document_count(app_engine: AsyncEngine, make_org: MakeOrg) -> None:
+    org = await make_org()
+    collection_id = await _collection(app_engine, org)
+    parent = await _folder(app_engine, org, collection_id, "Policies")
+    child = await _folder(app_engine, org, collection_id, "2026", parent.id)
+    await add_document(app_engine, org, collection_id, parent.id)
+    await add_document(app_engine, org, collection_id, parent.id, "ready")
+    await add_document(app_engine, org, collection_id, child.id, "failed")
+
+    async def work(conn: Any, tenant: Any, access: Any) -> list[FolderRow]:
+        return await folders.list_folders(conn, tenant, access, collection_id)
+
+    listed = await run_as(app_engine, org, "ke", work)
+    renamed = await _rename(app_engine, org, collection_id, parent.id, "Rules")
+
+    assert {row.name: row.document_count for row in listed} == {"Policies": 2, "2026": 1}
+    assert renamed.document_count == 2
+    assert child.document_count == 0
 
 
 async def test_rename_and_delete_are_audited(app_engine: AsyncEngine, make_org: MakeOrg) -> None:

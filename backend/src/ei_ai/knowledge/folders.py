@@ -30,6 +30,7 @@ from ei_ai.knowledge.folder_rows import (
     FolderRow,
     delete_folder_row,
     find_folder_row,
+    has_documents,
     has_subfolders,
     insert_folder,
     list_folder_rows,
@@ -45,7 +46,7 @@ _NAME_KEY = "folders_sibling_name_key"
 _MAX_DEPTH = 3
 
 
-async def _guard(
+async def guard_collection(
     conn: AsyncConnection, tenant: TenantContext, access: WorkspaceAccess, collection_id: uuid.UUID
 ) -> None:
     """Check the permission, then that the collection belongs to the caller's Workspace."""
@@ -88,7 +89,7 @@ async def list_folders(
     conn: AsyncConnection, tenant: TenantContext, access: WorkspaceAccess, collection_id: uuid.UUID
 ) -> list[FolderRow]:
     """The folders of a collection of the caller's Workspace, by depth, then name."""
-    await _guard(conn, tenant, access, collection_id)
+    await guard_collection(conn, tenant, access, collection_id)
     return await list_folder_rows(conn, tenant.org_id, collection_id)
 
 
@@ -102,7 +103,7 @@ async def create_folder(
     parent_id: uuid.UUID | None,
 ) -> FolderRow:
     """Create a folder at the top or under a parent of the same collection (up to 3 levels)."""
-    await _guard(conn, tenant, access, collection_id)
+    await guard_collection(conn, tenant, access, collection_id)
     depth = 1
     if parent_id is not None:
         parent = await _locked(conn, tenant, collection_id, parent_id)
@@ -138,7 +139,7 @@ async def rename_folder(
     name: str,
 ) -> FolderRow:
     """Rename a folder. The same name again changes nothing and writes no event."""
-    await _guard(conn, tenant, access, collection_id)
+    await guard_collection(conn, tenant, access, collection_id)
     current = await _locked(conn, tenant, collection_id, folder_id)
     cleaned = clean_name(name)
     if cleaned == current.name:
@@ -161,10 +162,12 @@ async def delete_folder(
     collection_id: uuid.UUID,
     folder_id: uuid.UUID,
 ) -> None:
-    """Delete a folder that has no subfolders."""
-    await _guard(conn, tenant, access, collection_id)
+    """Delete a folder that has no subfolders and no documents."""
+    await guard_collection(conn, tenant, access, collection_id)
     await _locked(conn, tenant, collection_id, folder_id)
     if await has_subfolders(conn, tenant.org_id, collection_id, folder_id):
+        raise FolderNotEmpty
+    if await has_documents(conn, tenant.org_id, collection_id, folder_id):
         raise FolderNotEmpty
     await delete_folder_row(conn, tenant.org_id, collection_id, folder_id)
     await _event(conn, tenant, access, folder_id, FOLDER_DELETED)

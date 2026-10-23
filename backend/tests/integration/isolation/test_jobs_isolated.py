@@ -1,6 +1,7 @@
 """AC3: a background job runs with the tenant context of its own Organization and cannot read or
 write the data of another one. The sample handlers stand in for "processing an Organization's
-document" (see ``sample_jobs.py``); the production ``JOBS`` registry is empty until KB-02.
+document" (see ``sample_jobs.py``); the production ``JOBS`` kinds (KB-02 document ingestion)
+are checked through their ``JobCase`` in ``cases.py``.
 """
 
 import logging

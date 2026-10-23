@@ -5,6 +5,7 @@ A new route without an entry fails CI with
 tests", for which kind to pick and how to fill it in.
 """
 
+from ei_ai.knowledge.ingestion.job import INGEST_DOCUMENT
 from support.isolation.cases import (
     JobCase,
     OwnTenantRoute,
@@ -84,7 +85,42 @@ ROUTE_CASES: tuple[RouteCase, ...] = (
     ResourceRoute(
         "DELETE",
         "/workspaces/{workspace_id}/collections/{collection_id}/folders/{folder_id}",
+        {
+            "workspace_id": "workspaces",
+            "collection_id": "collections",
+            "folder_id": "empty_folders",
+        },
+        ok_status=204,
+    ),
+    ResourceRoute(
+        "POST",
+        "/workspaces/{workspace_id}/collections/{collection_id}/folders/{folder_id}/documents",
         {"workspace_id": "workspaces", "collection_id": "collections", "folder_id": "folders"},
+        content=lambda r: (
+            b"qa text",
+            {"X-File-Name": "qa-iso.txt", "Content-Type": "application/octet-stream"},
+        ),
+        ok_status=201,
+    ),
+    ResourceRoute(
+        "GET",
+        "/workspaces/{workspace_id}/collections/{collection_id}/documents",
+        {"workspace_id": "workspaces", "collection_id": "collections", "folder_id": "folders"},
+    ),
+    ResourceRoute(
+        "GET",
+        "/workspaces/{workspace_id}/collections/{collection_id}/documents/{document_id}/text",
+        {"workspace_id": "workspaces", "collection_id": "collections", "document_id": "documents"},
+    ),
+    ResourceRoute(
+        "GET",
+        "/workspaces/{workspace_id}/collections/{collection_id}/documents/{document_id}/chunks",
+        {"workspace_id": "workspaces", "collection_id": "collections", "document_id": "documents"},
+    ),
+    ResourceRoute(
+        "DELETE",
+        "/workspaces/{workspace_id}/collections/{collection_id}/documents/{document_id}",
+        {"workspace_id": "workspaces", "collection_id": "collections", "document_id": "documents"},
         ok_status=204,
     ),
     ResourceRoute(
@@ -118,4 +154,6 @@ ROUTE_CASES: tuple[RouteCase, ...] = (
     ),
 )
 
-JOB_CASES: tuple[JobCase, ...] = ()
+JOB_CASES: tuple[JobCase, ...] = (
+    JobCase(INGEST_DOCUMENT, lambda rows: {"document_id": str(rows.document_id)}),
+)

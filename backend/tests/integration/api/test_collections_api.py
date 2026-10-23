@@ -85,7 +85,13 @@ async def test_list_and_detail_shapes(app_engine: AsyncEngine, make_org: MakeOrg
     assert set(listed.json()["collections"][0]) == ITEM_KEYS
     assert set(detail.json()) == ITEM_KEYS | {"folders"}
     assert detail.json()["folders"] == [
-        {"id": folder.json()["id"], "name": "P", "parent_id": None, "depth": 1}
+        {
+            "id": folder.json()["id"],
+            "name": "P",
+            "parent_id": None,
+            "depth": 1,
+            "document_count": 0,
+        }
     ]
 
 
@@ -336,6 +342,7 @@ async def test_folder_routes_codes(app_engine: AsyncEngine, make_org: MakeOrg) -
         "name": "Policies",
         "parent_id": None,
         "depth": 1,
+        "document_count": 0,
     }
     assert (duplicate.status_code, duplicate.json()) == (409, {"detail": "name_taken"})
     assert (second.status_code, third.json()["depth"]) == (201, 3)

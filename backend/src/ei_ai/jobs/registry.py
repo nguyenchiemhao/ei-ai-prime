@@ -37,6 +37,7 @@ class JobRegistry:
         return tuple(sorted(self._handlers))
 
 
-# Empty today. KB-02 (EA-33) registers document ingestion here and runs its queue tasks through
-# ``run_tenant_job``; every kind registered here needs a JobCase in the isolation suite.
+# KB-02 (EA-33) registers document ingestion (``knowledge.document.ingest``) here; the API's
+# in-process runner executes it through ``run_tenant_job``. Every kind registered here needs a
+# JobCase in the isolation suite.
 JOBS = JobRegistry()

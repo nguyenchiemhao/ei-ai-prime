@@ -191,6 +191,7 @@ Option tables show the licence (verified against the project's licence file or r
 - Ingestion jobs (parse, normalise, chunk, embed) are enqueued in the same transaction as the document row, so there is no lost-job window and no extra broker to isolate or secure (C6).
 - Each job stores the `org_id`; the worker sets the tenant context from it before any query. This is one of the side paths that D46 and P62 require the isolation suite to cover (FND-02).
 - Revisit if queue throughput becomes a bottleneck (section 11).
+- Amendment 2026-10-22 (KB-02, EA-33, ruling R2): document ingestion runs in an in-process runner inside the API (`ei_ai.knowledge.ingestion.runner`, asyncio tasks, at most 2 at once) that executes jobs only through `envelope_for` and `run_tenant_job`; the `queued` document row is the durable record, and a job lost with the process is shown as Failed · interrupted after 2 minutes. Procrastinate is not adopted yet because its tables have no `org_id` and would need an owner-approved schema-guard exception (`data-model.md`). The job contract (FND-02) is unchanged, so Procrastinate or a separate worker can replace the runner later without changing the handler. The text above is the original decision and is kept as it was.
 
 ### 3.11 Rate-limit store and cache
 

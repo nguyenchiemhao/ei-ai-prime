@@ -16,9 +16,12 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ei_ai.auth.principal import Principal
+from ei_ai.crypto.lifecycle import create_org_key
 from ei_ai.db.tenant import tenant_transaction
 from ei_ai.main import create_app
 from ei_ai.readiness import Readiness
+from ei_ai.storage.files import OrgFileStore
+from support.crypto import TEST_MASTER_KEY
 from support.identity import StaticBearerVerifier
 
 # (Organization role, {workspace key: Workspace role})
@@ -113,6 +116,8 @@ async def create_role_org(
                         "role": role,
                     },
                 )
+        # Uploads encrypt with the Organization's data key, as for a provisioned Organization.
+        await create_org_key(conn, org_id, TEST_MASTER_KEY)
     return RoleOrg(org_id=org_id, workspaces=workspace_ids, people=persons, suffix=suffix)
 
 
@@ -121,9 +126,13 @@ async def _ok() -> None:
 
 
 def role_app(
-    engine: AsyncEngine, orgs: Sequence[RoleOrg], extra_routers: Sequence[APIRouter] = ()
+    engine: AsyncEngine,
+    orgs: Sequence[RoleOrg],
+    extra_routers: Sequence[APIRouter] = (),
+    file_store: OrgFileStore | None = None,
 ) -> FastAPI:
-    """The production app where every person of ``orgs`` can authenticate with their token."""
+    """The production app where every person of ``orgs`` can authenticate with their token.
+    ``file_store`` is where originals go (none: uploads cannot store a file)."""
     principals = {
         person.token: Principal(user_id=person.user_id, org_id=org.org_id)
         for org in orgs
@@ -133,6 +142,7 @@ def role_app(
         readiness=Readiness(database=_ok, valkey=_ok),
         identity_verifiers=(StaticBearerVerifier(principals),),
         engine=engine,
+        file_store=file_store,
     )
     for router in extra_routers:
         app.include_router(router)
@@ -141,9 +151,12 @@ def role_app(
 
 @asynccontextmanager
 async def role_client(
-    engine: AsyncEngine, *orgs: RoleOrg, extra_routers: Sequence[APIRouter] = ()
+    engine: AsyncEngine,
+    *orgs: RoleOrg,
+    extra_routers: Sequence[APIRouter] = (),
+    file_store: OrgFileStore | None = None,
 ) -> AsyncIterator[httpx.AsyncClient]:
-    app = role_app(engine, orgs, extra_routers)
+    app = role_app(engine, orgs, extra_routers, file_store)
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app), base_url="http://test"
     ) as client:

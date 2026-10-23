@@ -2,13 +2,16 @@
 are called directly (no route), so a removed ``ensure`` cannot hide behind a route dependency."""
 
 import uuid
+from pathlib import Path
 from typing import Any
 
 import pytest
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ei_ai.db.tenant import tenant_transaction
 from ei_ai.knowledge import service
+from ei_ai.knowledge.documents import delete_originals
 from ei_ai.knowledge.errors import (
     CollectionNotFound,
     GroupsRequired,
@@ -16,12 +19,18 @@ from ei_ai.knowledge.errors import (
     InvalidKnowledgeInput,
     NameTaken,
 )
-from ei_ai.knowledge.rows import CollectionRow, insert_collection
+from ei_ai.knowledge.rows import (
+    CollectionRow,
+    DocumentCounts,
+    document_counts,
+    insert_collection,
+)
 from ei_ai.rbac.access import PermissionDenied
+from ei_ai.tenancy.context import TenantContext
 from support.rbac.orgs import RoleOrg
 from support.sign_in import in_tenant
 
-from .conftest import MakeOrg, run_as
+from .conftest import MakeOrg, add_document, file_store, run_as
 
 pytestmark = pytest.mark.integration
 
@@ -539,3 +548,70 @@ async def test_list_uses_one_query_for_100_collections(
     names = [row.name.lower() for row in rows]
     assert names == sorted(names)
     assert rows[0].name.startswith("A-") and rows[-1].name.startswith("b-")
+
+
+async def test_collection_delete_removes_documents_chunks_and_files(
+    app_engine: AsyncEngine, make_org: MakeOrg, tmp_path: Path
+) -> None:
+    org = await make_org()
+    row = await _create(app_engine, org, "ke")
+    folder = uuid.uuid4()
+    await in_tenant(
+        app_engine,
+        org.org_id,
+        "INSERT INTO folders (id, org_id, collection_id, name, depth)"
+        " VALUES (:folder, :org, :c, 'Policies', 1)",
+        {"folder": folder, "c": row.id},
+    )
+    tenant = TenantContext(org_id=org.org_id, user_id=org.user("ke"))
+    storage = file_store(tmp_path)
+    async with app_engine.connect() as conn, tenant_transaction(conn, org.org_id):
+        file_ids = [await storage.put(conn, tenant, b"data") for _ in range(2)]
+    first = await add_document(app_engine, org, row.id, folder, "ready", file_ids[0])
+    await add_document(app_engine, org, row.id, folder, file_id=file_ids[1])
+    await in_tenant(
+        app_engine,
+        org.org_id,
+        "INSERT INTO document_chunks (org_id, document_id, ordinal, text, char_start, char_end,"
+        " token_estimate) VALUES (:org, :d, 0, 'qa', 0, 2, 1)",
+        {"d": first},
+    )
+
+    async def work(conn: Any, tenant: Any, access: Any) -> list[uuid.UUID]:
+        return await service.delete_collection(conn, tenant, access, row.id)
+
+    deleted = await run_as(app_engine, org, "ke", work)
+    await delete_originals(storage, tenant, deleted)
+
+    assert sorted(deleted) == sorted(file_ids)
+    counts = await in_tenant(
+        app_engine,
+        org.org_id,
+        "SELECT (SELECT count(*) FROM documents WHERE org_id = :org),"
+        " (SELECT count(*) FROM document_chunks WHERE org_id = :org)",
+    )
+    assert tuple(counts[0]) == (0, 0)
+    assert [path for path in tmp_path.rglob("*") if path.is_file()] == []
+
+
+async def test_collection_summary_counts(app_engine: AsyncEngine, make_org: MakeOrg) -> None:
+    org = await make_org()
+    busy = await _create(app_engine, org, "ke", name="Busy")
+    empty = await _create(app_engine, org, "ke", name="Empty")
+    folder = uuid.uuid4()
+    await in_tenant(
+        app_engine,
+        org.org_id,
+        "INSERT INTO folders (id, org_id, collection_id, name, depth)"
+        " VALUES (:folder, :org, :c, 'Policies', 1)",
+        {"folder": folder, "c": busy.id},
+    )
+    for status in ("queued", "queued", "ready", "failed", "not_supported", "ready", "ready"):
+        await add_document(app_engine, org, busy.id, folder, status)
+
+    async def work(conn: Any, tenant: Any, access: Any) -> dict[uuid.UUID, DocumentCounts]:
+        return await document_counts(conn, tenant.org_id, [busy.id, empty.id])
+
+    counts = await run_as(app_engine, org, "ke", work)
+
+    assert counts == {busy.id: DocumentCounts(total=7, ready=3, processing=2, needs_attention=2)}

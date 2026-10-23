@@ -46,7 +46,7 @@ def unwrap_data_key(master: MasterKey, org_id: UUID, wrapped: bytes) -> bytes:
         raise DecryptionFailed() from None
 
 
-def seal(dek: bytes, org_id: UUID, plaintext: bytes) -> bytes:
+def seal(dek: bytes, org_id: UUID, plaintext: bytes | bytearray) -> bytes:
     """Encrypt ``plaintext`` for the Organization; ``ValueError`` above the size cap."""
     if len(plaintext) > MAX_PLAINTEXT_BYTES:
         raise ValueError("plaintext is larger than the maximum size")

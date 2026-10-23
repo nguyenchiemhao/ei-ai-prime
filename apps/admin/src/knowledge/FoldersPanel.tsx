@@ -5,11 +5,15 @@ import type { ApiResult } from "../api/client";
 import { FolderDeleteDialog } from "./FolderDeleteDialog";
 import { FolderDialog } from "./FolderDialog";
 import { knowledgeErrorKey } from "./errors";
+import { orderAsTree } from "./folderTree";
 
 interface Props {
   workspaceId: string;
   collectionId: string;
   folders: readonly FolderItem[];
+  /** The selected folder id, or ALL_DOCUMENTS. */
+  selectedId: string;
+  onSelect(id: string): void;
   onChange(folders: FolderItem[]): void;
   /** The session ended: the shell sends the user to sign in. */
   onSessionExpired(): void;
@@ -26,33 +30,16 @@ const UNAUTHENTICATED = 401;
 const NOT_FOUND = 404;
 const MAX_DEPTH = 3;
 
-// Orders a flat folder list as a tree: each folder is followed by its subfolders, siblings by name.
-// Input: folders (FolderItem[]). Output: FolderItem[]
-const orderAsTree = (folders: readonly FolderItem[]): FolderItem[] => {
-  const byParent = new Map<string | null, FolderItem[]>();
-  for (const item of folders) {
-    const siblings = byParent.get(item.parent_id ?? null) ?? [];
-    siblings.push(item);
-    byParent.set(item.parent_id ?? null, siblings);
-  }
-  const ordered: FolderItem[] = [];
-  const visit = (parentId: string | null) => {
-    const siblings = byParent.get(parentId) ?? [];
-    siblings.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
-    for (const item of siblings) {
-      ordered.push(item);
-      visit(item.id);
-    }
-  };
-  visit(null);
-  return ordered;
-};
+/** The selection value of the "All documents" entry. */
+export const ALL_DOCUMENTS = "all";
 
-/** The folders of a collection (nav "Folders"): add, rename and delete, up to 3 levels deep. */
+/** The folders of a collection (nav "Folders"): select, add, rename and delete, up to 3 levels deep. */
 export function FoldersPanel({
   workspaceId,
   collectionId,
   folders,
+  selectedId,
+  onSelect,
   onChange,
   onSessionExpired,
   onNotFound,
@@ -109,6 +96,8 @@ export function FoldersPanel({
     );
   }
 
+  const totalCount = folders.reduce((sum, item) => sum + item.document_count, 0);
+
   return (
     <>
       <nav
@@ -127,6 +116,18 @@ export function FoldersPanel({
             {t("admin.knowledge.detail.newFolder")}
           </button>
         </div>
+        <button
+          type="button"
+          className="folder-select all-documents"
+          data-testid="all-documents"
+          aria-current={selectedId === ALL_DOCUMENTS ? "true" : undefined}
+          onClick={() => onSelect(ALL_DOCUMENTS)}
+        >
+          <span className="folder-name">{t("admin.knowledge.documents.allDocuments")}</span>
+          <span className="folder-count" data-testid="folder-count">
+            {totalCount}
+          </span>
+        </button>
         {folders.length === 0 ? (
           <p className="folders-empty">{t("admin.knowledge.detail.noFolders")}</p>
         ) : (
@@ -139,7 +140,18 @@ export function FoldersPanel({
                 data-folder-id={item.id}
                 data-depth={item.depth}
               >
-                <span className="folder-name">{item.name}</span>
+                <button
+                  type="button"
+                  className="folder-select"
+                  data-testid="folder-select"
+                  aria-current={selectedId === item.id ? "true" : undefined}
+                  onClick={() => onSelect(item.id)}
+                >
+                  <span className="folder-name">{item.name}</span>
+                  <span className="folder-count" data-testid="folder-count">
+                    {item.document_count}
+                  </span>
+                </button>
                 <span className="folder-actions">
                   {item.depth < MAX_DEPTH ? (
                     <button

@@ -163,3 +163,15 @@ async def test_store_rejects_non_uuid_ids(
         await store.delete(_tenant(org), "../x")  # type: ignore[arg-type]
     with pytest.raises(TypeError):
         await store.delete(org.org_id, uuid.uuid4())  # type: ignore[arg-type]
+
+
+async def test_put_accepts_bytearray(
+    app_engine: AsyncEngine, two_orgs: TwoOrgs, store: OrgFileStore
+) -> None:
+    org = two_orgs.a
+    data = bytearray(TEXT_SAMPLE)
+    async with app_engine.connect() as conn, tenant_transaction(conn, org.org_id):
+        file_id = await store.put(conn, _tenant(org), data)
+        restored = await store.get(conn, _tenant(org), file_id)
+
+    assert restored == bytes(data), "decrypted file differs from the input"

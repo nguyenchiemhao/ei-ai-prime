@@ -255,7 +255,7 @@ export interface paths {
         get: operations["get_collection_workspaces__workspace_id__collections__collection_id__get"];
         put?: never;
         post?: never;
-        /** Delete a collection and its folders */
+        /** Delete a collection with its folders, documents and stored originals */
         delete: operations["delete_collection_workspaces__workspace_id__collections__collection_id__delete"];
         options?: never;
         head?: never;
@@ -273,6 +273,74 @@ export interface paths {
         get?: never;
         /** Set who can read a collection */
         put: operations["change_access_workspaces__workspace_id__collections__collection_id__access_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/collections/{collection_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The documents of a collection, or of one folder, newest first */
+        get: operations["list_documents_workspaces__workspace_id__collections__collection_id__documents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/collections/{collection_id}/documents/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a document in any status, with its chunks and stored original */
+        delete: operations["remove_document_workspaces__workspace_id__collections__collection_id__documents__document_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/collections/{collection_id}/documents/{document_id}/chunks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The chunks of a ready document, by ordinal */
+        get: operations["get_document_chunks_workspaces__workspace_id__collections__collection_id__documents__document_id__chunks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/collections/{collection_id}/documents/{document_id}/text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The first 100 000 characters of the extracted text of a ready document */
+        get: operations["get_document_text_workspaces__workspace_id__collections__collection_id__documents__document_id__text_get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -307,12 +375,29 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete a folder that has no subfolders */
+        /** Delete a folder that has no subfolders and no documents */
         delete: operations["delete_folder_workspaces__workspace_id__collections__collection_id__folders__folder_id__delete"];
         options?: never;
         head?: never;
         /** Rename a folder */
         patch: operations["rename_folder_workspaces__workspace_id__collections__collection_id__folders__folder_id__patch"];
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/collections/{collection_id}/folders/{folder_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload one file into a folder (raw body, name in X-File-Name) */
+        post: operations["upload_document_workspaces__workspace_id__collections__collection_id__folders__folder_id__documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/workspaces/{workspace_id}/members": {
@@ -368,6 +453,28 @@ export interface components {
             access_level: "public" | "authenticated" | "restricted";
             /** Groups */
             groups: string[];
+        };
+        /** ChunkItem */
+        ChunkItem: {
+            /** Char End */
+            char_end: number;
+            /** Char Start */
+            char_start: number;
+            /** Heading Path */
+            heading_path: string[];
+            /** Ordinal */
+            ordinal: number;
+            /** Page */
+            page: number | null;
+            /** Text */
+            text: string;
+            /** Token Estimate */
+            token_estimate: number;
+        };
+        /** ChunkList */
+        ChunkList: {
+            /** Chunks */
+            chunks: components["schemas"]["ChunkItem"][];
         };
         /**
          * CollectionCreate
@@ -490,6 +597,55 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** DocumentItem */
+        DocumentItem: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Folder Id
+             * Format: uuid
+             */
+            folder_id: string;
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "pdf" | "docx" | "md" | "txt";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Page Count */
+            page_count: number | null;
+            /** Progress */
+            progress: number | null;
+            /** Reason */
+            reason: string | null;
+            /** Size Bytes */
+            size_bytes: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "processing" | "ready" | "failed" | "not_supported";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            uploaded_by: components["schemas"]["UploadedBy"] | null;
+        };
+        /** DocumentList */
+        DocumentList: {
+            /** Documents */
+            documents: components["schemas"]["DocumentItem"][];
+        };
         /** DocumentSummary */
         DocumentSummary: {
             /**
@@ -529,6 +685,8 @@ export interface components {
         FolderItem: {
             /** Depth */
             depth: number;
+            /** Document Count */
+            document_count: number;
             /**
              * Id
              * Format: uuid
@@ -548,6 +706,11 @@ export interface components {
         ForgotRequest: {
             /** Email */
             email: string;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
         };
         /** HealthStatus */
         HealthStatus: {
@@ -702,6 +865,25 @@ export interface components {
             /** Default Workspace Id */
             default_workspace_id: string | null;
         };
+        /** TextPreview */
+        TextPreview: {
+            /** Text */
+            text: string;
+            /** Total Characters */
+            total_characters: number;
+            /** Truncated */
+            truncated: boolean;
+        };
+        /** UploadedBy */
+        UploadedBy: {
+            /** Display Name */
+            display_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
         /** UsedBy */
         UsedBy: {
             /**
@@ -711,6 +893,19 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
         };
         /** WorkspaceInfo */
         WorkspaceInfo: {
@@ -1304,7 +1499,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorCode"];
                 };
             };
-            /** @description The name is taken or the folder has subfolders (name_taken, folder_not_empty) */
+            /** @description The name is taken or the folder has subfolders or documents (name_taken, folder_not_empty) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1492,7 +1687,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorCode"];
                 };
             };
-            /** @description The name is taken or the folder has subfolders (name_taken, folder_not_empty) */
+            /** @description The name is taken or the folder has subfolders or documents (name_taken, folder_not_empty) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1575,6 +1770,263 @@ export interface operations {
             };
         };
     };
+    list_documents_workspaces__workspace_id__collections__collection_id__documents_get: {
+        parameters: {
+            query?: {
+                folder_id?: string | null;
+            };
+            header?: never;
+            path: {
+                collection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentList"];
+                };
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown or invisible Workspace, collection, folder or document (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_document_workspaces__workspace_id__collections__collection_id__documents__document_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown or invisible Workspace, collection, folder or document (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_document_chunks_workspaces__workspace_id__collections__collection_id__documents__document_id__chunks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChunkList"];
+                };
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown or invisible Workspace, collection, folder or document (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The document is not ready (document_not_ready) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_document_text_workspaces__workspace_id__collections__collection_id__documents__document_id__text_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TextPreview"];
+                };
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown or invisible Workspace, collection, folder or document (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The document is not ready (document_not_ready) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_folder_workspaces__workspace_id__collections__collection_id__folders_post: {
         parameters: {
             query?: never;
@@ -1627,7 +2079,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorCode"];
                 };
             };
-            /** @description The name is taken or the folder has subfolders (name_taken, folder_not_empty) */
+            /** @description The name is taken or the folder has subfolders or documents (name_taken, folder_not_empty) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1694,7 +2146,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorCode"];
                 };
             };
-            /** @description The name is taken or the folder has subfolders (name_taken, folder_not_empty) */
+            /** @description The name is taken or the folder has subfolders or documents (name_taken, folder_not_empty) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1767,7 +2219,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorCode"];
                 };
             };
-            /** @description The name is taken or the folder has subfolders (name_taken, folder_not_empty) */
+            /** @description The name is taken or the folder has subfolders or documents (name_taken, folder_not_empty) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1777,6 +2229,91 @@ export interface operations {
                 };
             };
             /** @description Malformed request or an unacceptable value (invalid_request, groups_required, invalid_group, folder_too_deep) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+        };
+    };
+    upload_document_workspaces__workspace_id__collections__collection_id__folders__folder_id__documents_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The file name, percent-encoded UTF-8; any path part is dropped */
+                "X-File-Name"?: string | null;
+            };
+            path: {
+                collection_id: string;
+                folder_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentItem"];
+                };
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown or invisible Workspace, collection, folder or document (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Over the size limit or the storage quota (file_too_large, storage_quota_exceeded) */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unsupported file format (unsupported_format) */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Bad file name or an empty file (invalid_file_name, empty_file) */
             422: {
                 headers: {
                     [name: string]: unknown;
