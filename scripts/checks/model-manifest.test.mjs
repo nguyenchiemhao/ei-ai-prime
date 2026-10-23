@@ -22,8 +22,9 @@ const MANIFEST = path.join(
 );
 const manifest = JSON.parse(fs.readFileSync(MANIFEST, "utf8"));
 const chat = manifest.models.filter((entry) => entry.kind === "chat");
+const embedding = manifest.models.filter((entry) => entry.kind === "embedding");
 
-function modelDefaults() {
+function modelDefaults(service = "model") {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ei-ai-manifest-"));
   const file = path.join(dir, "test.env");
   const dummy = [
@@ -35,14 +36,23 @@ function modelDefaults() {
   ];
   fs.writeFileSync(file, dummy.map((name) => `${name}=dummy`).join("\n") + "\n");
   const env = { ...process.env };
-  for (const name of ["LLM_ALIAS", "LLM_MODEL_FILE", "LLM_MODEL_URL", "LLM_MODEL_SHA256"])
+  for (const name of [
+    "LLM_ALIAS",
+    "LLM_MODEL_FILE",
+    "LLM_MODEL_URL",
+    "LLM_MODEL_SHA256",
+    "EMBEDDING_MODEL_ALIAS",
+    "EMBEDDING_MODEL_FILE",
+    "EMBEDDING_MODEL_URL",
+    "EMBEDDING_MODEL_SHA256",
+  ])
     delete env[name];
   const result = compose(["--env-file", file, "--profile", "model", "config", "--format", "json"], {
     capture: true,
     env,
   });
   assert.equal(result.code, 0, result.stderr);
-  return JSON.parse(result.stdout).services.model.environment;
+  return JSON.parse(result.stdout).services[service].environment;
 }
 
 test("manifest_has_one_local_chat_entry", () => {
@@ -53,6 +63,25 @@ test("manifest_has_one_local_chat_entry", () => {
 test("manifest_chat_entry_pins_the_file_the_model_service_starts", () => {
   const defaults = modelDefaults();
   const [entry] = chat;
+  assert.equal(entry.model_id, defaults.LLM_ALIAS);
+  assert.equal(entry.digest, `sha256:${defaults.LLM_MODEL_SHA256}`);
+  const match = defaults.LLM_MODEL_URL.match(
+    /^https:\/\/huggingface\.co\/([^/]+\/[^/]+)\/resolve\/([0-9a-f]{40})\/(.+)$/,
+  );
+  assert.ok(match, `unexpected LLM_MODEL_URL ${defaults.LLM_MODEL_URL}`);
+  const [, repo, revision, file] = match;
+  assert.equal(file, defaults.LLM_MODEL_FILE);
+  assert.equal(entry.source_revision, `${repo}@${revision}/${file}`);
+});
+
+test("manifest_has_one_local_embedding_entry", () => {
+  assert.equal(embedding.length, 1);
+  assert.equal(embedding[0].deployment, "local");
+});
+
+test("manifest_embedding_entry_pins_the_file_the_embedding_service_starts", () => {
+  const defaults = modelDefaults("embedding");
+  const [entry] = embedding;
   assert.equal(entry.model_id, defaults.LLM_ALIAS);
   assert.equal(entry.digest, `sha256:${defaults.LLM_MODEL_SHA256}`);
   const match = defaults.LLM_MODEL_URL.match(

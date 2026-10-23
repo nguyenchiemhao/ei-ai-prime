@@ -13,6 +13,9 @@ MODULES = (
     "ei_ai.knowledge.ingestion.progress",
     "ei_ai.knowledge.ingestion.runtime",
     "ei_ai.knowledge.ingestion.runner",
+    "ei_ai.knowledge.indexing.job",
+    "ei_ai.knowledge.indexing.indexer",
+    "ei_ai.knowledge.indexing.embedder",
 )
 
 

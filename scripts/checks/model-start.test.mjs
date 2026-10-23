@@ -117,6 +117,43 @@ test("match_runs_the_server_with_the_alias_of_the_actual_hash", { skip: SKIP }, 
   assert.equal(box.curlArgs(), null, "a present file is not downloaded again");
 });
 
+test("server_args_default_to_the_chat_flags", { skip: SKIP }, () => {
+  const box = sandbox({ fileContent: "model-a" });
+
+  const result = box.run({ LLM_MODEL_SHA256: sha256("model-a") });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(box.serverArgs().slice(8), ["-c", "8192", "-t", "6", "--jinja"]);
+});
+
+test("server_args_are_passed_through", { skip: SKIP }, () => {
+  const box = sandbox({ fileContent: "model-a" });
+
+  const result = box.run({
+    LLM_MODEL_SHA256: sha256("model-a"),
+    LLM_SERVER_ARGS: "--embeddings --pooling cls -c 8192 -b 8192 -ub 8192 -t 6",
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(box.serverArgs().slice(4), [
+    "--host",
+    "0.0.0.0",
+    "--port",
+    "8080",
+    "--embeddings",
+    "--pooling",
+    "cls",
+    "-c",
+    "8192",
+    "-b",
+    "8192",
+    "-ub",
+    "8192",
+    "-t",
+    "6",
+  ]);
+});
+
 test("a_swapped_file_with_a_matching_env_sha_gets_a_new_alias", { skip: SKIP }, () => {
   // Attack 7: the file is replaced and LLM_MODEL_SHA256 edited to match; the alias must change.
   const box = sandbox({ fileContent: "model-b" });

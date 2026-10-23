@@ -1,10 +1,11 @@
-"""What the ingestion job needs besides its ``JobContext``: the encrypted file store of originals
-and the progress board (EA-33, R2). ``JobContext`` carries only the Organization and the session,
-so the runner sets the runtime around each job.
+"""What the knowledge jobs need besides their ``JobContext``: the encrypted file store of originals
+and the progress board (EA-33, R2), and the embedder of the index job (EA-35; None when indexing
+is off). ``JobContext`` carries only the Organization and the session, so the runner sets the
+runtime around each job.
 
-The job module imports this one while ``ei_ai.jobs`` is still initialising, so the file store and
-progress types are imported for type checking only: a runtime import would close an import cycle
-(``ei_ai.storage.files``/``progress`` -> ``ei_ai.jobs`` -> ``job`` -> here)."""
+The job modules import this one while ``ei_ai.jobs`` is still initialising, so the file store,
+progress and embedder types are imported for type checking only: a runtime import would close an
+import cycle (``ei_ai.storage.files``/``progress`` -> ``ei_ai.jobs`` -> ``job`` -> here)."""
 
 from __future__ import annotations
 
@@ -15,6 +16,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from ei_ai.knowledge.indexing.embedder import ChunkEmbedder
     from ei_ai.knowledge.ingestion.progress import ProgressBoard
     from ei_ai.storage.files import OrgFileStore
 
@@ -23,6 +25,7 @@ if TYPE_CHECKING:
 class IngestionRuntime:
     files: OrgFileStore
     progress: ProgressBoard
+    embedder: ChunkEmbedder | None = None
 
 
 _RUNTIME: ContextVar[IngestionRuntime | None] = ContextVar("ingestion_runtime", default=None)

@@ -62,7 +62,7 @@ const byProfile = (profile) =>
 test("compose_has_the_project_name_and_the_expected_services_per_profile", () => {
   assert.equal(resolved.name, "ei-ai");
   assert.deepEqual(byProfile("core"), ["admin", "api", "db", "valkey", "widget"]);
-  assert.deepEqual(byProfile("model"), ["model"]);
+  assert.deepEqual(byProfile("model"), ["embedding", "model"]);
   assert.deepEqual(byProfile("tools"), ["backend-tools", "migrate"]);
 });
 
@@ -125,6 +125,77 @@ test("api_and_backend_tools_call_the_local_model_and_have_no_egress_proxy_yet", 
   }
 });
 
+test("embedding_healthcheck_requires_the_checksummed_alias", () => {
+  const embedding = services.embedding;
+  assert.equal(embedding.environment.LLM_ALIAS, "bge-m3");
+  assert.deepEqual(embedding.healthcheck.test, [
+    "CMD-SHELL",
+    `curl -fsS http://localhost:8080/v1/models | grep -q '"id":"bge-m3@sha256-'`,
+  ]);
+  assert.equal(embedding.healthcheck.interval, "10s");
+  assert.equal(embedding.healthcheck.timeout, "5s");
+  assert.equal(Number(embedding.healthcheck.retries), 6);
+  assert.equal(seconds(embedding.healthcheck.start_period), 600);
+  assert.equal(Number(embedding.mem_limit), 2 * 1024 ** 3);
+});
+
+test("embedding_starts_through_the_checksum_script_with_a_file_pinned_at_a_commit", () => {
+  const embedding = services.embedding;
+  assert.equal(embedding.image, "ghcr.io/ggml-org/llama.cpp:server-b11580");
+  assert.deepEqual(embedding.entrypoint, ["/bin/sh", "/opt/ei-ai/start-model.sh"]);
+  assert.ok(!embedding.command, "the script builds the server command");
+  const env = embedding.environment;
+  assert.match(env.LLM_MODEL_FILE, /^[^/]+\.gguf$/);
+  assert.match(
+    env.LLM_MODEL_URL,
+    /^https:\/\/huggingface\.co\/.+\/resolve\/[0-9a-f]{40}\/.+\.gguf$/,
+  );
+  assert.ok(env.LLM_MODEL_URL.endsWith(`/${env.LLM_MODEL_FILE}`));
+  assert.match(env.LLM_MODEL_SHA256, /^[0-9a-f]{64}$/);
+  assert.equal(env.LLM_SERVER_ARGS, "--embeddings --pooling cls -c 8192 -b 8192 -ub 8192 -t 6");
+  const mounts = (embedding.volumes ?? []).map(
+    (v) => `${v.type} ${v.target} ${v.read_only === true}`,
+  );
+  assert.deepEqual(mounts.sort(), ["bind /opt/ei-ai true", "volume /models false"]);
+  const script = embedding.volumes.find((v) => v.target === "/opt/ei-ai");
+  assert.equal(path.resolve(script.source), path.join(ROOT, "infra", "model"));
+});
+
+test("api_and_backend_tools_call_the_local_embedding_server", () => {
+  for (const name of ["api", "backend-tools"])
+    assert.equal(services[name].environment.MODEL_EMBEDDING_BASE_URL, "http://embedding:8080/v1");
+});
+
+test("api_and_backend_tools_get_the_platform_embedding_model", () => {
+  for (const name of ["api", "backend-tools"])
+    assert.equal(services[name].environment.EMBEDDING_MODEL_REF, "bge-m3@2026.10");
+  const moved = JSON.parse(config({ ...DUMMY, EMBEDDING_MODEL_REF: "other@v2" }).stdout).services;
+  for (const name of ["api", "backend-tools"])
+    assert.equal(moved[name].environment.EMBEDDING_MODEL_REF, "other@v2");
+});
+
+test("embedding_pin_ignores_chat_overrides", () => {
+  const sha = "0".repeat(64);
+  const moved = JSON.parse(
+    config({ ...DUMMY, LLM_MODEL_SHA256: sha, LLM_MODEL_FILE: "x.gguf", LLM_ALIAS: "other" })
+      .stdout,
+  ).services;
+  assert.equal(moved.model.environment.LLM_MODEL_SHA256, sha);
+  assert.deepEqual(moved.embedding.environment, services.embedding.environment);
+  assert.deepEqual(moved.embedding.healthcheck, services.embedding.healthcheck);
+});
+
+test("embedding_pin_can_be_overridden_only_through_embedding_variables", () => {
+  const sha = "1".repeat(64);
+  const moved = JSON.parse(
+    config({ ...DUMMY, EMBEDDING_MODEL_SHA256: sha, EMBEDDING_MODEL_ALIAS: "other" }).stdout,
+  ).services;
+  assert.equal(moved.embedding.environment.LLM_MODEL_SHA256, sha);
+  assert.equal(moved.embedding.environment.LLM_ALIAS, "other");
+  assert.match(moved.embedding.healthcheck.test[1], /"id":"other@sha256-'$/);
+  assert.deepEqual(moved.model.environment, services.model.environment);
+});
+
 test("published_ports_are_fixed_and_loopback_only", () => {
   const published = Object.entries(services).flatMap(([name, service]) =>
     (service.ports ?? []).map((port) => ({
@@ -139,7 +210,7 @@ test("published_ports_are_fixed_and_loopback_only", () => {
     "api 127.0.0.1:8000",
     "widget 127.0.0.1:3001",
   ]);
-  for (const name of ["db", "valkey", "model", "backend-tools", "migrate"])
+  for (const name of ["db", "valkey", "model", "embedding", "backend-tools", "migrate"])
     assert.equal(services[name].ports, undefined, `${name} must not publish a port`);
   assert.ok(
     !published.some(({ port }) => port === 4001 || port === 4002),
@@ -315,7 +386,7 @@ test("master_key_only_on_api_and_backend_tools", () => {
       `${name} must get the interpolated master key`,
     );
   }
-  for (const name of ["db", "migrate", "valkey", "model", "admin", "widget"]) {
+  for (const name of ["db", "migrate", "valkey", "model", "embedding", "admin", "widget"]) {
     assert.ok(
       !("EI_AI_MASTER_KEY" in (services[name].environment ?? {})),
       `${name} must not get the master key`,

@@ -69,8 +69,11 @@ FORGED_INSERTS = {
         " VALUES (:other_org, decode(repeat('00', 60), 'hex'), '0000000000000000')"
     ),
     "chunk_embeddings": (
-        "INSERT INTO chunk_embeddings (org_id, embedding)"
-        " VALUES (:other_org, array_fill(0.1::real, ARRAY[1024])::vector)"
+        "INSERT INTO chunk_embeddings (org_id, embedding, chunk_id, document_id, workspace_id,"
+        " collection_id, folder_id, access_level, groups, model_id, model_version)"
+        " VALUES (:other_org, array_fill(0.1::real, ARRAY[1024])::vector, :other_chunk,"
+        " :other_document, :other_ws, :other_collection, :other_folder, 'authenticated', '{}',"
+        " 'bge-m3', '2026.10')"
     ),
     "documents": (
         "INSERT INTO documents (org_id, collection_id, folder_id, name, format, size_bytes,"
@@ -169,6 +172,7 @@ async def test_insert_for_other_org_is_rejected_42501(
         "other_collection": two_orgs.b.collection_id,
         "other_folder": two_orgs.b.folder_id,
         "other_document": two_orgs.b.document_id,
+        "other_chunk": two_orgs.b.chunk_id,
         "own_user": two_orgs.a.user_id,
     }
     params = {k: v for k, v in params.items() if f":{k}" in sql}

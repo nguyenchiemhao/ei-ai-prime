@@ -91,7 +91,13 @@ docker compose exec -T api ei-ai model try --org <ORG_ID> --model qwen3-4b-instr
 4. Copy it into each Organization that should use it: `ei-ai model add --org <ORG_ID> --model <model_id>@<version>`.
 5. Never edit a pin: a new file is always a new version (the database refuses the UPDATE). To retire a version, give 30 days' notice (D18): `UPDATE model_catalog SET status = 'retiring', retirement_date = '<date>' WHERE …`; from that date the gateway answers `MODEL_RETIRED`, and it never substitutes another version.
 
-GPU models (qwen3-8b/14b) are added the same way when SET-04/EVL-02 pin and measure them. The embedding and reranker rows are in the catalog, but their servers (`MODEL_EMBEDDING_BASE_URL`, `MODEL_RERANK_BASE_URL`) start with KB-04 (EA-35); until then `embed`/`rerank` answer `MODEL_UNAVAILABLE` without network access.
+GPU models (qwen3-8b/14b) are added the same way when SET-04/EVL-02 pin and measure them. The embedding server runs since KB-04 (EA-35): the compose service `embedding` (profile `model`, bge-m3 pinned by its own `EMBEDDING_MODEL_*` variables) at `MODEL_EMBEDDING_BASE_URL`. The reranker row is in the catalog, but its server (`MODEL_RERANK_BASE_URL`) is not started yet, so `rerank` answers `MODEL_UNAVAILABLE` without network access.
+
+## Embedding model of the index (EA-35)
+
+- After a document becomes `ready`, the API's ingestion runner queues the job `knowledge.document.index`: it embeds the document's chunks through `ModelGateway.embed` (batches of 16, actor `system`) and replaces the document's vectors in the Organization's partition, each tagged with the model id and version. A failure (`MODEL_UNAVAILABLE`, `MODEL_NOT_FOUND`, wrong vector size, missing partition) rolls the job back and logs `document_index_failed document_id=… org_id=… error=<code or class>`; the document stays `ready` and is not indexed. There is no automatic retry.
+- The model is a platform setting, `EMBEDDING_MODEL_REF` (default `bge-m3@2026.10`). It must name a manifest entry of kind `embedding` deployed locally (D4: documents and embeddings stay local); anything else aborts startup with `EMBEDDING_MODEL_REF must name a local embedding model of the platform manifest`. Every Organization needs that ref in its catalog (`ei-ai model add`; the demo seed adds it).
+- Changing the embedding model: add the new manifest entry (see above) and point the `embedding` service at its file, `ei-ai model add` it to each Organization, set `EMBEDDING_MODEL_REF`, restart, then run `ei-ai index reindex --org <id>` for each Organization. Queries only match vectors of the current model, so a document is found again once it is re-embedded.
 
 ## Measured overhead
 

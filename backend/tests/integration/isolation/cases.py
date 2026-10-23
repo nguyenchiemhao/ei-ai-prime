@@ -5,6 +5,7 @@ A new route without an entry fails CI with
 tests", for which kind to pick and how to fill it in.
 """
 
+from ei_ai.knowledge.indexing.job import INDEX_DOCUMENT
 from ei_ai.knowledge.ingestion.job import INGEST_DOCUMENT
 from support.isolation.cases import (
     JobCase,
@@ -156,4 +157,5 @@ ROUTE_CASES: tuple[RouteCase, ...] = (
 
 JOB_CASES: tuple[JobCase, ...] = (
     JobCase(INGEST_DOCUMENT, lambda rows: {"document_id": str(rows.document_id)}),
+    JobCase(INDEX_DOCUMENT, lambda rows: {"document_id": str(rows.document_id)}),
 )

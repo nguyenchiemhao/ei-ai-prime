@@ -7,16 +7,25 @@ from typing import Any
 
 import pytest
 
+from ei_ai.model_gateway.refs import ModelRef
 from ei_ai.tenancy.context import TenantContext
 from ei_ai.vectors.partitions import (
     create_vector_partition,
     drop_vector_partition,
     partition_name,
 )
-from ei_ai.vectors.search import EMBEDDING_DIMENSIONS, MAX_K, NEAREST_SQL, VectorHit, nearest
+from ei_ai.vectors.search import (
+    EMBEDDING_DIMENSIONS,
+    MAX_K,
+    NEAREST_SQL,
+    VectorFilter,
+    VectorHit,
+    nearest,
+)
 
 TENANT = TenantContext(org_id=uuid.uuid4(), user_id=uuid.uuid4())
 VALID = [0.0] * EMBEDDING_DIMENSIONS
+MODEL = ModelRef("bge-m3", "2026.10")
 
 
 class _NoDatabase:
@@ -48,23 +57,38 @@ def _with(index: int, value: float) -> list[float]:
 )
 async def test_nearest_validates_dimensions_k_and_finiteness(query: list[float], k: int) -> None:
     with pytest.raises(ValueError):
-        await nearest(_NoDatabase(), TENANT, query, k)  # type: ignore[arg-type]
+        await nearest(_NoDatabase(), TENANT, query, k, model=MODEL)  # type: ignore[arg-type]
 
 
 async def test_nearest_needs_the_verified_context() -> None:
     with pytest.raises(TypeError):
-        await nearest(_NoDatabase(), TENANT.org_id, VALID, 5)  # type: ignore[arg-type]
+        await nearest(_NoDatabase(), TENANT.org_id, VALID, 5, model=MODEL)  # type: ignore[arg-type]
 
 
 def test_the_constants_match_the_spec() -> None:
     assert (EMBEDDING_DIMENSIONS, MAX_K) == (1024, 40)
-    assert NEAREST_SQL == (
-        "SELECT id, embedding <=> CAST(:q AS vector) AS distance FROM chunk_embeddings"
-        " WHERE org_id = :org ORDER BY embedding <=> CAST(:q AS vector) LIMIT :k"
+    # The tenant filter and the model pin are part of the one statement.
+    assert (
+        " WHERE org_id = :org AND model_id = :model_id AND model_version = :model_version"
+        in NEAREST_SQL
     )
-    hit = VectorHit(id=TENANT.org_id, distance=0.5)
+    hit = VectorHit(
+        id=TENANT.org_id,
+        chunk_id=TENANT.org_id,
+        document_id=TENANT.org_id,
+        collection_id=TENANT.org_id,
+        distance=0.5,
+    )
     with pytest.raises(AttributeError):
         hit.distance = 0.1  # type: ignore[misc]
+
+
+def test_vector_filter_is_frozen_and_checks_levels() -> None:
+    assert VectorFilter() == VectorFilter(None, (), ())
+    with pytest.raises(ValueError):
+        VectorFilter(access_levels=("public", "admin"))
+    with pytest.raises(AttributeError):
+        VectorFilter().groups = ("x",)  # type: ignore[misc]
 
 
 def test_partition_name_is_derived_from_the_uuid() -> None:

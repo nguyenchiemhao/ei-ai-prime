@@ -2,7 +2,7 @@
 // per-Organization vector partitions. Profile api: no HTTP route, no browser. Black-box: the Platform
 // Operator CLI, psql as postgres / ei_ai_app, the migrator one-off container, the backend test suites
 // and the container logs. Written from .work/EA-20/contract.md only.
-// Runs against a running, migrated stack (migration head 0009, EI_AI_MASTER_KEY in .env):
+// Runs against a running, migrated stack (migration head 0011, EI_AI_MASTER_KEY in .env):
 //   npm run up && npm run migrate && npm run seed && npm run e2e -- e2e/foundation/EA-20-org-*
 // Test data: every Organization is named `qa-EA20-<run>-<tag>`; teardown (afterAll) drops the partitions
 // this run created, deletes the rows children first as the superuser (RLS is never altered) and proves
@@ -49,6 +49,8 @@ const PURGE_BY_ORG = [
   "user_credentials",
   "audit_events",
   "set_password_tokens",
+  "document_chunks",
+  "documents",
   "folders",
   "collections",
   "model_catalog",
@@ -229,14 +231,35 @@ function fixture(): Fixture {
   return fixtureMemo;
 }
 
-/** Inserts one row per vector expression for `org`, as ei_ai_app in its context; returns the new ids. */
+/**
+ * Inserts one complete vector row per vector expression for `org`, as ei_ai_app in its context:
+ * since EA-35 every vector belongs to a chunk of a ready document and carries its metadata, so this
+ * also creates a collection, a folder, a ready document and one chunk per vector. Returns the new
+ * vector ids in the order of `vectors`.
+ */
 function insertVectors(org: QaOrg, vectors: string[]): string[] {
-  const values = vectors.map((vector) => `('${org.id}', ${vector})`).join(", ");
+  const name = `${MARK}-vectors-${randomBytes(3).toString("hex")}`;
   const run = psqlAs(
     "ei_ai_app",
     inContext(
       org.id,
-      `insert into chunk_embeddings (org_id, embedding) values ${values} returning id;`,
+      `with ws as (select id from workspaces where org_id = '${org.id}' order by created_at, id limit 1),
+       c as (insert into collections (org_id, workspace_id, name, access_level)
+             select '${org.id}', id, '${name}', 'authenticated' from ws returning id, workspace_id),
+       f as (insert into folders (org_id, collection_id, name, depth)
+             select '${org.id}', id, 'qa', 1 from c returning id),
+       d as (insert into documents (org_id, collection_id, folder_id, name, format, size_bytes, status, chunk_count, file_id)
+             select '${org.id}', c.id, f.id, 'qa.txt', 'txt', 1, 'ready', ${vectors.length}, gen_random_uuid()
+             from c cross join f returning id),
+       v as (select u.embedding, (u.n - 1)::int as ordinal
+             from unnest(array[${vectors.join(", ")}]::vector[]) with ordinality as u(embedding, n)),
+       ch as (insert into document_chunks (org_id, document_id, ordinal, text, char_start, char_end, token_estimate)
+              select '${org.id}', d.id, v.ordinal, 'qa', 0, 2, 1 from d cross join v returning id, ordinal),
+       e as (insert into chunk_embeddings (org_id, embedding, chunk_id, document_id, workspace_id, collection_id,
+                                           folder_id, access_level, groups, model_id, model_version)
+             select '${org.id}', v.embedding, ch.id, d.id, c.workspace_id, c.id, f.id, 'authenticated', '{}', 'qa-ea20', '1'
+             from ch join v using (ordinal) cross join d cross join c cross join f returning id, chunk_id)
+       select e.id from e join ch on ch.id = e.chunk_id order by ch.ordinal;`,
       "commit",
     ),
   );
@@ -322,7 +345,7 @@ test.describe("EA-20 per-Organization encryption keys and vector partitions", ()
     masterKey(); // precondition: a generated key exists
     expect(
       sql("select count(*) from information_schema.tables where table_name = 'organization_keys'"),
-      "precondition: migration head 0009 is applied (npm run migrate)",
+      "precondition: migration head 0011 is applied (npm run migrate)",
     ).toBe("1");
     before = tableCounts();
   });
@@ -562,7 +585,8 @@ test.describe("EA-20 per-Organization encryption keys and vector partitions", ()
     for (const orgId of [DEMO_ORG, SONG_HAN_ORG]) {
       expect(snapshot[orgId], `one key row for ${orgId}`).toHaveLength(1);
       expect(sql(`select count(*) from chunk_embeddings where org_id = '${orgId}'`)).toBe("0");
-      expect(partitionExists(orgId), "the seed creates no vector partition").toBe(false);
+      // Since EA-35 `npm run seed` ensures the demo Organizations' vector partitions.
+      expect(partitionExists(orgId), "the seed ensures the vector partition").toBe(true);
     }
 
     const first = seed();
@@ -808,7 +832,12 @@ test.describe("EA-20 per-Organization encryption keys and vector partitions", ()
     expect(
       sql(`select string_agg(attname || ':' || format_type(atttypid, atttypmod), ',' order by attname)
            from pg_attribute where attrelid = 'chunk_embeddings'::regclass and attnum > 0 and not attisdropped`),
-    ).toBe("created_at:timestamp with time zone,embedding:vector(1024),id:uuid,org_id:uuid");
+    ).toBe(
+      // EA-35 added the chunk, document, location, access and model metadata columns.
+      "access_level:text,chunk_id:uuid,collection_id:uuid,created_at:timestamp with time zone," +
+        "document_id:uuid,embedding:vector(1024),folder_id:uuid,groups:text[],id:uuid," +
+        "model_id:text,model_version:text,org_id:uuid,workspace_id:uuid",
+    );
     expect(
       sql(`select count(*) from pg_inherits i join pg_class c on c.oid = i.inhrelid
            where i.inhparent = 'chunk_embeddings'::regclass and pg_get_expr(c.relpartbound, c.oid) = 'DEFAULT'`),
@@ -1005,7 +1034,7 @@ test.describe("EA-20 per-Organization encryption keys and vector partitions", ()
   });
 
   test(
-    "AC4 TC-4-7: partitions do not trip the schema guard (migrate stays idempotent at head 0009)",
+    "AC4 TC-4-7: partitions do not trip the schema guard (migrate stays idempotent at head 0011)",
     { tag: "@slow" },
     () => {
       fixture(); // partitions exist while the guard runs
@@ -1014,7 +1043,7 @@ test.describe("EA-20 per-Organization encryption keys and vector partitions", ()
         spawn(process.execPath, ["scripts/dev.mjs", "migrate"]),
       );
       expect(migrate.status, migrate.stdout + migrate.stderr).toBe(0);
-      expect(migrate.stdout + migrate.stderr).toContain("database revision: 0009");
+      expect(migrate.stdout + migrate.stderr).toContain("database revision: 0011");
       expect(migrate.stdout + migrate.stderr).toContain("schema guard: 0 violations");
     },
   );
