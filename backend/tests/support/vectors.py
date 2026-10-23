@@ -25,11 +25,15 @@ async def insert_vector(
     access_level: str = "authenticated",
     groups: Sequence[str] = (),
     chunk_id: uuid.UUID | None = None,
+    collection_id: uuid.UUID | None = None,
+    folder_id: uuid.UUID | None = None,
 ) -> uuid.UUID:
     """Inserts one vector in the org's fixture document and returns its id.
 
     ``conn`` must be inside ``tenant_transaction`` of ``org``. Without ``chunk_id`` a fresh chunk
-    is created first (a chunk has at most one vector).
+    is created first (a chunk has at most one vector). ``collection_id`` and ``folder_id`` default
+    to
+    the org's fixture collection and folder.
     """
     params = {"org": org.org_id, "document": org.document_id}
     if chunk_id is None:
@@ -57,8 +61,8 @@ async def insert_vector(
             "v": _literal(embedding),
             "chunk": chunk_id,
             "ws": org.workspace_id,
-            "collection": org.collection_id,
-            "folder": org.folder_id,
+            "collection": collection_id or org.collection_id,
+            "folder": folder_id or org.folder_id,
             "level": access_level,
             "groups": list(groups),
             "model_id": model.model_id,

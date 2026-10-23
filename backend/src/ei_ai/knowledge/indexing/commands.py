@@ -28,7 +28,8 @@ from ei_ai.knowledge.indexing.embedding_model import platform_embedding_ref
 from ei_ai.knowledge.indexing.index_rows import ready_document_ids
 from ei_ai.knowledge.indexing.indexer import index_document
 from ei_ai.knowledge.indexing.query import embed_query
-from ei_ai.knowledge.indexing.status_rows import chunk_ordinals, index_counts
+from ei_ai.knowledge.indexing.status_rows import chunk_ordinals, index_counts, org_collection_ids
+from ei_ai.knowledge.retrieval.command import add_retrieve_parser, run_retrieve_command
 from ei_ai.model_gateway.cli_common import (
     CommandFailed,
     CommandRefused,
@@ -62,6 +63,7 @@ def add_index_parsers(commands: "argparse._SubParsersAction[argparse.ArgumentPar
     search.add_argument("--query", required=True, metavar="TEXT")
     search.add_argument("--k", default=str(DEFAULT_K), metavar="N")
     search.add_argument("--collection", metavar="COLLECTION_ID")
+    add_retrieve_parser(actions)
 
 
 @asynccontextmanager
@@ -170,16 +172,10 @@ async def _search(
     async with build_embedder(engine) as embedder:
         ctx = ModelCallContext(org_id=org_id, actor=PLATFORM_OPERATOR)
         vector = await embed_query(embedder, ctx, query)
-        # Operator tool with no principal: unfiltered by access level on purpose (not a user
-        # path); only --collection narrows the search. A filter with no access levels matches
-        # nothing, so --collection lists every level.
-        where = (
-            VectorFilter(
-                collection_ids=(collection_id,), access_levels=tuple(sorted(ACCESS_LEVELS))
-            )
-            if collection_id
-            else None
-        )
+        # Operator tool with no principal: every access level on purpose (not a user path). The
+        # filter is always a collection list (the org's own, or --collection), never None, and
+        # an access-level list is always set, since a filter with no levels matches nothing.
+        all_levels = tuple(sorted(ACCESS_LEVELS))
         lines: list[str] = []
         # Only ``run_tenant_job`` builds the verified ``JobContext`` that ``nearest`` needs, so
         # the search runs as a one-off job on a private registry (not the global ``JOBS``).
@@ -187,6 +183,12 @@ async def _search(
 
         @registry.register("index.search")
         async def search_job(job: JobContext, payload: Mapping[str, object]) -> None:
+            collections = (
+                (collection_id,)
+                if collection_id
+                else await org_collection_ids(job.session, job.org_id)
+            )
+            where = VectorFilter(collection_ids=collections, access_levels=all_levels)
             hits = await nearest(job.session, job, vector, k, model=embedder.ref, where=where)
             ordinals = await chunk_ordinals(job.session, job.org_id, [h.chunk_id for h in hits])
             lines.extend(
@@ -204,6 +206,8 @@ async def _search(
 
 def run_index_command(args: argparse.Namespace) -> int:
     """Run one parsed ``index`` command; returns the exit code."""
+    if args.action == "retrieve":
+        return run_retrieve_command(args)
     is_search = args.action == "search"
     try:
         org_id = parse_org_id(args.org)

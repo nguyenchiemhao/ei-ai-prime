@@ -34,7 +34,8 @@ NEAREST_SQL = (
     " embedding <=> CAST(:q AS vector) AS distance FROM chunk_embeddings"
     " WHERE org_id = :org AND model_id = :model_id AND model_version = :model_version"
     " AND (CAST(:collections AS uuid[]) IS NULL"
-    " OR collection_id = ANY(CAST(:collections AS uuid[])))"
+    " OR collection_id = ANY(CAST(:collections AS uuid[]))"
+    " OR folder_id = ANY(CAST(:folders AS uuid[])))"
     " AND (NOT :filtered OR access_level = ANY(CAST(:levels AS text[]))"
     " OR groups && CAST(:groups AS text[]))"
     " ORDER BY embedding <=> CAST(:q AS vector) LIMIT :k"
@@ -45,17 +46,22 @@ NEAREST_SQL = (
 class VectorFilter:
     """Which vectors a caller may see (AC3).
 
-    ``collection_ids`` None means any collection. An entry matches when its access level is in
+    ``collection_ids`` None means any collection (an explicit choice; ``()`` matches nothing). An
+    entry is in scope when its collection is in ``collection_ids`` or its folder is in
+    ``folder_ids`` (folders need a collection list). It then matches when its access level is in
     ``access_levels`` or one of its groups is in ``groups``; with both empty nothing matches.
     """
 
     collection_ids: tuple[uuid.UUID, ...] | None = None
     access_levels: tuple[str, ...] = ()
     groups: tuple[str, ...] = ()
+    folder_ids: tuple[uuid.UUID, ...] = ()
 
     def __post_init__(self) -> None:
         if not ACCESS_LEVELS.issuperset(self.access_levels):
             raise ValueError("unknown access level")
+        if self.collection_ids is None and self.folder_ids:
+            raise ValueError("collection_ids must not be None when folder_ids are given")
 
 
 @dataclass(frozen=True)
@@ -83,12 +89,13 @@ async def nearest(
     k: int,
     *,
     model: ModelRef,
-    where: VectorFilter | None = None,
+    where: VectorFilter | None,
 ) -> list[VectorHit]:
     """The ``k`` vectors of the context's Organization nearest to ``query`` (cosine distance).
 
     Only vectors made by ``model`` count. With ``where`` the permission filter runs inside the
-    query; no ``where`` means no permission filter (the caller has none to apply).
+    query; ``where`` is required, and ``where=None`` means no permission filter and any collection
+    (only for callers that have no principal).
     """
     if not isinstance(tenant, TenantContext | JobContext):
         raise TypeError(
@@ -108,6 +115,7 @@ async def nearest(
         "filtered": where is not None,
         "levels": list(where.access_levels) if where is not None else [],
         "groups": list(where.groups) if where is not None else [],
+        "folders": list(where.folder_ids) if where is not None else [],
     }
     # Keep scanning the HNSW index until k rows pass the filter (pgvector >= 0.8).
     await session.execute(text("SELECT set_config('hnsw.iterative_scan', 'strict_order', true)"))

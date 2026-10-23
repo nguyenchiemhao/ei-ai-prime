@@ -9,7 +9,7 @@ MAX_GROUPS = 20
 MAX_GROUP_LENGTH = 64
 
 
-def _normalise_group(raw: str) -> str:
+def normalise_group(raw: str) -> str:
     """One group in NFC, trimmed and lower-cased; ``InvalidGroup`` when it is not acceptable."""
     group = unicodedata.normalize("NFC", raw).strip().lower()
     if not 1 <= len(group) <= MAX_GROUP_LENGTH:
@@ -24,7 +24,7 @@ def normalise_groups(raw: Sequence[str]) -> list[str]:
     ``InvalidGroup`` for a bad group or more than 20 groups."""
     seen: dict[str, None] = {}
     for item in raw:
-        seen.setdefault(_normalise_group(item), None)
+        seen.setdefault(normalise_group(item), None)
     if len(seen) > MAX_GROUPS:
         raise InvalidGroup
     return list(seen)

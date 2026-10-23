@@ -115,13 +115,18 @@ async def test_nearest_as_a_never_returns_b_even_when_b_is_nearest(
         a_far = await insert_vector(conn, a, _unit(1))  # distance 1
 
     async with app_engine.connect() as conn, tenant_transaction(conn, a.org_id):
-        route_hits = await nearest(conn, _tenant(a), query, MAX_K, model=DEFAULT_MODEL)
+        route_hits = await nearest(conn, _tenant(a), query, MAX_K, model=DEFAULT_MODEL, where=None)
     async with tenant_session(app_engine, a.org_id) as session:
         job_hits = await nearest(
-            session, JobContext(org_id=a.org_id, session=session), query, 1, model=DEFAULT_MODEL
+            session,
+            JobContext(org_id=a.org_id, session=session),
+            query,
+            1,
+            model=DEFAULT_MODEL,
+            where=None,
         )
     async with app_engine.connect() as conn, tenant_transaction(conn, b.org_id):
-        b_hits = await nearest(conn, _tenant(b), query, 1, model=DEFAULT_MODEL)
+        b_hits = await nearest(conn, _tenant(b), query, 1, model=DEFAULT_MODEL, where=None)
 
     assert [hit.id for hit in route_hits] == [a.chunk_embedding_id, a_far]
     assert route_hits[0].distance < route_hits[1].distance
@@ -146,6 +151,7 @@ async def test_query_plan_scans_only_the_own_partition(
         "filtered": True,
         "levels": ["public", "authenticated"],
         "groups": ["hr"],
+        "folders": [],
     }
 
     async with app_engine.connect() as conn, tenant_transaction(conn, a.org_id):
@@ -242,7 +248,7 @@ async def test_no_default_partition_and_org_without_partition_gets_nothing(
 
     tenant = TenantContext(org_id=bare_org, user_id=uuid.uuid4())
     async with app_engine.connect() as conn, tenant_transaction(conn, bare_org):
-        assert await nearest(conn, tenant, _unit(0), MAX_K, model=DEFAULT_MODEL) == []
+        assert await nearest(conn, tenant, _unit(0), MAX_K, model=DEFAULT_MODEL, where=None) == []
 
 
 def test_create_vector_partition_is_idempotent_and_rejects_unknown_org(
