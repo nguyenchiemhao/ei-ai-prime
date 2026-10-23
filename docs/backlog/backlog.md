@@ -87,12 +87,13 @@ Points are stored as `sp-N` labels (Story Points field not enabled in EA — see
 | KB-01 | EA-32 | Collections/Folders, 3 access levels, local-only | 5 | Highest | FND-06 |
 | KB-02 | EA-33 | Upload & process PDF/DOCX/MD/TXT | 8 | Highest | KB-01, FND-03, FND-11 |
 | KB-03 | EA-34 | XLSX/CSV row lookups | 5 | Medium | KB-02 |
-| KB-04 | EA-35 | Hybrid index (accent-stripped keywords + vectors) | 8 | Highest | KB-02, FND-07 |
+| KB-04 | EA-35 | Vector index per Organization (keyword half split to KB-10 on 2026-10-23) | 8 | Highest | KB-02, FND-07 |
 | KB-05 | EA-36 | Permission filter before the model + rerank | 8 | Highest | KB-04 |
 | KB-06 | EA-37 | RAG with citations, strict mode, "Ask this collection" | 8 | Highest | KB-05, EVL-03 |
 | KB-07 | EA-38 | Replace/delete documents with immediate effect | 5 | High | KB-04 |
 | KB-08 | EA-39 | Glossary + query expansion | 5 | High | KB-05 |
-| KB-09 ⓟ✔ | EA-87 | Spike: Vietnamese keyword tokenisation without an unlicensed segmenter (blocks KB-04) | 3 | High | — |
+| KB-09 ⓟ✔ | EA-87 | Spike: Vietnamese keyword tokenisation without an unlicensed segmenter (blocks KB-10) | 3 | High | — |
+| KB-10 ⓟ✔ | EA-95 | Accent-stripped keyword index + hybrid RRF ranking (deferred half of KB-04) | 5 | High | KB-09, KB-04 |
 | WGT-01 | EA-40 | Channel, allowed sites, signing keys, embed code | 8 | Highest | FND-12, FND-06 |
 | WGT-02 | EA-41 | Iframe widget + streaming | 8 | Highest | WGT-01, KB-06 |
 | WGT-03 | EA-42 | Host-signed JWT + group permissions | 8 | Highest | WGT-01, KB-05 |
@@ -156,7 +157,8 @@ flowchart LR
   SET02[SET-02 Licences] --> SET03
   SET03 --> FND01[FND-01 RLS] --> FND04[FND-04 CLI] --> FND05[FND-05 Sign-in] --> FND06[FND-06 RBAC]
   FND06 --> KB01[KB-01 Collection] --> KB02[KB-02 Upload] --> KB04[KB-04 Index] --> KB05[KB-05 Permission filter] --> KB06[KB-06 RAG]
-  KB09[KB-09 VI tokenisation] --> KB04
+  KB09[KB-09 VI tokenisation] --> KB10[KB-10 Keyword + hybrid]
+  KB04 --> KB10
   KB06 --> WGT02[WGT-02 Widget] --> PIPE01[PIPE-01 Gate]
   FND12[FND-12 Draft/Publish] --> WGT01[WGT-01 Channel] --> WGT02
   PIPE01 --> PIPE02[PIPE-02 Classifier] --> PIPE07[PIPE-07 Orchestrator]
@@ -194,6 +196,25 @@ Assumed **velocity 40 SP per 2-week sprint** (1 human reviewer + AI agent — re
 ### 5.3 Options to shorten the prototype
 
 Cut or move after M5 while keeping the three parts of the D3 positioning: KB-03 (5), PIPE-04 (3), PIPE-06 (3), WGT-07 (5), WGT-09 (5), ADM-04 (8 — cloud BYOK; the prototype runs local), E5 Jev (19) → **~48 SP saved (~1.2 sprints)**. WGT-11 is approved, so it is not on the cut list. Note D21: the owner wants to try Jev, so E5 is postponed, never dropped.
+
+### 5.4 Demo-first thin slice (owner, 2026-10-23)
+
+To reach a demo sooner (console Chat page, D67), the owner paused security hardening and runs this order:
+KB-02 (EA-33) → KB-04 vectors (EA-35) → KB-05 (EA-36) → KB-06 + EVL-03 (EA-37, EA-17) → WGT-13 + WGT-12
+console Chat (EA-90, EA-88) → PIPE-03 + simple matcher (EA-53) → SKL-04 + reduced SKL-03 (EA-63, EA-66) →
+optional WGT-01/02/10 with one fixed HS256 key.
+
+**To finish after the demo** (do not lose these):
+
+| Item | Ticket | What remains |
+|---|---|---|
+| Keyword half of KB-04 | EA-95 (KB-10), after EA-87 (KB-09) | AC2 accent-stripped search, AC5 segmentation + ADR, RRF, 300 ms p95 |
+| Log masking | EA-25 (FND-08) | paused |
+| Egress proxy | EA-27 (FND-10) | paused |
+| Full widget JWT, anonymous mode, encrypted conversations | EA-42, EA-43, EA-47 (WGT-03/04/08) | paused; demo uses the console session or one fixed HS256 key |
+| Gate / rate limit, Response Guard | EA-51, EA-58 (PIPE-01/08) | paused |
+| ADM-04/05, JEV-*, MVP-* | — | paused |
+| Shortcuts taken in the demo slice | each ticket's final Jira comment ("Follow-up") | e.g. KB-05 must always pass a permission filter to `nearest` |
 
 ## 6. Self-check
 
