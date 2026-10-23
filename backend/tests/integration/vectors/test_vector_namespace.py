@@ -30,6 +30,7 @@ from ei_ai.vectors.partitions import (
 )
 from ei_ai.vectors.search import EMBEDDING_DIMENSIONS, MAX_K, NEAREST_SQL, nearest
 from support.tenants import OrgRows, TwoOrgs, purge_org_ids
+from support.vectors import DEFAULT_MODEL, insert_vector
 
 pytestmark = [pytest.mark.integration, pytest.mark.isolation]
 
@@ -60,12 +61,17 @@ def _tenant(org: OrgRows) -> TenantContext:
     return TenantContext(org_id=org.org_id, user_id=org.user_id)
 
 
-async def _insert_vector(engine: AsyncEngine, org_id: uuid.UUID, values: list[float]) -> uuid.UUID:
+async def _insert_raw_vector(
+    engine: AsyncEngine, org_id: uuid.UUID, values: list[float]
+) -> uuid.UUID:
     async with engine.connect() as conn, tenant_transaction(conn, org_id):
         result = await conn.execute(
             text(
-                "INSERT INTO chunk_embeddings (org_id, embedding)"
-                " VALUES (:org, CAST(:v AS vector)) RETURNING id"
+                "INSERT INTO chunk_embeddings (org_id, embedding, chunk_id, document_id,"
+                " workspace_id, collection_id, folder_id, access_level, groups, model_id,"
+                " model_version) VALUES (:org, CAST(:v AS vector), gen_random_uuid(),"
+                " gen_random_uuid(), gen_random_uuid(), gen_random_uuid(), gen_random_uuid(),"
+                " 'authenticated', '{}', 'bge-m3', '2026.10') RETURNING id"
             ),
             {"org": org_id, "v": _literal(values)},
         )
@@ -103,15 +109,19 @@ async def test_nearest_as_a_never_returns_b_even_when_b_is_nearest(
 ) -> None:
     a, b = two_orgs.a, two_orgs.b
     query = _unit(0)
-    b_nearest = await _insert_vector(app_engine, b.org_id, query)  # distance 0: global nearest
-    a_far = await _insert_vector(app_engine, a.org_id, _unit(1))  # distance 1
+    async with app_engine.connect() as conn, tenant_transaction(conn, b.org_id):
+        b_nearest = await insert_vector(conn, b, query)  # distance 0: global nearest
+    async with app_engine.connect() as conn, tenant_transaction(conn, a.org_id):
+        a_far = await insert_vector(conn, a, _unit(1))  # distance 1
 
     async with app_engine.connect() as conn, tenant_transaction(conn, a.org_id):
-        route_hits = await nearest(conn, _tenant(a), query, MAX_K)
+        route_hits = await nearest(conn, _tenant(a), query, MAX_K, model=DEFAULT_MODEL)
     async with tenant_session(app_engine, a.org_id) as session:
-        job_hits = await nearest(session, JobContext(org_id=a.org_id, session=session), query, 1)
+        job_hits = await nearest(
+            session, JobContext(org_id=a.org_id, session=session), query, 1, model=DEFAULT_MODEL
+        )
     async with app_engine.connect() as conn, tenant_transaction(conn, b.org_id):
-        b_hits = await nearest(conn, _tenant(b), query, 1)
+        b_hits = await nearest(conn, _tenant(b), query, 1, model=DEFAULT_MODEL)
 
     assert [hit.id for hit in route_hits] == [a.chunk_embedding_id, a_far]
     assert route_hits[0].distance < route_hits[1].distance
@@ -126,7 +136,17 @@ async def test_query_plan_scans_only_the_own_partition(
     app_engine: AsyncEngine, two_orgs: TwoOrgs
 ) -> None:
     a = two_orgs.a
-    params = {"q": _literal(_unit(0)), "org": a.org_id, "k": 5}
+    params = {
+        "q": _literal(_unit(0)),
+        "org": a.org_id,
+        "k": 5,
+        "model_id": DEFAULT_MODEL.model_id,
+        "model_version": DEFAULT_MODEL.version,
+        "collections": [a.collection_id],
+        "filtered": True,
+        "levels": ["public", "authenticated"],
+        "groups": ["hr"],
+    }
 
     async with app_engine.connect() as conn, tenant_transaction(conn, a.org_id):
         await conn.execute(text("SET LOCAL plan_cache_mode = force_custom_plan"))
@@ -217,12 +237,12 @@ async def test_no_default_partition_and_org_without_partition_gets_nothing(
     assert "DEFAULT" not in bounds
 
     with pytest.raises(DBAPIError) as error:
-        await _insert_vector(app_engine, bare_org, _unit(0))
+        await _insert_raw_vector(app_engine, bare_org, _unit(0))
     assert getattr(error.value.orig, "sqlstate", None) == "23514"  # no partition for the row
 
     tenant = TenantContext(org_id=bare_org, user_id=uuid.uuid4())
     async with app_engine.connect() as conn, tenant_transaction(conn, bare_org):
-        assert await nearest(conn, tenant, _unit(0), MAX_K) == []
+        assert await nearest(conn, tenant, _unit(0), MAX_K, model=DEFAULT_MODEL) == []
 
 
 def test_create_vector_partition_is_idempotent_and_rejects_unknown_org(

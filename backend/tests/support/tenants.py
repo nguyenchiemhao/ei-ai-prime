@@ -349,10 +349,22 @@ async def create_org_rows(engine: AsyncEngine, label: str) -> OrgRows:
     async with engine.connect() as conn, tenant_transaction(conn, rows.org_id):
         await conn.execute(
             text(
-                "INSERT INTO chunk_embeddings (id, org_id, embedding)"
-                " VALUES (:id, :org, array_fill(0.1::real, ARRAY[1024])::vector)"
+                "INSERT INTO chunk_embeddings (id, org_id, embedding, chunk_id, document_id,"
+                " workspace_id, collection_id, folder_id, access_level, groups, model_id,"
+                " model_version)"
+                " VALUES (:id, :org, array_fill(0.1::real, ARRAY[1024])::vector, :chunk,"
+                " :document, :ws, :collection, :folder, 'authenticated', '{}', 'bge-m3',"
+                " '2026.10')"
             ),
-            {"id": rows.chunk_embedding_id, "org": rows.org_id},
+            {
+                "id": rows.chunk_embedding_id,
+                "org": rows.org_id,
+                "chunk": rows.chunk_id,
+                "document": rows.document_id,
+                "ws": rows.workspace_id,
+                "collection": rows.collection_id,
+                "folder": rows.folder_id,
+            },
         )
     return replace(rows, organization_key_id=key_id)
 

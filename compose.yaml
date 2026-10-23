@@ -79,6 +79,31 @@ services:
       start_period: 600s
     mem_limit: 6g
 
+  # Second llama.cpp server for the bge-m3 embedding model (EA-35, ~0.6 GB download on first start). Same
+  # checksum start script and the same rules as "model"; its pin has its own EMBEDDING_MODEL_* variables
+  # so a chat model override never moves it. Internal network only, no published port.
+  embedding:
+    image: ghcr.io/ggml-org/llama.cpp:server-b11580
+    profiles: ["model"]
+    entrypoint: ["/bin/sh", "/opt/ei-ai/start-model.sh"]
+    environment:
+      LLM_MODEL_FILE: ${EMBEDDING_MODEL_FILE:-bge-m3-q8_0.gguf}
+      LLM_MODEL_URL: ${EMBEDDING_MODEL_URL:-https://huggingface.co/ggml-org/bge-m3-Q8_0-GGUF/resolve/9eba04c5d75ba5a1595e45de734d36bef4e5cb98/bge-m3-q8_0.gguf}
+      LLM_MODEL_SHA256: ${EMBEDDING_MODEL_SHA256:-aa473d51f451a22f0fcf39ba3330c14bed38a385712b1113440f69df4047a173}
+      LLM_ALIAS: ${EMBEDDING_MODEL_ALIAS:-bge-m3}
+      LLM_SERVER_ARGS: "--embeddings --pooling cls -c 8192 -b 8192 -ub 8192 -t 6"
+    volumes:
+      - model-cache:/models
+      - ./infra/model:/opt/ei-ai:ro
+    healthcheck:
+      # Healthy only when /v1/models lists the checksummed alias, i.e. the verified model is loaded.
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/v1/models | grep -q '\"id\":\"${EMBEDDING_MODEL_ALIAS:-bge-m3}@sha256-'"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 600s
+    mem_limit: 2g
+
   api:
     build:
       context: ./backend
@@ -101,6 +126,10 @@ services:
       # Model Gateway (EA-24): the local llama.cpp server on the internal network (no egress proxy).
       # No EGRESS_PROXY_URL yet (FND-10): cloud model calls are refused (CLOUD_NOT_CONFIGURED).
       MODEL_LOCAL_BASE_URL: http://model:8080/v1
+      # Local embedding server (EA-35): bge-m3 on the internal network.
+      MODEL_EMBEDDING_BASE_URL: http://embedding:8080/v1
+      # Embedding model of indexing and search (EA-35): a local embedding entry of the manifest.
+      EMBEDDING_MODEL_REF: ${EMBEDDING_MODEL_REF:-bge-m3@2026.10}
       # Encrypted originals (EA-20 OrgFileStore) of uploaded documents (EA-33), one directory per Organization.
       FILE_STORAGE_ROOT: /var/lib/ei-ai/files
     volumes:
@@ -175,6 +204,9 @@ services:
       # Master key: the CLI and seed integration tests read it (EA-20).
       EI_AI_MASTER_KEY: ${EI_AI_MASTER_KEY:?run npm run up to create .env}
       MODEL_LOCAL_BASE_URL: http://model:8080/v1
+      MODEL_EMBEDDING_BASE_URL: http://embedding:8080/v1
+      # Embedding model of indexing and search (EA-35): a local embedding entry of the manifest.
+      EMBEDDING_MODEL_REF: ${EMBEDDING_MODEL_REF:-bge-m3@2026.10}
 
   # One-shot database migration: "ei-ai db upgrade" (Alembic to head, then the schema guard). Not started
   # by "up" itself: npm run up / npm run migrate / test-integration run it explicitly after db is healthy.

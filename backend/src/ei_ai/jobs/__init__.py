@@ -7,4 +7,5 @@ tenant-isolation suite both import ``ei_ai.jobs``, which is how the suite sees t
 demands its ``JobCase``. A handler module that nothing imports is invisible to both.
 """
 
+import ei_ai.knowledge.indexing.job  # noqa: F401
 import ei_ai.knowledge.ingestion.job  # noqa: F401

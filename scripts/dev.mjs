@@ -22,6 +22,7 @@ import {
 import { memoryWarning } from "./lib/memory-preflight.mjs";
 import { runMigrations } from "./lib/migrate.mjs";
 import { resetDatabase } from "./lib/reset.mjs";
+import { runPartitionSteps } from "./lib/seed-partitions.mjs";
 import { seedCommand, seedPassword } from "./lib/seed-password.mjs";
 
 /** The URLs printed after a successful start (the admin port follows ADMIN_PORT, as in compose.yaml). */
@@ -173,7 +174,10 @@ function reset() {
 function runSeed() {
   const value = process.env.EI_AI_SEED_PASSWORD || seedPassword(ROOT);
   const env = value ? { ...process.env, EI_AI_SEED_PASSWORD: value } : process.env;
-  return compose([...ALL_PROFILE_ARGS, ...seedCommand()], { env }).code;
+  const code = compose([...ALL_PROFILE_ARGS, ...seedCommand()], { env }).code;
+  if (code !== 0) return code;
+  // The demo Organizations also get their vector partition (EA-35); safe to repeat.
+  return runPartitionSteps(`${ROOT}/backend/src/ei_ai/seed/data`);
 }
 
 const [command, ...rest] = process.argv.slice(2);

@@ -9,6 +9,9 @@
 #    Model Gateway finds in GET /v1/models proves which file runs, so a newer build can never be
 #    called in place of a pinned one (D18).
 #
+# LLM_SERVER_ARGS (optional) replaces the default server flags "-c 8192 -t 6 --jinja"; the embedding
+# service (EA-35) uses it for "--embeddings --pooling cls ...".
+#
 # MODEL_DIR and LLAMA_SERVER_BIN exist for scripts/checks/model-start.test.mjs.
 set -eu
 
@@ -18,6 +21,7 @@ server="${LLAMA_SERVER_BIN:-/app/llama-server}"
 : "${LLM_MODEL_URL:?LLM_MODEL_URL is required}"
 : "${LLM_MODEL_SHA256:?LLM_MODEL_SHA256 is required}"
 : "${LLM_ALIAS:?LLM_ALIAS is required}"
+server_args="${LLM_SERVER_ARGS:--c 8192 -t 6 --jinja}"
 
 file="$model_dir/$LLM_MODEL_FILE"
 if [ ! -f "$file" ]; then
@@ -34,4 +38,5 @@ fi
 
 served="$LLM_ALIAS@sha256-$(printf %s "$actual" | cut -c1-12)"
 echo "model file sha256 verified; serving $served" >&2
-exec "$server" -m "$file" --alias "$served" --host 0.0.0.0 --port 8080 -c 8192 -t 6 --jinja
+# $server_args is word-split on purpose: it is a list of flags.
+exec "$server" -m "$file" --alias "$served" --host 0.0.0.0 --port 8080 $server_args

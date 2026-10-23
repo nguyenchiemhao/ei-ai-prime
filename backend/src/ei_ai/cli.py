@@ -1,6 +1,7 @@
 """Command line entry point: ``ei-ai seed demo``, ``ei-ai db upgrade``, ``ei-ai db current``,
 ``ei-ai db vector-partition`` and the Platform Operator commands ``org create``,
-``workspace create``, ``user invite``, ``user link``, ``model add`` and ``model try``.
+``workspace create``, ``user invite``, ``user link``, ``model add``, ``model try``,
+``index reindex``, ``index status`` and ``index search``.
 
 Exit codes: 0 done, 1 failed, 2 refused/usage.
 """
@@ -16,6 +17,7 @@ import psycopg
 from ei_ai.db.engine import CLI_CONNECT_TIMEOUT_SECONDS, to_libpq_url
 from ei_ai.db.migrate import current_revision, guard_violations, upgrade_head
 from ei_ai.db.migrations.roles import MigrationRoleError
+from ei_ai.knowledge.indexing.commands import add_index_parsers, run_index_command
 from ei_ai.model_gateway.commands import add_model_parsers, run_model_command
 from ei_ai.provisioning.commands import (
     COMMAND_GROUPS,
@@ -45,6 +47,7 @@ def _parser() -> argparse.ArgumentParser:
     partition.add_argument("--org", required=True, type=uuid.UUID, help="Organization id")
     add_provisioning_parsers(commands)
     add_model_parsers(commands)
+    add_index_parsers(commands)
     return parser
 
 
@@ -154,6 +157,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return run_provisioning_command(args)
     if args.command == "model":
         return run_model_command(args)
+    if args.command == "index":
+        return run_index_command(args)
     if args.action == "vector-partition":
         return _db_vector_partition(args.org)
     return _db_upgrade() if args.action == "upgrade" else _db_current()

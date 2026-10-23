@@ -97,6 +97,30 @@ const MEKONG = ORGS.mekong;
 const SONGHAN = ORGS.songhan;
 const ORG_LIST = ORG_IDS.map((id) => `'${id}'`).join(", ");
 
+// Since EA-35 `npm run seed` also ensures the vector partition of each demo Organization (one
+// `migrate` one-off run per Organization, sorted by id): two more stdout lines after the seed
+// output, and Compose's container progress lines on stderr. `ei-ai seed demo` alone does not.
+const PARTITION_PROGRESS = /^Container \S+ (Running|Waiting|Healthy|Creating|Created)$/;
+const SEED_FRESH_OUTPUT = [
+  ...FRESH_OUTPUT,
+  "vector partition created: <uuid>",
+  "vector partition created: <uuid>",
+];
+
+/** What `npm run seed` prints on a run that creates nothing. */
+function seedRepeatOutput(): string[] {
+  return [
+    ...repeatOutput(),
+    "vector partition already present: <uuid>",
+    "vector partition already present: <uuid>",
+  ];
+}
+
+/** The stderr lines of `npm run seed` other than Compose's container progress. */
+function seedErrors(stderr: string): string[] {
+  return lines(stderr).filter((line) => !PARTITION_PROGRESS.test(line.trim()));
+}
+
 let wsIds: Record<OrgKey, Record<string, string>>;
 let fresh: Run;
 let freshCounts: Record<OrgKey, Record<string, number>>;
@@ -300,8 +324,11 @@ test("AC1 TC-1-4: a person who sets a password still needs at least 12 character
 
 test("AC1 TC-1-5: the fresh seed prints exactly the contract output, nothing on stderr, exit code 0", async () => {
   expect(fresh.status).toBe(0);
-  expect(fresh.stderr).toBe("");
-  expect(normalizeOutput(fresh.stdout)).toEqual(FRESH_OUTPUT);
+  expect(seedErrors(fresh.stderr)).toEqual([]);
+  expect(normalizeOutput(fresh.stdout)).toEqual(SEED_FRESH_OUTPUT);
+  expect(lines(fresh.stdout).slice(-2)).toEqual(
+    [...ORG_IDS].sort().map((id) => `vector partition created: ${id}`),
+  );
   expect(fresh.stdout).toContain(`Organization: Mekong Devworks (${MEKONG.id}): created`);
   expect(fresh.stdout).toContain(`Organization: Sông Hàn Retail (${SONGHAN.id}): created`);
   const ids = [
@@ -792,10 +819,10 @@ test("AC5: a second and third `npm run seed` create nothing, print the same text
   const second = seed("repeat seed 2");
   for (const run of [first, second]) {
     expect(run.status, run.stderr).toBe(0);
-    expect(run.stderr).toBe("");
+    expect(seedErrors(run.stderr)).toEqual([]);
   }
   expect(second.stdout).toBe(first.stdout);
-  expect(normalizeOutput(first.stdout)).toEqual(repeatOutput());
+  expect(normalizeOutput(first.stdout)).toEqual(seedRepeatOutput());
   expect(lines(first.stdout).filter((line) => line.endsWith(": already present"))).toHaveLength(17);
   expect(first.stdout).not.toContain(": created");
   expect(first.stdout).toContain("Audit events written: 0");
@@ -822,7 +849,7 @@ test("AC5 TC-5-2: a password a user changed is kept by every later seed", async 
 
     const run = seed("seed after a password change");
     expect(run.status, run.stderr).toBe(0);
-    expect(normalizeOutput(run.stdout)).toEqual(repeatOutput());
+    expect(normalizeOutput(run.stdout)).toEqual(seedRepeatOutput());
     expect(passwordHashOf(MEKONG.id, uid), "the changed hash is kept").toBe(hashChanged);
 
     forgetSession(email);
@@ -888,7 +915,7 @@ test("AC5 TC-5-4: a user created outside the manifest never gets the shared pass
     const before = snapshot();
     const run = seed("seed with an outside user");
     expect(run.status, run.stderr).toBe(0);
-    expect(normalizeOutput(run.stdout)).toEqual(repeatOutput());
+    expect(normalizeOutput(run.stdout)).toEqual(seedRepeatOutput());
     expect(snapshot()).toEqual(before);
     expect(
       rows(

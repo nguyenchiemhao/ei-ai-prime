@@ -5,7 +5,9 @@ through real HTTP without any real network. Each test scripts the replies:
 
 - ``listed_ids``: the ids ``GET /v1/models`` lists (llama.cpp lists its alias);
 - ``models_replies`` / ``replies``: per-request ``Reply`` queues for ``/v1/models`` and for the
-  completion, embedding and rerank endpoints; an empty queue answers with ``Reply()``.
+  completion, embedding and rerank endpoints; an empty queue answers with ``Reply()``;
+- ``dimensions``: the size of every embedding (``[0.5, <position in the request>, -0.25]``, cut
+  or padded with zeros).
 
 Never imported by ``src``.
 """
@@ -68,6 +70,7 @@ class FakeModelServer:
     replies: deque[Reply] = field(default_factory=deque)
     requests: list[Recorded] = field(default_factory=list)
     base_url: str = ""
+    dimensions: int = 3
 
     def paths(self) -> list[str]:
         return [request.path for request in self.requests]
@@ -135,7 +138,7 @@ class FakeModelServer:
             return PlainTextResponse(reply.body, status_code=reply.status)
         inputs = body["input"] if isinstance(body["input"], list) else [body["input"]]
         data = [
-            {"object": "embedding", "index": index, "embedding": [0.5, float(index), -0.25]}
+            {"object": "embedding", "index": index, "embedding": self._vector(index)}
             for index, _ in enumerate(inputs)
         ]
         return JSONResponse(
@@ -149,6 +152,9 @@ class FakeModelServer:
                 },
             }
         )
+
+    def _vector(self, index: int) -> list[float]:
+        return ([0.5, float(index), -0.25] + [0.0] * self.dimensions)[: self.dimensions]
 
     async def rerank(self, request: Request) -> Response:
         body = await self._record(request)

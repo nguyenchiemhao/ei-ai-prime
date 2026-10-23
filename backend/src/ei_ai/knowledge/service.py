@@ -33,6 +33,7 @@ from ei_ai.knowledge.errors import (
     NameTaken,
 )
 from ei_ai.knowledge.groups import normalise_groups
+from ei_ai.knowledge.indexing.index_rows import sync_collection_access
 from ei_ai.knowledge.names import clean_name, clean_subtitle
 from ei_ai.knowledge.rows import (
     CollectionRow,
@@ -266,6 +267,7 @@ async def change_access(
         access_level=access_level,
         groups=cleaned_groups,
     )
+    await sync_collection_access(conn, tenant.org_id, collection_id, access_level, cleaned_groups)
     action = COLLECTION_ACCESS_CHANGED if level_changed else COLLECTION_GROUPS_CHANGED
     await _event(conn, tenant, access, collection_id, action, current.access_level, access_level)
     return row

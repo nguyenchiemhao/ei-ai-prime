@@ -12,7 +12,7 @@ from ei_ai.tenancy.context import TenantContext, is_org_field
 
 @dataclass(frozen=True)
 class JobEnvelope:
-    """``org_id`` is set only by :func:`envelope_for`."""
+    """``org_id`` is set only by :func:`envelope_for` (or copied by :func:`follow_up`)."""
 
     kind: str
     org_id: UUID
@@ -45,3 +45,14 @@ def envelope_for(tenant: TenantContext, kind: str, payload: Mapping[str, object]
     if _has_org_field(payload):
         raise ValueError("job payload must not carry an Organization field")
     return JobEnvelope(kind=kind, org_id=tenant.org_id, payload=dict(payload))
+
+
+def follow_up(envelope: JobEnvelope, kind: str, payload: Mapping[str, object]) -> JobEnvelope:
+    """The envelope of a job queued by the job of ``envelope``, for the same Organization.
+
+    The Organization is copied from the envelope that ran (built by :func:`envelope_for`), never
+    taken from the payload, so a payload that carries an Organization field is refused.
+    """
+    if _has_org_field(payload):
+        raise ValueError("job payload must not carry an Organization field")
+    return JobEnvelope(kind=kind, org_id=envelope.org_id, payload=dict(payload))

@@ -19,7 +19,7 @@ const FORGED = "0b9c1c3e-5f0a-4a52-9a53-2c0f1f6f7a11";
 // EA-24 (FND-07) added model_catalog (head 0005); EA-23 (FND-06) added the audit role-change columns (head 0006);
 // EA-32 added collections and folders (head 0007); EA-20 added organization_keys and the partitioned
 // chunk_embeddings with one partition per Organization (head 0009); EA-33 added documents and
-// document_chunks (head 0010).
+// document_chunks (head 0010); EA-35 added vector metadata (head 0011).
 const TABLES = [
   "admin_sessions",
   "audit_events",
@@ -38,7 +38,7 @@ const TABLES = [
   "workspace_memberships",
   "workspaces",
 ];
-const REVISION = "0010";
+const REVISION = "0011";
 const STANDARD_EXPRESSION = "NULLIF(current_setting('app.current_org'::text, true), ''::text)";
 
 /** Runs SQL through psql in the db container; returns stdout, stderr and the exit code. */

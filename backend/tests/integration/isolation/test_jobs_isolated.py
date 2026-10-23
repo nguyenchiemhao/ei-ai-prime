@@ -6,15 +6,22 @@ are checked through their ``JobCase`` in ``cases.py``.
 
 import logging
 import uuid
+from pathlib import Path
 
 import pytest
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ei_ai.crypto.cipher import OrgCipher
 from ei_ai.jobs.envelope import JobEnvelope
 from ei_ai.jobs.registry import JOBS
 from ei_ai.jobs.runner import run_tenant_job
+from ei_ai.knowledge.ingestion.progress import ProgressBoard
+from ei_ai.knowledge.ingestion.runtime import IngestionRuntime, use_runtime
+from ei_ai.storage.files import OrgFileStore
+from support.crypto import TEST_MASTER_KEY
+from support.fake_embedder import FakeEmbedder
 from support.isolation.cases import JobCase
 from support.isolation.jobs import assert_job_isolated, job_coverage_problems
 from support.isolation.snapshot import snapshot_org
@@ -151,7 +158,15 @@ def test_every_registered_job_has_an_isolation_case() -> None:
     ],
 )
 async def test_declared_jobs_are_isolated(
-    case: JobCase, me: str, other: str, app_engine: AsyncEngine, two_orgs: TwoOrgs
+    case: JobCase,
+    me: str,
+    other: str,
+    app_engine: AsyncEngine,
+    two_orgs: TwoOrgs,
+    tmp_path: Path,
 ) -> None:
     rows = {"A": two_orgs.a, "B": two_orgs.b}
-    await assert_job_isolated(app_engine, JOBS, case, rows[me], rows[other])
+    # What the API's runner gives every job: the file store, the progress board, an embedder.
+    files = OrgFileStore(tmp_path, OrgCipher(TEST_MASTER_KEY))
+    with use_runtime(IngestionRuntime(files, ProgressBoard(), FakeEmbedder())):
+        await assert_job_isolated(app_engine, JOBS, case, rows[me], rows[other])

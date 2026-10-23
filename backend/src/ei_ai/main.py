@@ -21,11 +21,15 @@ from ei_ai.auth.session_verifier import SessionCookieVerifier
 from ei_ai.crypto.cipher import OrgCipher
 from ei_ai.crypto.master_key import master_key_from_env
 from ei_ai.db.engine import create_app_engine
+from ei_ai.knowledge.indexing.embedder import ChunkEmbedder, GatewayEmbedder
+from ei_ai.knowledge.indexing.embedding_model import platform_embedding_ref
 from ei_ai.knowledge.ingestion.progress import ProgressBoard
 from ei_ai.knowledge.ingestion.runner import IngestionRunner
+from ei_ai.model_gateway.factory import build_gateway
+from ei_ai.model_gateway.gateway import ModelGateway
 from ei_ai.rbac.declarations import install_permission_handler
 from ei_ai.readiness import Readiness, build_readiness
-from ei_ai.settings import Settings
+from ei_ai.settings import ModelSettings, Settings
 from ei_ai.storage.files import OrgFileStore
 
 logger = logging.getLogger("uvicorn.error")
@@ -40,6 +44,7 @@ def create_app(
     rate_limiter: RateLimiter | None = None,
     environment: str | None = None,
     file_store: OrgFileStore | None = None,
+    embedder: ChunkEmbedder | None = None,
 ) -> FastAPI:
     """Build the app. Without ``readiness`` the settings are read from the environment at startup
     (fail fast, error names the variable only); they configure the CSRF origin, the sign-in rate
@@ -56,12 +61,18 @@ def create_app(
     master key of ``EI_AI_MASTER_KEY`` or ``EI_AI_MASTER_KEY_FILE`` (missing or malformed: startup
     aborts with a ``SettingsError`` naming the variable only); the runner is closed at shutdown
     before the engine is disposed.
+
+    After a document is ingested, the runner indexes it with ``embedder`` (EA-35). Without one, a
+    lifespan that reads the settings embeds through the Model Gateway with the platform embedding
+    model (``EMBEDDING_MODEL_REF``; invalid: startup aborts) and closes that gateway after the
+    runner; tests without a lifespan and without an embedder index nothing.
     """
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         owned_engine: AsyncEngine | None = None
         owned_directory: SignInDirectory | None = None
+        owned_gateway: ModelGateway | None = None
         if readiness is None:
             settings = Settings.from_env(os.environ)
             # Before anything that needs disposing: a missing master key aborts startup here.
@@ -69,9 +80,15 @@ def create_app(
                 app.state.file_store = OrgFileStore(
                     Path(settings.file_storage_root), OrgCipher(master_key_from_env(os.environ))
                 )
+            if embedder is None:
+                model_settings = ModelSettings.from_env(os.environ)
+                embedding_ref = platform_embedding_ref(os.environ)
             app.state.readiness = build_readiness(settings)
             if engine is None:
                 owned_engine = app.state.engine = create_app_engine(settings)
+            if embedder is None:
+                owned_gateway = build_gateway(model_settings, app.state.engine)
+                app.state.embedder = GatewayEmbedder(owned_gateway, embedding_ref)
             if sign_in_directory is None:
                 owned_directory = SignInDirectory(settings.signin_database_url)
                 app.state.sign_in_directory = owned_directory
@@ -83,6 +100,8 @@ def create_app(
             yield
         finally:
             await app.state.ingestion_runner.close()
+            if owned_gateway is not None:
+                await owned_gateway.aclose()
             if owned_directory is not None:
                 await owned_directory.dispose()
             if owned_engine is not None:
@@ -93,10 +112,14 @@ def create_app(
     app.state.engine = engine
     app.state.sign_in_directory = sign_in_directory
     app.state.file_store = file_store
+    app.state.embedder = embedder
     app.state.progress_board = ProgressBoard()
     app.state.clock = lambda: datetime.now(UTC)
     app.state.ingestion_runner = IngestionRunner(
-        lambda: app.state.engine, lambda: app.state.file_store, app.state.progress_board
+        lambda: app.state.engine,
+        lambda: app.state.file_store,
+        app.state.progress_board,
+        embedder=lambda: app.state.embedder,
     )
     app.state.identity_verifiers = (
         tuple(identity_verifiers)
