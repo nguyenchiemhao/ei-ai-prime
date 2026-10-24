@@ -216,6 +216,7 @@ optional WGT-01/02/10 with one fixed HS256 key.
 | ADM-04/05, JEV-*, MVP-* | — | paused |
 | Reranker server, AC6 hit@3, 800 ms p95 | EA-36 follow-up | rerank stage is built; no `--reranking` server runs (RAM); measure with EVL-02 |
 | AC1 with the real EVL-03 questions | EA-36 follow-up, after EA-17 | 10 permission questions are a test fixture today |
+| AC3 strict mode on the real EVL-03 set, AC5 first token ≤ 3 s, MIN_RELEVANCE calibration | EA-37 follow-up, via EVL-02 (EA-30) after EA-17 | fixture 10/10 and real model 10/10 on CPU; first token median 4.8 s on the dev machine |
 | Shortcuts taken in the demo slice | each ticket's final Jira comment ("Follow-up") | e.g. KB-05 must always pass a permission filter to `nearest` |
 
 ## 6. Self-check
