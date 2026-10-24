@@ -184,6 +184,12 @@ test("api_and_backend_tools_get_the_rerank_setting_empty_by_default", () => {
     assert.equal(set[name].environment.RERANK_MODEL_REF, "bge-reranker-v2-m3@2026.10");
 });
 
+test("api_gets_the_platform_chat_model", () => {
+  assert.equal(services.api.environment.CHAT_MODEL_REF, "qwen3-4b-instruct-2507@2026.10");
+  const moved = JSON.parse(config({ ...DUMMY, CHAT_MODEL_REF: "other@v2" }).stdout).services;
+  assert.equal(moved.api.environment.CHAT_MODEL_REF, "other@v2");
+});
+
 test("embedding_pin_ignores_chat_overrides", () => {
   const sha = "0".repeat(64);
   const moved = JSON.parse(

@@ -11,6 +11,7 @@ import { can } from "../api/permissions";
 import { useSession } from "../auth/SessionProvider";
 import { usePageTitle } from "../components/usePageTitle";
 import { AccessBadge } from "../knowledge/AccessBadge";
+import { AskPanel } from "../knowledge/AskPanel";
 import { CollectionDialog } from "../knowledge/CollectionDialog";
 import { DeleteCollectionDialog } from "../knowledge/DeleteCollectionDialog";
 import { DocumentsPanel } from "../knowledge/DocumentsPanel";
@@ -211,6 +212,13 @@ export function CollectionDetailPage() {
               setStatus(t("admin.knowledge.documents.removeDialog.removed", { name }))
             }
             onSessionExpired={onSessionExpired}
+          />
+          <AskPanel
+            key={detail.id}
+            workspaceId={access.id}
+            collection={detail}
+            onSessionExpired={onSessionExpired}
+            onNotFound={() => setNotFound(true)}
           />
         </div>
       </div>

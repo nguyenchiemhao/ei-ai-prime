@@ -280,6 +280,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspace_id}/collections/{collection_id}/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask a collection a question and stream the cited answer */
+        post: operations["ask_collection_workspaces__workspace_id__collections__collection_id__ask_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspace_id}/collections/{collection_id}/documents": {
         parameters: {
             query?: never;
@@ -453,6 +470,32 @@ export interface components {
             access_level: "public" | "authenticated" | "restricted";
             /** Groups */
             groups: string[];
+        };
+        /**
+         * AskPrincipal
+         * @description Who the answer is checked for. ``groups`` are validated by ``simulated_principal`` (up to
+         *     100 distinct names); the route refuses more than 100 items before normalising them.
+         */
+        AskPrincipal: {
+            /**
+             * Groups
+             * @default []
+             */
+            groups: string[];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "anonymous" | "authenticated";
+        };
+        /**
+         * AskRequest
+         * @description Only these fields: an ``org_id``, ``user_id`` or ``workspace_id`` is a 422.
+         */
+        AskRequest: {
+            principal: components["schemas"]["AskPrincipal"];
+            /** Question */
+            question: string;
         };
         /** ChunkItem */
         ChunkItem: {
@@ -1761,6 +1804,78 @@ export interface operations {
             };
             /** @description Malformed request or an unacceptable value (invalid_request, groups_required, invalid_group, folder_too_deep) */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+        };
+    };
+    ask_collection_workspaces__workspace_id__collections__collection_id__ask_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskRequest"];
+            };
+        };
+        responses: {
+            /** @description Server-Sent Events: passages, delta (0..n), then done or error */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            /** @description No live session (unauthenticated) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The role lacks the permission (forbidden) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Unknown or invisible Workspace or collection (not_found) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description Malformed request, identity field or unacceptable value (invalid_request, invalid_group) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorCode"];
+                };
+            };
+            /** @description The embedding or answer model is not available (model_unavailable) */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

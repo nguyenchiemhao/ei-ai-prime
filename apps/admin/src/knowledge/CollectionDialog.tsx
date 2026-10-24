@@ -12,6 +12,7 @@ import type { ApiResult } from "../api/client";
 import { useDialogKeys } from "../components/useDialogKeys";
 import { ConfirmPublicDialog } from "./ConfirmPublicDialog";
 import { knowledgeErrorKey } from "./errors";
+import { parseGroups } from "./groups";
 import { type AccessLevel, isAccessLevel } from "./labels";
 
 interface Props {
@@ -35,14 +36,6 @@ const UNAUTHENTICATED = 401;
 const NOT_FOUND = 404;
 const GROUPS_REQUIRED_KEY = "admin.knowledge.error.groupsRequired";
 const LEVELS: readonly AccessLevel[] = ["public", "authenticated", "restricted"];
-
-// Splits the Groups input on commas, trims and drops empties.
-// Input: text (string). Output: string[]
-const parseGroups = (text: string): string[] =>
-  text
-    .split(",")
-    .map((group) => group.trim())
-    .filter((group) => group !== "");
 
 // Lower-cases, NFC-normalises and de-duplicates groups the way the API stores them.
 // Input: groups (string[]). Output: string[]

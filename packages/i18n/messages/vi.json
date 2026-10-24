@@ -107,6 +107,26 @@
       }
     },
     "knowledge": {
+      "ask": {
+        "title": "Hỏi thử bộ tài liệu này",
+        "helper": "Kiểm tra tài liệu có trả lời được câu hỏi thực tế trước khi gắn vào trợ lý.",
+        "principalLabel": "Hỏi với tư cách",
+        "principal": {
+          "authenticated": "Người dùng đã đăng nhập",
+          "anonymous": "Khách ẩn danh"
+        },
+        "groupsLabel": "Nhóm",
+        "groupsHelp": "Cách nhau bằng dấu phẩy, ví dụ managers, hr",
+        "questionLabel": "Câu hỏi thử",
+        "questionPlaceholder": "Kết hôn được nghỉ mấy ngày?",
+        "submit": "Hỏi",
+        "passagesTitle": "Đoạn tài liệu tìm thấy",
+        "page": "tr. {{page}}",
+        "noPassages": "Không tìm thấy đoạn tài liệu nào cho câu hỏi này.",
+        "notFound": "Mình chưa tìm thấy thông tin này trong tài liệu.",
+        "modelUnavailable": "Mô hình hiện chưa sẵn sàng. Vui lòng thử lại sau ít phút.",
+        "invalidGroup": "Tên nhóm dài 1–64 ký tự, không chứa dấu phẩy; tối đa 100 nhóm."
+      },
       "title": "Kiến thức",
       "subtitle": "Bộ sưu tập chứa tài liệu của bạn. Quyền truy cập được đặt theo từng bộ sưu tập và được kiểm tra trước khi bất cứ nội dung nào đến mô hình.",
       "new": "Bộ sưu tập mới",

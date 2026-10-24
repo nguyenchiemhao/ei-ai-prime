@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { signIn } from "./auth";
-import { apiRequest, apiUpload, clearCsrfToken } from "./client";
+import { apiRequest, apiStream, apiUpload, clearCsrfToken } from "./client";
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), { status });
@@ -200,5 +200,81 @@ describe("apiUpload", () => {
       status: 415,
       code: "unsupported_format",
     });
+  });
+});
+
+function streamOf(chunks: string[], status = 200): Response {
+  const encoder = new TextEncoder();
+  return new Response(
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (const chunk of chunks) controller.enqueue(encoder.encode(chunk));
+        controller.close();
+      },
+    }),
+    { status },
+  );
+}
+
+describe("apiStream", () => {
+  it("sends_the_csrf_header_and_streams_chunks", async () => {
+    fetchMock
+      .mockResolvedValueOnce(json(200, { csrf_token: "tok" }))
+      .mockResolvedValueOnce(streamOf(["ab", "cà"]));
+    const chunks: string[] = [];
+
+    const result = await apiStream("/s", { q: 1 }, (text) => chunks.push(text));
+
+    expect(result).toEqual({ ok: true, data: undefined });
+    expect(callArg(1, 0)).toBe("/api/s");
+    const init = callArg(1, 1) as { method: string; body: string };
+    expect(init.method).toBe("POST");
+    expect(init.body).toBe('{"q":1}');
+    expect(headersOf(1)).toEqual({ "Content-Type": "application/json", "X-CSRF-Token": "tok" });
+    expect(chunks.join("")).toBe("abcà");
+  });
+
+  it.each([
+    [401, { detail: "unauthenticated" }, "unauthenticated"],
+    [404, { detail: "not_found" }, "not_found"],
+    [503, { detail: "model_unavailable" }, "model_unavailable"],
+  ])("maps_%i_like_apiRequest", async (status, body, code) => {
+    fetchMock
+      .mockResolvedValueOnce(json(200, { csrf_token: "t" }))
+      .mockResolvedValueOnce(json(status, body));
+    const onChunk = vi.fn();
+
+    expect(await apiStream("/s", {}, onChunk)).toEqual({ ok: false, status, code });
+    expect(onChunk).not.toHaveBeenCalled();
+  });
+
+  it("maps_a_body_less_502_to_unknown", async () => {
+    fetchMock
+      .mockResolvedValueOnce(json(200, { csrf_token: "t" }))
+      .mockResolvedValueOnce(new Response(null, { status: 502 }));
+
+    expect(await apiStream("/s", {}, vi.fn())).toEqual({ ok: false, status: 502, code: "unknown" });
+  });
+
+  it("reports_aborted", async () => {
+    fetchMock
+      .mockResolvedValueOnce(json(200, { csrf_token: "t" }))
+      .mockRejectedValueOnce(new DOMException("aborted", "AbortError"));
+    const controller = new AbortController();
+    controller.abort();
+
+    expect(await apiStream("/s", {}, vi.fn(), controller.signal)).toEqual({
+      ok: false,
+      status: 0,
+      code: "aborted",
+    });
+  });
+
+  it("maps_a_network_error", async () => {
+    fetchMock
+      .mockResolvedValueOnce(json(200, { csrf_token: "t" }))
+      .mockRejectedValueOnce(new TypeError("down"));
+
+    expect(await apiStream("/s", {}, vi.fn())).toEqual({ ok: false, status: 0, code: "network" });
   });
 });

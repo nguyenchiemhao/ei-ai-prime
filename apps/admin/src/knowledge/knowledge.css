@@ -533,3 +533,112 @@
   background: var(--ei-color-surface-sensitive-row);
   border-radius: var(--ei-radius-md);
 }
+
+/* Ask this collection (EA-37). */
+.ask-helper {
+  margin: var(--ei-space-1) 0 0;
+  font-size: var(--ei-font-size-md);
+  color: var(--ei-color-text-muted);
+}
+
+.ask-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ei-space-3);
+}
+
+.ask-principal-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ei-space-3);
+  align-items: flex-start;
+}
+
+.ask-groups {
+  flex: 1 1 240px;
+}
+
+.ask-question-row {
+  display: flex;
+  gap: var(--ei-space-2-5);
+  align-items: center;
+}
+
+.ask-question {
+  flex: 1;
+  min-width: 0;
+}
+
+.ask-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.ask-answer {
+  padding: var(--ei-space-3-5) var(--ei-space-4);
+  background: var(--ei-color-surface-widget-canvas);
+  border-radius: var(--ei-radius-lg);
+  font-size: var(--ei-font-size-base);
+  line-height: var(--ei-font-line-height-relaxed);
+  white-space: pre-wrap;
+  /* A long unbroken word or name wraps inside the panel instead of widening the page. */
+  overflow-wrap: anywhere;
+}
+
+.ask-citation {
+  font-size: var(--ei-font-size-sm);
+  font-weight: var(--ei-font-weight-semibold);
+  color: var(--ei-color-brand-text);
+}
+
+.ask-passages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ei-space-1-5);
+  line-height: normal;
+}
+
+.ask-passages-title {
+  margin: 0;
+  font-size: var(--ei-font-size-sm);
+  font-weight: var(--ei-font-weight-semibold);
+  color: var(--ei-color-text-muted);
+}
+
+.ask-passage-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ei-space-1-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ask-passage {
+  display: grid;
+  grid-template-columns: var(--ei-space-6) minmax(0, 1fr) auto;
+  gap: var(--ei-space-3);
+  font-size: var(--ei-font-size-md);
+  color: var(--ei-color-text-muted);
+}
+
+.ask-passage-source {
+  overflow-wrap: anywhere;
+}
+
+.ask-passage[data-cited="true"] {
+  color: var(--ei-color-text-primary);
+}
+
+.ask-passage-number {
+  font-weight: var(--ei-font-weight-semibold);
+  color: var(--ei-color-brand-text);
+}
+
+.ask-passage-score {
+  font-family: var(--ei-font-family-mono);
+}

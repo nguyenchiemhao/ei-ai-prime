@@ -107,6 +107,26 @@
       }
     },
     "knowledge": {
+      "ask": {
+        "title": "Ask this collection",
+        "helper": "Check that your documents answer real questions before attaching them to an assistant.",
+        "principalLabel": "Ask as",
+        "principal": {
+          "authenticated": "Signed-in user",
+          "anonymous": "Anonymous visitor"
+        },
+        "groupsLabel": "Groups",
+        "groupsHelp": "Comma-separated, e.g. managers, hr",
+        "questionLabel": "Test question",
+        "questionPlaceholder": "How many days of leave do I get when I marry?",
+        "submit": "Ask",
+        "passagesTitle": "Passages found",
+        "page": "p. {{page}}",
+        "noPassages": "No passages found for this question.",
+        "notFound": "I couldn't find this information in the documents.",
+        "modelUnavailable": "The model is not available right now. Try again in a moment.",
+        "invalidGroup": "Group names must be 1–64 characters, without commas; at most 100 groups."
+      },
       "title": "Knowledge",
       "subtitle": "Collections hold your documents. Access is set per collection and enforced before anything reaches the model.",
       "new": "New collection",

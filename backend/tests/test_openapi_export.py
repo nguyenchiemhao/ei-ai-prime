@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 
@@ -29,3 +30,14 @@ def test_committed_openapi_matches_the_app() -> None:
         "packages/api-types/openapi.json is stale; regenerate it with: "
         "npm run backend -- openapi-export, then npm run generate -w @ei-ai/api-types"
     )
+
+
+def test_ask_route_documents_an_event_stream_and_json_errors() -> None:
+    paths = json.loads(render_openapi())["paths"]
+    responses = paths["/workspaces/{workspace_id}/collections/{collection_id}/ask"]["post"][
+        "responses"
+    ]
+
+    assert list(responses["200"]["content"]) == ["text/event-stream"]
+    for status in ("401", "403", "404", "422", "503"):
+        assert list(responses[status]["content"]) == ["application/json"]

@@ -97,8 +97,13 @@ async def add_indexed_document(
     chunk_texts: Sequence[str],
     *,
     embedder: FakeEmbedder,
+    name: str | None = None,
+    headings: Sequence[Sequence[str]] | None = None,
 ) -> uuid.UUID:
-    """A ``ready`` document with one chunk per text, indexed through the real indexer."""
+    """A ``ready`` document with one chunk per text, indexed through the real indexer.
+
+    ``name`` (default: a random ``doc-*.txt``) and ``headings`` (one heading path per chunk;
+    default ``["Part", "Section <n>"]``) are what the answer tests show as the source."""
     document_id = uuid.uuid4()
     await conn.execute(
         text(
@@ -112,7 +117,7 @@ async def add_indexed_document(
             "org": org.org_id,
             "collection": collection_id,
             "folder": folder_id,
-            "name": f"doc-{document_id.hex[:8]}.txt",
+            "name": name or f"doc-{document_id.hex[:8]}.txt",
             "count": len(chunk_texts),
             "user": org.user_id,
         },
@@ -130,7 +135,7 @@ async def add_indexed_document(
                 "ordinal": ordinal,
                 "text": chunk,
                 "page": ordinal + 1,
-                "heading": ["Part", f"Section {ordinal}"],
+                "heading": list(headings[ordinal]) if headings else ["Part", f"Section {ordinal}"],
                 "end": len(chunk) + 1,
             },
         )

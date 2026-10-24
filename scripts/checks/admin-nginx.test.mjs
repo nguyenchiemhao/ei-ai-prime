@@ -89,3 +89,14 @@ test("no_full_content_security_policy_yet", () => {
   const csp = fs.readFileSync(CONF, "utf8").match(/Content-Security-Policy\s+"([^"]*)"/g) ?? [];
   for (const value of csp) assert.match(value, /"frame-ancestors 'none'"/);
 });
+
+test("api_location_waits_long_enough_for_a_streamed_answer", () => {
+  // EA-37: the ask box streams while the local model generates; nginx's default is 60 s.
+  const [server] = blocks(fs.readFileSync(CONF, "utf8"), "server");
+  const api = blocks(server, "location").find((body) =>
+    /proxy_pass\s+http:\/\/api:8000\//.test(body),
+  );
+  assert.ok(api, "no /api/ location");
+  const seconds = Number(api.match(/proxy_read_timeout\s+(\d+)s;/)?.[1]);
+  assert.ok(seconds >= 180, "proxy_read_timeout must be at least 180s in the /api/ location");
+});

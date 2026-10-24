@@ -125,6 +125,16 @@ ROUTE_CASES: tuple[RouteCase, ...] = (
         ok_status=204,
     ),
     ResourceRoute(
+        "POST",
+        "/workspaces/{workspace_id}/collections/{collection_id}/ask",
+        {"workspace_id": "workspaces", "collection_id": "collections"},
+        body=lambda r: {
+            "question": "qa iso question",
+            "principal": {"kind": "authenticated", "groups": []},
+        },
+        ok_status=200,
+    ),
+    ResourceRoute(
         "PUT",
         "/organization/members/{user_id}/org-role",
         {"user_id": "users"},

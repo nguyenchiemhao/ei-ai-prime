@@ -74,5 +74,9 @@ ROUTE_PERMISSIONS: dict[tuple[str, str], str] = {
         "DELETE",
         "/workspaces/{workspace_id}/collections/{collection_id}/documents/{document_id}",
     ): Permission.KNOWLEDGE_MANAGE.value,
+    (
+        "POST",
+        "/workspaces/{workspace_id}/collections/{collection_id}/ask",
+    ): Permission.KNOWLEDGE_MANAGE.value,
     ("PUT", "/organization/members/{user_id}/org-role"): Permission.ORG_ROLES_MANAGE.value,
 }

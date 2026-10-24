@@ -47,13 +47,13 @@ function makeDetail(extra: Partial<CollectionDetail> = {}): CollectionDetail {
   };
 }
 
-const DOCUMENT_LIST = `GET ${BASE}/c1/documents`;
+const DOCUMENT_LIST = /^GET \/workspaces\/[^/]+\/collections\/c[12]\/documents/;
 
 // Answers every document list request that the test did not stub with an empty list.
 function withEmptyDocumentLists(handlers: Parameters<typeof mockApi>[0]) {
   return new Proxy(handlers, {
     get: (target, key) =>
-      typeof key === "string" && !(key in target) && key.startsWith(DOCUMENT_LIST)
+      typeof key === "string" && !(key in target) && DOCUMENT_LIST.test(key)
         ? () => json(200, { documents: [] })
         : target[key as string],
   });
@@ -111,6 +111,34 @@ describe("CollectionDetailPage", () => {
     expect(screen.getByTestId("delete-collection-row").textContent).toContain(
       "Deletes the collection, its folders and everything indexed from it. This cannot be undone.",
     );
+  });
+
+  it("renders_the_ask_panel_after_the_documents_panel", async () => {
+    await open();
+    const documents = await screen.findByTestId("documents-empty");
+    const panel = screen.getByTestId("ask-panel");
+    expect(
+      documents.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(panel.parentElement?.className).toBe("collection-main");
+  });
+
+  it("resets_the_ask_panel_when_the_collection_changes", async () => {
+    const other = makeDetail({ id: "c2", name: "Benefits", folders: [] });
+    const { router } = await open(
+      { [`GET ${BASE}/c2`]: () => json(200, other) },
+      makeDetail({ access_level: "restricted", groups: ["hr"] }),
+    );
+    expect((screen.getByTestId("ask-groups") as HTMLInputElement).value).toBe("hr");
+    fireEvent.change(screen.getByTestId("ask-question"), { target: { value: "Leave?" } });
+
+    await router.navigate(`/w/${WS}/knowledge/c2`);
+
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Benefits"),
+    );
+    expect((screen.getByTestId("ask-groups") as HTMLInputElement).value).toBe("");
+    expect((screen.getByTestId("ask-question") as HTMLInputElement).value).toBe("");
   });
 
   it("shows_no_folders_message", async () => {

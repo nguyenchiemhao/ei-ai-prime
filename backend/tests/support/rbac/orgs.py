@@ -18,6 +18,9 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from ei_ai.auth.principal import Principal
 from ei_ai.crypto.lifecycle import create_org_key
 from ei_ai.db.tenant import tenant_transaction
+from ei_ai.knowledge.answers.chat_model import AnswerModel
+from ei_ai.knowledge.indexing.embedder import ChunkEmbedder
+from ei_ai.knowledge.retrieval.reranker import Reranker
 from ei_ai.main import create_app
 from ei_ai.readiness import Readiness
 from ei_ai.storage.files import OrgFileStore
@@ -130,9 +133,13 @@ def role_app(
     orgs: Sequence[RoleOrg],
     extra_routers: Sequence[APIRouter] = (),
     file_store: OrgFileStore | None = None,
+    embedder: ChunkEmbedder | None = None,
+    answer_model: AnswerModel | None = None,
+    reranker: Reranker | None = None,
 ) -> FastAPI:
     """The production app where every person of ``orgs`` can authenticate with their token.
-    ``file_store`` is where originals go (none: uploads cannot store a file)."""
+    ``file_store`` is where originals go (none: uploads cannot store a file); ``embedder``,
+    ``answer_model`` and ``reranker`` are the models of the ask route (none: it answers 503)."""
     principals = {
         person.token: Principal(user_id=person.user_id, org_id=org.org_id)
         for org in orgs
@@ -143,6 +150,9 @@ def role_app(
         identity_verifiers=(StaticBearerVerifier(principals),),
         engine=engine,
         file_store=file_store,
+        embedder=embedder,
+        answer_model=answer_model,
+        reranker=reranker,
     )
     for router in extra_routers:
         app.include_router(router)
@@ -155,8 +165,11 @@ async def role_client(
     *orgs: RoleOrg,
     extra_routers: Sequence[APIRouter] = (),
     file_store: OrgFileStore | None = None,
+    embedder: ChunkEmbedder | None = None,
+    answer_model: AnswerModel | None = None,
+    reranker: Reranker | None = None,
 ) -> AsyncIterator[httpx.AsyncClient]:
-    app = role_app(engine, orgs, extra_routers, file_store)
+    app = role_app(engine, orgs, extra_routers, file_store, embedder, answer_model, reranker)
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app), base_url="http://test"
     ) as client:

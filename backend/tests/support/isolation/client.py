@@ -21,6 +21,8 @@ from ei_ai.main import create_app
 from ei_ai.readiness import Readiness
 from ei_ai.storage.files import OrgFileStore
 from support.crypto import TEST_MASTER_KEY
+from support.fake_answer_model import FakeAnswerModel
+from support.fake_embedder import FakeEmbedder
 from support.identity import StaticBearerVerifier
 from support.tenants import TwoOrgs
 
@@ -58,7 +60,7 @@ def build_app(
 ) -> FastAPI:
     """Both Organizations' users can authenticate (``token-a``, ``token-b``); readiness is ok.
     Originals go encrypted to ``storage_root`` (a temporary directory when none is given) and
-    ingestion jobs are recorded, not run."""
+    ingestion jobs are recorded, not run. The ask route embeds and answers with the fakes."""
     principals = {
         TOKENS[rows.label]: Principal(user_id=rows.user_id, org_id=rows.org_id)
         for rows in (orgs.a, orgs.b)
@@ -70,6 +72,8 @@ def build_app(
         file_store=OrgFileStore(
             storage_root or Path(tempfile.mkdtemp()), OrgCipher(TEST_MASTER_KEY)
         ),
+        embedder=FakeEmbedder(),
+        answer_model=FakeAnswerModel(),
     )
     app.state.ingestion_runner = RecordingRunner()
     for router in extra_routers:

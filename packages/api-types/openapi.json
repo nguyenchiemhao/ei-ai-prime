@@ -28,6 +28,52 @@
         "title": "AccessChange",
         "type": "object"
       },
+      "AskPrincipal": {
+        "additionalProperties": false,
+        "description": "Who the answer is checked for. ``groups`` are validated by ``simulated_principal`` (up to\n100 distinct names); the route refuses more than 100 items before normalising them.",
+        "properties": {
+          "groups": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "kind": {
+            "enum": [
+              "anonymous",
+              "authenticated"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "AskPrincipal",
+        "type": "object"
+      },
+      "AskRequest": {
+        "additionalProperties": false,
+        "description": "Only these fields: an ``org_id``, ``user_id`` or ``workspace_id`` is a 422.",
+        "properties": {
+          "principal": {
+            "$ref": "#/components/schemas/AskPrincipal"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question",
+          "principal"
+        ],
+        "title": "AskRequest",
+        "type": "object"
+      },
       "ChunkItem": {
         "properties": {
           "char_end": {
@@ -2237,6 +2283,106 @@
           }
         },
         "summary": "Set who can read a collection"
+      }
+    },
+    "/workspaces/{workspace_id}/collections/{collection_id}/ask": {
+      "post": {
+        "operationId": "ask_collection_workspaces__workspace_id__collections__collection_id__ask_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Collection Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Server-Sent Events: passages, delta (0..n), then done or error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "No live session (unauthenticated)"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "The role lacks the permission (forbidden)"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "Unknown or invisible Workspace or collection (not_found)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "Malformed request, identity field or unacceptable value (invalid_request, invalid_group)"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorCode"
+                }
+              }
+            },
+            "description": "The embedding or answer model is not available (model_unavailable)"
+          }
+        },
+        "summary": "Ask a collection a question and stream the cited answer"
       }
     },
     "/workspaces/{workspace_id}/collections/{collection_id}/documents": {
