@@ -132,6 +132,8 @@ services:
       EMBEDDING_MODEL_REF: ${EMBEDDING_MODEL_REF:-bge-m3@2026.10}
       # Rerank model of retrieval (EA-36): empty = rerank off, vector order only.
       RERANK_MODEL_REF: ${RERANK_MODEL_REF:-}
+      # Chat model of the ask box (EA-37): a local chat entry of the manifest, served by `model`.
+      CHAT_MODEL_REF: ${CHAT_MODEL_REF:-qwen3-4b-instruct-2507@2026.10}
       # Encrypted originals (EA-20 OrgFileStore) of uploaded documents (EA-33), one directory per Organization.
       FILE_STORAGE_ROOT: /var/lib/ei-ai/files
     volumes:

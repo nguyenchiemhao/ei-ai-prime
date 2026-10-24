@@ -10,10 +10,21 @@ from pathlib import Path
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ei_ai.api import auth, collections, csrf, documents, health, members, organization, workspaces
+from ei_ai.api import (
+    ask,
+    auth,
+    collections,
+    csrf,
+    documents,
+    health,
+    members,
+    organization,
+    workspaces,
+)
 from ei_ai.api.csrf import CsrfMiddleware, origin_of
 from ei_ai.api.no_store import NoStoreAuthMiddleware
 from ei_ai.api.validation import install_validation_handler
+from ei_ai.app_logging import configure_app_logging
 from ei_ai.auth.directory import SignInDirectory
 from ei_ai.auth.principal import IdentityVerifier
 from ei_ai.auth.rate_limit import RateLimiter
@@ -21,10 +32,12 @@ from ei_ai.auth.session_verifier import SessionCookieVerifier
 from ei_ai.crypto.cipher import OrgCipher
 from ei_ai.crypto.master_key import master_key_from_env
 from ei_ai.db.engine import create_app_engine
+from ei_ai.knowledge.answers.chat_model import AnswerModel, GatewayAnswerModel, platform_chat_ref
 from ei_ai.knowledge.indexing.embedder import ChunkEmbedder, GatewayEmbedder
 from ei_ai.knowledge.indexing.embedding_model import platform_embedding_ref
 from ei_ai.knowledge.ingestion.progress import ProgressBoard
 from ei_ai.knowledge.ingestion.runner import IngestionRunner
+from ei_ai.knowledge.retrieval.reranker import GatewayReranker, Reranker, platform_rerank_ref
 from ei_ai.model_gateway.factory import build_gateway
 from ei_ai.model_gateway.gateway import ModelGateway
 from ei_ai.rbac.declarations import install_permission_handler
@@ -45,6 +58,8 @@ def create_app(
     environment: str | None = None,
     file_store: OrgFileStore | None = None,
     embedder: ChunkEmbedder | None = None,
+    answer_model: AnswerModel | None = None,
+    reranker: Reranker | None = None,
 ) -> FastAPI:
     """Build the app. Without ``readiness`` the settings are read from the environment at startup
     (fail fast, error names the variable only); they configure the CSRF origin, the sign-in rate
@@ -66,10 +81,26 @@ def create_app(
     lifespan that reads the settings embeds through the Model Gateway with the platform embedding
     model (``EMBEDDING_MODEL_REF``; invalid: startup aborts) and closes that gateway after the
     runner; tests without a lifespan and without an embedder index nothing.
+
+    The ask route (EA-37) answers with ``answer_model`` and searches with ``embedder``, optionally
+    reranking with ``reranker``. A lifespan that reads the settings builds the missing ones from
+    the platform models (``CHAT_MODEL_REF``, ``RERANK_MODEL_REF``; invalid: startup aborts) on the
+    one gateway it owns. Without an embedder or an answer model the route answers 503.
     """
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        # Uvicorn configures only its own loggers: without this every ei_ai INFO line is lost.
+        restore_logging = configure_app_logging() if readiness is None else None
+        try:
+            async with resources(app):
+                yield
+        finally:
+            if restore_logging is not None:
+                restore_logging()
+
+    @asynccontextmanager
+    async def resources(app: FastAPI) -> AsyncIterator[None]:
         owned_engine: AsyncEngine | None = None
         owned_directory: SignInDirectory | None = None
         owned_gateway: ModelGateway | None = None
@@ -81,14 +112,24 @@ def create_app(
                     Path(settings.file_storage_root), OrgCipher(master_key_from_env(os.environ))
                 )
             if embedder is None:
-                model_settings = ModelSettings.from_env(os.environ)
                 embedding_ref = platform_embedding_ref(os.environ)
+            if answer_model is None:
+                chat_ref = platform_chat_ref(os.environ)
+            rerank_ref = platform_rerank_ref(os.environ) if reranker is None else None
+            needs_gateway = embedder is None or answer_model is None or rerank_ref is not None
+            if needs_gateway:
+                model_settings = ModelSettings.from_env(os.environ)
             app.state.readiness = build_readiness(settings)
             if engine is None:
                 owned_engine = app.state.engine = create_app_engine(settings)
-            if embedder is None:
+            if needs_gateway:
                 owned_gateway = build_gateway(model_settings, app.state.engine)
-                app.state.embedder = GatewayEmbedder(owned_gateway, embedding_ref)
+                if embedder is None:
+                    app.state.embedder = GatewayEmbedder(owned_gateway, embedding_ref)
+                if answer_model is None:
+                    app.state.answer_model = GatewayAnswerModel(owned_gateway, chat_ref)
+                if rerank_ref is not None:
+                    app.state.reranker = GatewayReranker(owned_gateway, rerank_ref)
             if sign_in_directory is None:
                 owned_directory = SignInDirectory(settings.signin_database_url)
                 app.state.sign_in_directory = owned_directory
@@ -113,6 +154,8 @@ def create_app(
     app.state.sign_in_directory = sign_in_directory
     app.state.file_store = file_store
     app.state.embedder = embedder
+    app.state.answer_model = answer_model
+    app.state.reranker = reranker
     app.state.progress_board = ProgressBoard()
     app.state.clock = lambda: datetime.now(UTC)
     app.state.ingestion_runner = IngestionRunner(
@@ -141,6 +184,7 @@ def create_app(
     app.add_middleware(CsrfMiddleware, allowed_origin=lambda: app.state.admin_origin)
     # Outermost: it also marks the CSRF 403 and the validation 422 of /auth/* as no-store.
     app.add_middleware(NoStoreAuthMiddleware)
+    app.include_router(ask.router)
     app.include_router(auth.router)
     app.include_router(collections.router)
     app.include_router(csrf.router)

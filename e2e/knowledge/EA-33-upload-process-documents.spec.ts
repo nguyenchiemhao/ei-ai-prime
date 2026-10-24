@@ -1369,7 +1369,7 @@ test("AC9: the Collection detail shows the header, the folder list with counts, 
       await expect(row.getByTestId("preview-text")).toHaveText("Preview text");
     }
     await expect(page.getByText("Replace", { exact: true })).toHaveCount(0);
-    await expect(page.getByText("Ask this collection")).toHaveCount(0);
+    // The "Ask this collection" panel is no longer out of scope: EA-37 adds it (not asserted here).
     await page.screenshot({ path: `${SCREENSHOTS_33}/ac9-collection-detail.png`, fullPage: true });
     expect(withoutStatuses(seen.problems, [])).toEqual([]);
 

@@ -105,3 +105,48 @@ export function apiUpload<T>(
 ): Promise<ApiResult<T>> {
   return send<T>("POST", path, { ...headers }, body);
 }
+
+/**
+ * POST JSON and hand the response body to `onChunk` as decoded text while it arrives (SSE).
+ * Same CSRF header and error mapping as `apiRequest`; never throws. An abort comes back as
+ * `{ ok: false, status: 0, code: "aborted" }`.
+ */
+export async function apiStream(
+  path: string,
+  body: unknown,
+  onChunk: (text: string) => void,
+  signal?: AbortSignal,
+): Promise<ApiResult<void>> {
+  try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const token = await ensureCsrfToken();
+    if (token) headers["X-CSRF-Token"] = token;
+    const response = await fetch(`${API_PREFIX}${path}`, {
+      method: "POST",
+      headers,
+      credentials: "same-origin",
+      body: JSON.stringify(body),
+      signal,
+    });
+    if (!response.ok) {
+      return { ok: false, status: response.status, code: await readCode(response) };
+    }
+    if (response.body) {
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const text = decoder.decode(value, { stream: true });
+        if (text) onChunk(text);
+      }
+      const rest = decoder.decode();
+      if (rest) onChunk(rest);
+    }
+    return { ok: true, data: undefined };
+  } catch (error) {
+    const aborted =
+      signal?.aborted || (error instanceof DOMException && error.name === "AbortError");
+    return { ok: false, status: 0, code: aborted ? "aborted" : "network" };
+  }
+}
